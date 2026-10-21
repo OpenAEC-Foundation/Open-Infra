@@ -1,0 +1,101 @@
+//! The GIS workbench window. It runs on its own thread in the plugin process
+//! (Open CAD Studio has no plugin dialog API), next to the CAD window, and
+//! writes into the drawing through [`crate::bridge`].
+//!
+//! winit allows one event loop per process, so the window is created once and
+//! afterwards only hidden/shown; closing it hides it.
+
+mod app;
+mod jobs;
+
+use std::sync::mpsc::{channel, Sender};
+use std::sync::{Mutex, OnceLock};
+
+use eframe::egui;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Tab {
+    Location,
+    Raster,
+    Wfs,
+    Osm,
+    Servers,
+    Coords,
+}
+
+pub(crate) enum UiMsg {
+    Show(Tab),
+    /// A point picked in the drawing (project CRS), for the coordinate tab.
+    Picked([f64; 2]),
+    /// The import area was set in the drawing; reload the site.
+    SiteChanged,
+}
+
+struct Handle {
+    tx: Sender<UiMsg>,
+}
+
+fn handle() -> &'static Mutex<Option<Handle>> {
+    static H: OnceLock<Mutex<Option<Handle>>> = OnceLock::new();
+    H.get_or_init(|| Mutex::new(None))
+}
+
+static CTX: OnceLock<egui::Context> = OnceLock::new();
+
+pub(crate) fn send(msg: UiMsg) -> bool {
+    let guard = handle().lock().unwrap();
+    let Some(h) = guard.as_ref() else { return false };
+    let ok = h.tx.send(msg).is_ok();
+    if let Some(ctx) = CTX.get() {
+        ctx.request_repaint();
+    }
+    ok
+}
+
+/// Show the workbench on `tab`, creating the window on first use.
+pub fn open(tab: Tab) -> Result<(), String> {
+    if send(UiMsg::Show(tab)) {
+        return Ok(());
+    }
+    if cfg!(target_os = "macos") {
+        return Err("het GIS-venster is op macOS nog niet beschikbaar; gebruik de GIS_-commando's".into());
+    }
+    let (tx, rx) = channel();
+    tx.send(UiMsg::Show(tab)).ok();
+    *handle().lock().unwrap() = Some(Handle { tx });
+    std::thread::Builder::new()
+        .name("open-infra-ui".into())
+        .spawn(move || {
+            let mut options = eframe::NativeOptions {
+                viewport: egui::ViewportBuilder::default()
+                    .with_title("Open Infra — GIS-workbench")
+                    .with_app_id("open-infra-gis")
+                    .with_inner_size([820.0, 640.0])
+                    .with_min_inner_size([560.0, 420.0]),
+                ..Default::default()
+            };
+            options.event_loop_builder = Some(Box::new(|builder| {
+                // The plugin's main thread serves the host IPC; the window
+                // lives on this one.
+                #[cfg(all(unix, not(target_os = "macos")))]
+                winit::platform::x11::EventLoopBuilderExtX11::with_any_thread(builder, true);
+                #[cfg(windows)]
+                winit::platform::windows::EventLoopBuilderExtWindows::with_any_thread(builder, true);
+                let _ = builder;
+            }));
+            let result = eframe::run_native(
+                "Open Infra GIS",
+                options,
+                Box::new(move |cc| {
+                    let _ = CTX.set(cc.egui_ctx.clone());
+                    Ok(Box::new(app::App::new(cc, rx)))
+                }),
+            );
+            *handle().lock().unwrap() = None;
+            if let Err(e) = result {
+                crate::bridge::error(&format!("GIS-venster kon niet starten: {e}"));
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}

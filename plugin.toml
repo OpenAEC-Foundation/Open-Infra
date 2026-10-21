@@ -1,0 +1,19 @@
+[plugin]
+id = "openaec.open-infra"
+name = "Open Infra — GIS"
+version = "0.2.0"
+description = "GIS-workbench voor infra en civiele techniek: projectlocatie en coördinatenstelsels, WMS/WFS-servers, OpenStreetMap. Nederland (PDOK) en wereldwijd."
+author = "OpenAEC Foundation"
+license = "GPL-3.0-only"
+repository = "OpenAEC-Foundation/Open-Infra"
+
+[opencad]
+api_version = 13
+# Filled at build time (scripts/install.sh, release workflow) from the
+# compiler that built the library and the opencadcodec source in Cargo.lock.
+# The host loads the plugin only when both match its own build.
+rustc_version = "__RUSTC_VERSION__"
+acadrust_source = "__ACADRUST_SOURCE__"
+ribbon_order = 60
+command_prefixes = ["GIS_"]
+xdata_apps = []

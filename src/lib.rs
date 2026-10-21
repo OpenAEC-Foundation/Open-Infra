@@ -1,0 +1,313 @@
+//! Open Infra — GIS workbench for Open CAD Studio.
+//!
+//! A "GIS" ribbon tab modelled on the FreeCAD GIS(2BIM) workbench: set the
+//! project site and coordinate system, then pull WMS/tile map layers, WFS
+//! vector data and OpenStreetMap into the drawing — the Netherlands (PDOK)
+//! and worldwide. The workbench window runs in this plugin's own process.
+
+pub mod bridge;
+pub mod emit;
+pub mod gis;
+pub mod import;
+mod ui;
+
+use std::sync::OnceLock;
+
+use ocs_plugin_api::host::{BuiltinPlugin, CommandStep, HostApi, InteractiveCommand, PreviewWire};
+use ocs_plugin_api::manifest::{ApiVersion, PluginManifest};
+use ocs_plugin_api::ribbon::{CadModule, IconKind, ModuleEvent, RibbonGroup, RibbonItem, ToolDef};
+
+use gis::site::Site;
+
+static MANIFEST: PluginManifest = PluginManifest {
+    id: "openaec.open-infra",
+    name: "Open Infra — GIS",
+    version: env!("CARGO_PKG_VERSION"),
+    description: "GIS-workbench voor infra en civiele techniek: projectlocatie en coördinatenstelsels, WMS/WFS-servers, OpenStreetMap. Nederland (PDOK) en wereldwijd.",
+    api_version: ApiVersion::CURRENT,
+    ribbon_order: 60,
+    xdata_apps: &[],
+    command_prefixes: &["GIS_"],
+};
+
+const I_LOCATION: IconKind = IconKind::Svg(include_bytes!("../assets/location.svg"));
+const I_AREA: IconKind = IconKind::Svg(include_bytes!("../assets/area.svg"));
+const I_MAP: IconKind = IconKind::Svg(include_bytes!("../assets/map.svg"));
+const I_LAYERS: IconKind = IconKind::Svg(include_bytes!("../assets/layers.svg"));
+const I_VECTOR: IconKind = IconKind::Svg(include_bytes!("../assets/vector.svg"));
+const I_GLOBE: IconKind = IconKind::Svg(include_bytes!("../assets/globe.svg"));
+const I_POINT: IconKind = IconKind::Svg(include_bytes!("../assets/point.svg"));
+const I_SERVER: IconKind = IconKind::Svg(include_bytes!("../assets/server.svg"));
+const I_QUICK: IconKind = IconKind::Svg(include_bytes!("../assets/quick.svg"));
+
+/// One-click imports from the ribbon (no window): command → what to fetch.
+enum Quick {
+    Raster { server: &'static str },
+    Wfs { server: &'static str, typename: &'static str, label: Option<&'static str>, aci: i16 },
+    Osm,
+}
+
+const QUICK: &[(&str, &str, Quick)] = &[
+    ("GIS_Q_LUCHTFOTO", "Luchtfoto (PDOK)", Quick::Raster { server: "pdok-luchtfoto" }),
+    ("GIS_Q_KADASTER", "Kadastrale kaart (PDOK)", Quick::Raster { server: "pdok-kadastralekaart-wms" }),
+    ("GIS_Q_AHN", "AHN hoogtekaart (PDOK)", Quick::Raster { server: "pdok-ahn-wms" }),
+    ("GIS_Q_OSMKAART", "OpenStreetMap-kaart (wereld)", Quick::Raster { server: "osm-tiles" }),
+    ("GIS_Q_SATELLIET", "Sentinel-2 satelliet (wereld)", Quick::Raster { server: "eox-s2-wms" }),
+    ("GIS_Q_BAG", "BAG panden (PDOK)", Quick::Wfs { server: "pdok-bag-wfs", typename: "bag:pand", label: None, aci: 30 }),
+    ("GIS_Q_PERCELEN", "Kadastrale percelen (PDOK)", Quick::Wfs { server: "pdok-kadastralekaart-wfs", typename: "kadastralekaart:Perceel", label: Some("perceelnummer"), aci: 3 }),
+    ("GIS_Q_NWB", "NWB wegvakken (RWS)", Quick::Wfs { server: "pdok-nwbwegen-wfs", typename: "nwbwegen:wegvakken", label: Some("stt_naam"), aci: 2 }),
+    ("GIS_Q_SPOOR", "Spoorassen (ProRail)", Quick::Wfs { server: "pdok-spoorwegen-wfs", typename: "spoorwegen:spooras", label: None, aci: 6 }),
+    ("GIS_Q_OSM", "OpenStreetMap-vectoren (wereld)", Quick::Osm),
+];
+
+fn tool(id: &'static str, label: &'static str, icon: IconKind) -> RibbonItem {
+    RibbonItem::LargeTool(ToolDef { id, label, icon, event: ModuleEvent::Command(id.to_string()) })
+}
+
+struct GisModule;
+
+impl CadModule for GisModule {
+    fn id(&self) -> &'static str {
+        "open_infra_gis"
+    }
+    fn title(&self) -> &'static str {
+        "GIS"
+    }
+    fn ribbon_groups(&self) -> &[RibbonGroup] {
+        static GROUPS: OnceLock<Vec<RibbonGroup>> = OnceLock::new();
+        GROUPS.get_or_init(|| {
+            let quick = |filter: fn(&Quick) -> bool| {
+                QUICK.iter().filter(|(_, _, q)| filter(q)).map(|(c, l, _)| (*c, *l, I_QUICK)).collect::<Vec<_>>()
+            };
+            vec![
+                RibbonGroup {
+                    title: "Locatie",
+                    tools: vec![
+                        tool("GIS_LOCATIE", "Locatie", I_LOCATION),
+                        tool("GIS_GEBIED", "Gebied", I_AREA),
+                        tool("GIS_PUNT", "Punt info", I_POINT),
+                    ],
+                },
+                RibbonGroup {
+                    title: "Kaartlagen",
+                    tools: vec![
+                        tool("GIS_KAART", "WMS / Tegels", I_MAP),
+                        RibbonItem::LargeDropdown {
+                            id: "GIS_Q_RASTER",
+                            label: "Snel",
+                            icon: I_LAYERS,
+                            items: quick(|q| matches!(q, Quick::Raster { .. })),
+                            default: "GIS_Q_LUCHTFOTO",
+                        },
+                    ],
+                },
+                RibbonGroup {
+                    title: "Vectordata",
+                    tools: vec![
+                        tool("GIS_WFS", "WFS", I_VECTOR),
+                        tool("GIS_OSM", "OpenStreetMap", I_GLOBE),
+                        RibbonItem::LargeDropdown {
+                            id: "GIS_Q_VECTOR",
+                            label: "Snel",
+                            icon: I_QUICK,
+                            items: quick(|q| !matches!(q, Quick::Raster { .. })),
+                            default: "GIS_Q_BAG",
+                        },
+                    ],
+                },
+                RibbonGroup {
+                    title: "Werkbank",
+                    tools: vec![tool("GIS_COORD", "Coördinaten", I_POINT), tool("GIS_SERVERS", "Servers", I_SERVER)],
+                },
+            ]
+        })
+    }
+}
+
+/// `GIS_GEBIED`: pick two opposite corners of the import area in the drawing.
+struct AreaCmd {
+    first: Option<[f64; 2]>,
+    site: Site,
+    unit_factor: f64,
+}
+
+impl InteractiveCommand for AreaCmd {
+    fn prompt(&self) -> String {
+        if self.first.is_none() { "GIS: eerste hoek van het importgebied".into() } else { "GIS: tegenoverliggende hoek".into() }
+    }
+    fn on_point(&mut self, pt: [f64; 3]) -> CommandStep {
+        let Some(a) = self.first else {
+            self.first = Some([pt[0], pt[1]]);
+            return CommandStep::NeedPoint;
+        };
+        let b = [pt[0], pt[1]];
+        let pa = self.site.from_drawing(a, self.unit_factor);
+        let pb = self.site.from_drawing(b, self.unit_factor);
+        let (w, h) = ((pa[0] - pb[0]).abs(), (pa[1] - pb[1]).abs());
+        if w < 1.0 || h < 1.0 {
+            return CommandStep::Cancel;
+        }
+        let mut site = self.site.clone();
+        site.set_origin((pa[0] + pb[0]) / 2.0, (pa[1] + pb[1]) / 2.0);
+        site.width = (w * 10.0).round() / 10.0;
+        site.height = (h * 10.0).round() / 10.0;
+        // Write from a worker: this callback runs inside the host's input
+        // handling and must not wait on another host round-trip.
+        std::thread::spawn(move || match bridge::save_site(&site) {
+            Ok(()) => {
+                bridge::info(&format!("Importgebied {} × {} m rond X {:.2} Y {:.2} ({}).", site.width, site.height, site.origin_e, site.origin_n, site.crs));
+                ui::send(ui::UiMsg::SiteChanged);
+            }
+            Err(e) => bridge::error(&format!("Gebied niet opgeslagen: {e}")),
+        });
+        CommandStep::Done
+    }
+    fn on_cursor_move(&mut self, pt: [f64; 3]) -> Vec<PreviewWire> {
+        let Some(a) = self.first else { return Vec::new() };
+        let p = |x: f64, y: f64| [x, y, 0.0];
+        vec![PreviewWire::with_color(
+            vec![p(a[0], a[1]), p(pt[0], a[1]), p(pt[0], pt[1]), p(a[0], pt[1]), p(a[0], a[1])],
+            [0.95, 0.6, 0.15, 1.0],
+        )]
+    }
+}
+
+/// `GIS_PUNT`: report a picked point in the project CRS, WGS 84 and RD/UTM.
+struct PointCmd {
+    site: Site,
+    unit_factor: f64,
+}
+
+impl InteractiveCommand for PointCmd {
+    fn prompt(&self) -> String {
+        "GIS: wijs een punt aan".into()
+    }
+    fn on_point(&mut self, pt: [f64; 3]) -> CommandStep {
+        let p = self.site.from_drawing([pt[0], pt[1]], self.unit_factor);
+        let (site, unit) = (self.site.crs.clone(), self.unit_factor);
+        std::thread::spawn(move || {
+            let mut lines = vec![format!("{site}: X {:.3}  Y {:.3}", p[0], p[1])];
+            if let Ok(ll) = gis::crs::transform(&site, "EPSG:4326", p) {
+                lines.push(format!("WGS 84: {:.8} N  {:.8} E", ll[1], ll[0]));
+                let utm = gis::crs::utm_code_for(ll[0], ll[1]);
+                for other in ["EPSG:28992".to_string(), utm] {
+                    if other != site {
+                        if let (Ok(q), Some(i)) = (gis::crs::transform(&site, &other, p), gis::crs::known(&other)) {
+                            lines.push(format!("{}: X {:.3}  Y {:.3}", i.name, q[0], q[1]));
+                        }
+                    }
+                }
+            }
+            let _ = unit;
+            bridge::info(&lines.join("  |  "));
+            ui::send(ui::UiMsg::Picked(p));
+        });
+        CommandStep::Done
+    }
+}
+
+struct OpenInfra;
+
+fn require_site(host: &mut dyn HostApi) -> Option<Site> {
+    let s = bridge::site();
+    if s.is_none() {
+        host.push_error("[Open Infra] Stel eerst de projectlocatie in: GIS → Locatie.");
+        let _ = ui::open(ui::Tab::Location);
+    }
+    s
+}
+
+fn open(host: &mut dyn HostApi, tab: ui::Tab) {
+    if let Err(e) = ui::open(tab) {
+        host.push_error(&format!("[Open Infra] {e}"));
+    }
+}
+
+fn quick(host: &mut dyn HostApi, q: &'static Quick, label: &'static str) {
+    let Some(site) = require_site(host) else { return };
+    host.push_info(&format!("[Open Infra] {label} ophalen…"));
+    std::thread::spawn(move || {
+        let progress = |_: String| {};
+        let result = match q {
+            Quick::Raster { server } => gis::servers::find(server).ok_or_else(|| format!("server {server} onbekend")).and_then(|srv| {
+                if srv.kind == gis::servers::ServerKind::Xyz {
+                    import::xyz(&site, &srv, &gis::raster::Options { resolution: 0.5, format: "image/png".into() }, 0, &progress)
+                } else {
+                    let caps = gis::caps::fetch_wms(&srv.url)?;
+                    let layer = caps.layers.iter().find(|l| l.name == srv.default_layer).or(caps.layers.first()).cloned().ok_or("geen lagen")?;
+                    let opt = gis::raster::Options { resolution: 0.25, format: gis::raster::default_format(&caps, &layer.name) };
+                    import::wms(&site, &srv, &caps, &layer, &opt, 0, &progress)
+                }
+            }),
+            Quick::Wfs { server, typename, label, aci } => gis::servers::find(server).ok_or_else(|| format!("server {server} onbekend")).and_then(|srv| {
+                let caps = gis::caps::fetch_wfs(&srv.url)?;
+                let ft = caps.types.iter().find(|t| t.name.eq_ignore_ascii_case(typename)).cloned().ok_or_else(|| format!("objecttype {typename} niet gevonden"))?;
+                let res = import::wfs_fetch(&site, &caps, &ft, 20_000, &progress)?;
+                let style = import::VectorStyle { aci: *aci, label_field: label.map(str::to_string), text_m: 1.0, clip: true };
+                import::wfs_place(&site, &ft, &res, &style)
+            }),
+            Quick::Osm => {
+                let ids: Vec<&str> = gis::osm::THEMES.iter().filter(|t| t.default_on).map(|t| t.id).collect();
+                import::osm(&site, &ids, true, 2.0, true, &progress)
+            }
+        };
+        match result {
+            Ok(m) => bridge::info(&m),
+            Err(e) => bridge::error(&format!("{label}: {e}")),
+        }
+    });
+}
+
+impl BuiltinPlugin for OpenInfra {
+    fn manifest(&self) -> &'static PluginManifest {
+        &MANIFEST
+    }
+
+    fn ribbon(&self) -> Box<dyn CadModule> {
+        Box::new(GisModule)
+    }
+
+    fn on_load(&mut self, host: &mut dyn HostApi) {
+        bridge::attach(host);
+    }
+
+    fn dispatch(&self, host: &mut dyn HostApi, cmd: &str) -> bool {
+        let verb = cmd.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+        if !verb.starts_with("GIS_") {
+            return false;
+        }
+        bridge::attach(host);
+        match verb.as_str() {
+            "GIS_LOCATIE" | "GIS_WERKBANK" => open(host, ui::Tab::Location),
+            "GIS_KAART" | "GIS_WMS" => open(host, ui::Tab::Raster),
+            "GIS_WFS" => open(host, ui::Tab::Wfs),
+            "GIS_OSM" => open(host, ui::Tab::Osm),
+            "GIS_SERVERS" => open(host, ui::Tab::Servers),
+            "GIS_COORD" => open(host, ui::Tab::Coords),
+            "GIS_GEBIED" | "GIS_PUNT" => {
+                let site = bridge::site().unwrap_or_default();
+                site.register_crs();
+                let unit_factor = bridge::target().map(|t| t.unit_factor).unwrap_or(1.0);
+                if verb == "GIS_GEBIED" {
+                    host.start_interactive(Box::new(AreaCmd { first: None, site, unit_factor }));
+                } else {
+                    host.start_interactive(Box::new(PointCmd { site, unit_factor }));
+                }
+            }
+            "GIS_HELP" => host.push_info(
+                "[Open Infra] GIS_LOCATIE, GIS_GEBIED, GIS_PUNT, GIS_KAART, GIS_WFS, GIS_OSM, GIS_COORD, GIS_SERVERS; \
+                 snel: GIS_Q_LUCHTFOTO, GIS_Q_KADASTER, GIS_Q_AHN, GIS_Q_OSMKAART, GIS_Q_SATELLIET, GIS_Q_BAG, \
+                 GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_SPOOR, GIS_Q_OSM.",
+            ),
+            v => match QUICK.iter().find(|(c, ..)| *c == v) {
+                Some((_, label, q)) => quick(host, q, label),
+                None => {
+                    host.push_error(&format!("[Open Infra] onbekend commando {v} — zie GIS_HELP"));
+                }
+            },
+        }
+        true
+    }
+}
+
+ocs_plugin_api::export_plugin!(OpenInfra);

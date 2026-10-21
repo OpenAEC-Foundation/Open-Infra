@@ -1,36 +1,5 @@
-# Dependencies
-node_modules/
-
-# Build output
-dist/
-
-# Environment variables
-.env
-.env.*
-!.env.example
-
-# Editor / IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS files
-Thumbs.db
-Desktop.ini
-.DS_Store
-
-# Logs
-*.log
-npm-debug.log*
-
-# TypeScript
-*.tsbuildinfo
-
-# Vite
-*.local
-
-# Claude Code
+/target
+/dist
+.cargo/config.toml
 .claude/
 CLAUDE.md
