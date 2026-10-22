@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04   # same image as the host AppImage: glibc 2.35 runs on older distros too
             lib: libopen_infra.so
             asset: openaec.open-infra-linux-x86_64.so
             # plugin.toml is identical for every platform; one job ships it.
@@ -30,7 +30,7 @@ jobs:
           - os: windows-latest
             lib: open_infra.dll
             asset: openaec.open-infra-windows-x86_64.dll
-          - os: macos-latest
+          - os: macos-14       # Apple Silicon, as the host release
             lib: libopen_infra.dylib
             asset: openaec.open-infra-macos-aarch64.dylib
     runs-on: ${{ matrix.os }}
