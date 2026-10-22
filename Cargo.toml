@@ -11,10 +11,11 @@ repository = "https://github.com/OpenAEC-Foundation/Open-Infra"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-# Stable host contract. Pin the commit of the Open CAD Studio build you target:
+# Stable host contract, pinned to the Open CAD Studio v2026.42 release (API 10).
+# Pin the commit of the Open CAD Studio release you target:
 # it also pins the opencadcodec revision, and the host only loads a plugin built
 # against the same opencadcodec commit and rustc.
-ocs_plugin_api = { git = "https://github.com/HakanSeven12/OpenCADStudio", rev = "e82d4036eb3af56135337b120bd99063bcf12af7", features = ["host"] }
+ocs_plugin_api = { git = "https://github.com/HakanSeven12/OpenCADStudio", rev = "b6fbac39ffc74398ba5d283ce2bc1dc07a8fd8f0", features = ["host"] }
 
 # GIS engine
 proj4rs = "0.2"

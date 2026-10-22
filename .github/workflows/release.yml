@@ -25,6 +25,8 @@ jobs:
           - os: ubuntu-latest
             lib: libopen_infra.so
             asset: openaec.open-infra-linux-x86_64.so
+            # plugin.toml is identical for every platform; one job ships it.
+            toml: dist/plugin.toml
           - os: windows-latest
             lib: open_infra.dll
             asset: openaec.open-infra-windows-x86_64.dll
@@ -37,8 +39,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
-      - run: cargo test --lib
-      - run: cargo build --release
+      - run: cargo test --lib --locked
+      - run: cargo build --release --locked
       - name: Stage release asset
         shell: bash
         run: |
@@ -46,9 +48,15 @@ jobs:
           cp "target/release/${{ matrix.lib }}" "dist/${{ matrix.asset }}"
           acadrust_source=$(awk '/^name = "acadrust"$/{f=1} f&&/^source = /{gsub(/^source = "|"$/,""); print; exit}' Cargo.lock)
           sed -e "s|__RUSTC_VERSION__|$(rustc --version)|" -e "s|__ACADRUST_SOURCE__|$acadrust_source|" plugin.toml > dist/plugin.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          name: Open Infra ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
           files: |
             dist/${{ matrix.asset }}
-            dist/plugin.toml
+            ${{ matrix.toml }}

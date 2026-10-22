@@ -59,12 +59,18 @@ You need the same `rustc` and the same opencadcodec revision as the Open CAD Stu
 cargo test --lib          # engine tests (CRS, clipping, tiling, parsing)
 ```
 
-`Cargo.toml` pins `ocs_plugin_api` to an Open CAD Studio commit. For local development, `.cargo/config.toml` (not committed) can point to a checkout next to this repo:
+`Cargo.toml` pins `ocs_plugin_api` to the **Open CAD Studio v2026.42** release (plugin API 10, opencadcodec `5d4f11a`, rustc 1.99.1). So the plugin loads in the Open CAD Studio you can download. For a newer Open CAD Studio, move the `rev` along to the commit of that release, and the rustc version in `.github/workflows/release.yml` with it.
+
+For development against a local Open CAD Studio checkout, a `.cargo/config.toml` (not committed) can point to it:
 
 ```toml
 [patch."https://github.com/HakanSeven12/OpenCADStudio"]
 ocs_plugin_api = { path = "../OpenCADStudio/crates/ocs_plugin_api" }
 ```
+
+### Installing a release
+
+Use Open CAD Studio's **Plugin Manager** (`PLUGINS`): *Add a repository* → `OpenAEC-Foundation/Open-Infra` → install release `v0.2.0`. Or download `openaec.open-infra-<platform>` and `plugin.toml` from the GitHub release into `<config>/OpenCADStudio/plugins/openaec.open-infra/`, then restart Open CAD Studio.
 
 Commands (for scripts and automation): `GIS_LOCATIE`, `GIS_GEBIED [x1,y1 x2,y2]`, `GIS_PUNT`, `GIS_KAART`, `GIS_WFS`, `GIS_OSM`, `GIS_COORD`, `GIS_SERVERS`, `GIS_HELP`, and the quick imports `GIS_Q_LUCHTFOTO`, `GIS_Q_KADASTER`, `GIS_Q_AHN`, `GIS_Q_OSMKAART`, `GIS_Q_SATELLIET`, `GIS_Q_BAG`, `GIS_Q_PERCELEN`, `GIS_Q_NWB`, `GIS_Q_SPOOR`, `GIS_Q_OSM`.
 
