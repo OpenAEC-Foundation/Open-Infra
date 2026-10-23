@@ -1,8 +1,8 @@
 [plugin]
 id = "openaec.open-infra"
 name = "Open Infra — GIS"
-version = "0.2.1"
-description = "GIS-workbench voor infra en civiele techniek: projectlocatie en coördinatenstelsels, WMS/WFS-servers, OpenStreetMap. Nederland (PDOK) en wereldwijd."
+version = "2026.43.0"
+description = "GIS-workbench en NLCS-basisdata voor infra en civiele techniek: projectlocatie, WMS/WFS-servers, OpenStreetMap, BGT, kadaster en KLIC conform NLCS. Nederland (PDOK) en wereldwijd."
 author = "OpenAEC Foundation"
 license = "GPL-3.0-only"
 repository = "OpenAEC-Foundation/Open-Infra"
@@ -16,4 +16,4 @@ rustc_version = "__RUSTC_VERSION__"
 acadrust_source = "__ACADRUST_SOURCE__"
 ribbon_order = 60
 command_prefixes = ["GIS_"]
-xdata_apps = []
+xdata_apps = ["OPENINFRA"]

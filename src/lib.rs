@@ -26,10 +26,10 @@ static MANIFEST: PluginManifest = PluginManifest {
     id: "openaec.open-infra",
     name: "Open Infra — GIS",
     version: env!("CARGO_PKG_VERSION"),
-    description: "GIS-workbench voor infra en civiele techniek: projectlocatie en coördinatenstelsels, WMS/WFS-servers, OpenStreetMap. Nederland (PDOK) en wereldwijd.",
+    description: "GIS-workbench en NLCS-basisdata voor infra en civiele techniek: projectlocatie, WMS/WFS-servers, OpenStreetMap, BGT, kadaster en KLIC conform NLCS. Nederland (PDOK) en wereldwijd.",
     api_version: ApiVersion::CURRENT,
     ribbon_order: 60,
-    xdata_apps: &[],
+    xdata_apps: &[bridge::XDATA_APP],
     command_prefixes: &["GIS_"],
 };
 
