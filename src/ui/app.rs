@@ -27,7 +27,9 @@ const ACCENT: Color32 = Color32::from_rgb(33, 150, 220);
 const OK_GREEN: Color32 = Color32::from_rgb(152, 195, 121);
 const ERR_RED: Color32 = Color32::from_rgb(224, 108, 117);
 const WARN: Color32 = Color32::from_rgb(229, 192, 123);
-const MAP_H: f32 = 330.0;
+/// Map height on the import pages; the location page gets most of the window,
+/// like the map pane of FreeCAD's "Set Geographic Location" dialog.
+const MAP_H: f32 = 360.0;
 
 fn aci_color(aci: i16) -> Color32 {
     match aci {
@@ -272,9 +274,10 @@ impl App {
     /// Map toolbar + map. `site` gives the bounding box drawn on the map.
     fn map_section(&mut self, ui: &mut egui::Ui, site: Option<&Site>, marker: Option<LonLat>, image: Option<&(TextureHandle, [LonLat; 4])>, lines: &[(Vec<LonLat>, Color32)]) -> Option<MapEvent> {
         let ring = site.and_then(site_ring);
+        let map_h = if self.tab == Tab::Location { (ui.ctx().content_rect().height() * 0.62).max(460.0) } else { MAP_H };
         if self.fit_pending {
             if let Some(r) = &ring {
-                self.map.fit(r, Vec2::new(ui.available_width(), MAP_H));
+                self.map.fit(r, Vec2::new(ui.available_width(), map_h));
                 self.fit_pending = false;
             }
         }
@@ -287,7 +290,7 @@ impl App {
                     .then(|| self.map.area_mode = !self.map.area_mode);
                 if ui.add_enabled(ring.is_some(), egui::Button::new("Zoom naar gebied")).clicked() {
                     if let Some(r) = &ring {
-                        self.map.fit(r, Vec2::new(ui.available_width(), MAP_H));
+                        self.map.fit(r, Vec2::new(ui.available_width(), map_h));
                     }
                 }
                 if let Some(h) = self.map.hover() {
@@ -302,7 +305,7 @@ impl App {
                     });
                 }
             });
-            event = self.map.show(ui, MAP_H, Overlay { marker, bbox: ring.clone(), image: image.map(|(t, c)| (t, *c)), lines });
+            event = self.map.show(ui, map_h, Overlay { marker, bbox: ring.clone(), image: image.map(|(t, c)| (t, *c)), lines });
         });
         event
     }

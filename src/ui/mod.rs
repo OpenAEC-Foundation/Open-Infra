@@ -72,7 +72,7 @@ pub fn open(tab: Tab) -> Result<(), String> {
                 viewport: egui::ViewportBuilder::default()
                     .with_title("Open Infra — GIS-workbench")
                     .with_app_id("open-infra-gis")
-                    .with_inner_size([1060.0, 900.0])
+                    .with_inner_size([1280.0, 1000.0])
                     .with_min_inner_size([760.0, 560.0]),
                 ..Default::default()
             };
