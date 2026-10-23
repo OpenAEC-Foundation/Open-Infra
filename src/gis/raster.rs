@@ -274,3 +274,59 @@ mod tests {
         assert_eq!((t[3].1, t[3].2), (1952, 352));
     }
 }
+
+/// A small preview raster for the workbench map, with its corners in lon/lat
+/// (upper-left, upper-right, lower-right, lower-left).
+pub struct Preview {
+    pub rgba: Vec<u8>,
+    pub size: [usize; 2],
+    pub corners: [[f64; 2]; 4],
+}
+
+fn corners_lonlat(b: [f64; 4], from: &str) -> Result<[[f64; 2]; 4], String> {
+    let t = Transformer::new(from, "EPSG:4326")?;
+    Ok([t.apply([b[0], b[3]])?, t.apply([b[2], b[3]])?, t.apply([b[2], b[1]])?, t.apply([b[0], b[1]])?])
+}
+
+fn preview_size(site: &Site, max_px: u32) -> (u32, u32) {
+    let r = site.width / site.height;
+    if r >= 1.0 { (max_px, ((max_px as f64 / r).round() as u32).max(1)) } else { (((max_px as f64 * r).round() as u32).max(1), max_px) }
+}
+
+/// "Test" for a WMS layer: one GetMap of the import area, as the server
+/// delivers it (no reprojection; corners place it on the map).
+pub fn preview_wms(site: &Site, caps: &WmsCaps, layer: &WmsLayer, format: &str, max_px: u32) -> Result<Preview, String> {
+    let crs = request_crs(layer, &site.crs);
+    let data_crs = if crs == "CRS:84" { "EPSG:4326".to_string() } else { crs.clone() };
+    let b = if crs == site.crs { site.bbox() } else { envelope(site.bbox(), &Transformer::new(&site.crs, &data_crs)?)? };
+    let (w, h) = preview_size(site, max_px);
+    let img = decode(&http::get_image(&get_map_url(caps, &layer.name, &crs, b, w, h, format))?)?;
+    Ok(Preview { size: [img.width() as usize, img.height() as usize], rgba: img.into_raw(), corners: corners_lonlat(b, &data_crs)? })
+}
+
+/// "Test" for a tile server: the tiles covering the import area, stitched.
+pub fn preview_xyz(site: &Site, server: &MapServer) -> Result<Preview, String> {
+    let merc = envelope(site.bbox(), &Transformer::new(&site.crs, "EPSG:3857")?)?;
+    let mut z = (server.max_zoom.unwrap_or(19) as i32).min(19);
+    let range = |z: i32| {
+        let size = 2.0 * ORIGIN / 2f64.powi(z);
+        (size, ((merc[0] + ORIGIN) / size).floor() as i64, ((merc[2] + ORIGIN) / size).floor() as i64,
+         ((ORIGIN - merc[3]) / size).floor() as i64, ((ORIGIN - merc[1]) / size).floor() as i64)
+    };
+    let mut r = range(z);
+    while z > 0 && (r.2 - r.1 + 1) * (r.4 - r.3 + 1) > 9 {
+        z -= 1;
+        r = range(z);
+    }
+    let (size, x0, x1, y0, y1) = r;
+    let mut canvas = RgbaImage::new(((x1 - x0 + 1) * 256) as u32, ((y1 - y0 + 1) * 256) as u32);
+    for ty in y0..=y1 {
+        for tx in x0..=x1 {
+            let url = server.url.replace("{z}", &z.to_string()).replace("{x}", &tx.to_string()).replace("{y}", &ty.to_string());
+            let tile = decode(&http::get_image(&url)?)?;
+            image::imageops::overlay(&mut canvas, &tile, (tx - x0) * 256, (ty - y0) * 256);
+        }
+    }
+    let b = [x0 as f64 * size - ORIGIN, ORIGIN - (y1 + 1) as f64 * size, (x1 + 1) as f64 * size - ORIGIN, ORIGIN - y0 as f64 * size];
+    Ok(Preview { size: [canvas.width() as usize, canvas.height() as usize], rgba: canvas.into_raw(), corners: corners_lonlat(b, "EPSG:3857")? })
+}

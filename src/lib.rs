@@ -39,26 +39,31 @@ const I_GLOBE: IconKind = IconKind::Svg(include_bytes!("../assets/globe.svg"));
 const I_POINT: IconKind = IconKind::Svg(include_bytes!("../assets/point.svg"));
 const I_SERVER: IconKind = IconKind::Svg(include_bytes!("../assets/server.svg"));
 const I_QUICK: IconKind = IconKind::Svg(include_bytes!("../assets/quick.svg"));
+const I_PDOK: IconKind = IconKind::Svg(include_bytes!("../assets/pdok.svg"));
 
 /// One-click imports from the ribbon (no window): command → what to fetch.
 enum Quick {
-    Raster { server: &'static str },
-    Wfs { server: &'static str, typename: &'static str, label: Option<&'static str>, aci: i16 },
+    Data(import::Dataset),
     Osm,
 }
 
 const QUICK: &[(&str, &str, Quick)] = &[
-    ("GIS_Q_LUCHTFOTO", "Luchtfoto (PDOK)", Quick::Raster { server: "pdok-luchtfoto" }),
-    ("GIS_Q_KADASTER", "Kadastrale kaart (PDOK)", Quick::Raster { server: "pdok-kadastralekaart-wms" }),
-    ("GIS_Q_AHN", "AHN hoogtekaart (PDOK)", Quick::Raster { server: "pdok-ahn-wms" }),
-    ("GIS_Q_OSMKAART", "OpenStreetMap-kaart (wereld)", Quick::Raster { server: "osm-tiles" }),
-    ("GIS_Q_SATELLIET", "Sentinel-2 satelliet (wereld)", Quick::Raster { server: "eox-s2-wms" }),
-    ("GIS_Q_BAG", "BAG panden (PDOK)", Quick::Wfs { server: "pdok-bag-wfs", typename: "bag:pand", label: None, aci: 30 }),
-    ("GIS_Q_PERCELEN", "Kadastrale percelen (PDOK)", Quick::Wfs { server: "pdok-kadastralekaart-wfs", typename: "kadastralekaart:Perceel", label: Some("perceelnummer"), aci: 3 }),
-    ("GIS_Q_NWB", "NWB wegvakken (RWS)", Quick::Wfs { server: "pdok-nwbwegen-wfs", typename: "nwbwegen:wegvakken", label: Some("stt_naam"), aci: 2 }),
-    ("GIS_Q_SPOOR", "Spoorassen (ProRail)", Quick::Wfs { server: "pdok-spoorwegen-wfs", typename: "spoorwegen:spooras", label: None, aci: 6 }),
+    ("GIS_Q_LUCHTFOTO", "Luchtfoto (PDOK)", Quick::Data(import::Dataset::Raster { server: "pdok-luchtfoto" })),
+    ("GIS_Q_KADASTER", "Kadastrale kaart (PDOK)", Quick::Data(import::Dataset::Raster { server: "pdok-kadastralekaart-wms" })),
+    ("GIS_Q_AHN", "AHN hoogtekaart (PDOK)", Quick::Data(import::Dataset::Raster { server: "pdok-ahn-wms" })),
+    ("GIS_Q_OSMKAART", "OpenStreetMap-kaart (wereld)", Quick::Data(import::Dataset::Raster { server: "osm-tiles" })),
+    ("GIS_Q_SATELLIET", "Sentinel-2 satelliet (wereld)", Quick::Data(import::Dataset::Raster { server: "eox-s2-wms" })),
+    ("GIS_Q_BAG", "BAG panden (PDOK)", Quick::Data(import::Dataset::Wfs { server: "pdok-bag-wfs", typename: "bag:pand", label: None, aci: 30 })),
+    ("GIS_Q_PERCELEN", "Kadastrale percelen (PDOK)", Quick::Data(import::Dataset::Wfs { server: "pdok-kadastralekaart-wfs", typename: "kadastralekaart:Perceel", label: Some("perceelnummer"), aci: 3 })),
+    ("GIS_Q_NWB", "NWB wegvakken (RWS)", Quick::Data(import::Dataset::Wfs { server: "pdok-nwbwegen-wfs", typename: "nwbwegen:wegvakken", label: Some("stt_naam"), aci: 2 })),
+    ("GIS_Q_HECTO", "NWB hectometerpunten (RWS)", Quick::Data(import::Dataset::Wfs { server: "pdok-nwbwegen-wfs", typename: "nwbwegen:hectopunten", label: Some("hectomtrng"), aci: 2 })),
+    ("GIS_Q_SPOOR", "Spoorassen (ProRail)", Quick::Data(import::Dataset::Wfs { server: "pdok-spoorwegen-wfs", typename: "spoorwegen:spooras", label: None, aci: 6 })),
     ("GIS_Q_OSM", "OpenStreetMap-vectoren (wereld)", Quick::Osm),
 ];
+
+fn is_raster(q: &Quick) -> bool {
+    matches!(q, Quick::Data(import::Dataset::Raster { .. }))
+}
 
 fn tool(id: &'static str, label: &'static str, icon: IconKind) -> RibbonItem {
     RibbonItem::LargeTool(ToolDef { id, label, icon, event: ModuleEvent::Command(id.to_string()) })
@@ -80,44 +85,44 @@ impl CadModule for GisModule {
                 QUICK.iter().filter(|(_, _, q)| filter(q)).map(|(c, l, _)| (*c, *l, I_QUICK)).collect::<Vec<_>>()
             };
             vec![
+                // Like the FreeCAD GIS workbench toolbars.
                 RibbonGroup {
-                    title: "Locatie",
+                    title: "Webservices",
                     tools: vec![
-                        tool("GIS_LOCATIE", "Locatie", I_LOCATION),
-                        tool("GIS_GEBIED", "Gebied", I_AREA),
-                        tool("GIS_PUNT", "Punt info", I_POINT),
-                    ],
-                },
-                RibbonGroup {
-                    title: "Kaartlagen",
-                    tools: vec![
-                        tool("GIS_KAART", "WMS / Tegels", I_MAP),
-                        RibbonItem::LargeDropdown {
-                            id: "GIS_Q_RASTER",
-                            label: "Snel",
-                            icon: I_LAYERS,
-                            items: quick(|q| matches!(q, Quick::Raster { .. })),
-                            default: "GIS_Q_LUCHTFOTO",
-                        },
-                    ],
-                },
-                RibbonGroup {
-                    title: "Vectordata",
-                    tools: vec![
+                        tool("GIS_LOCATIE", "Geo-locatie", I_LOCATION),
+                        tool("GIS_KAART", "WMS / TMS", I_MAP),
                         tool("GIS_WFS", "WFS", I_VECTOR),
                         tool("GIS_OSM", "OpenStreetMap", I_GLOBE),
+                        tool("GIS_PDOK", "PDOK (NL)", I_PDOK),
+                    ],
+                },
+                RibbonGroup {
+                    title: "Snel importeren",
+                    tools: vec![
+                        RibbonItem::LargeDropdown {
+                            id: "GIS_Q_RASTER",
+                            label: "Kaartbeeld",
+                            icon: I_LAYERS,
+                            items: quick(is_raster),
+                            default: "GIS_Q_LUCHTFOTO",
+                        },
                         RibbonItem::LargeDropdown {
                             id: "GIS_Q_VECTOR",
-                            label: "Snel",
+                            label: "Vectordata",
                             icon: I_QUICK,
-                            items: quick(|q| !matches!(q, Quick::Raster { .. })),
+                            items: quick(|q| !is_raster(q)),
                             default: "GIS_Q_BAG",
                         },
                     ],
                 },
                 RibbonGroup {
-                    title: "Werkbank",
-                    tools: vec![tool("GIS_COORD", "Coördinaten", I_POINT), tool("GIS_SERVERS", "Servers", I_SERVER)],
+                    title: "Hulpmiddelen",
+                    tools: vec![
+                        tool("GIS_GEBIED", "Gebied", I_AREA),
+                        tool("GIS_PUNT", "Punt info", I_POINT),
+                        tool("GIS_COORD", "Coördinaten", I_POINT),
+                        tool("GIS_SERVERS", "Servers", I_SERVER),
+                    ],
                 },
             ]
         })
@@ -229,23 +234,7 @@ fn quick(host: &mut dyn HostApi, q: &'static Quick, label: &'static str) {
     std::thread::spawn(move || {
         let progress = |_: String| {};
         let result = match q {
-            Quick::Raster { server } => gis::servers::find(server).ok_or_else(|| format!("server {server} onbekend")).and_then(|srv| {
-                if srv.kind == gis::servers::ServerKind::Xyz {
-                    import::xyz(&site, &srv, &gis::raster::Options { resolution: 0.5, format: "image/png".into() }, 0, &progress)
-                } else {
-                    let caps = gis::caps::fetch_wms(&srv.url)?;
-                    let layer = caps.layers.iter().find(|l| l.name == srv.default_layer).or(caps.layers.first()).cloned().ok_or("geen lagen")?;
-                    let opt = gis::raster::Options { resolution: 0.25, format: gis::raster::default_format(&caps, &layer.name) };
-                    import::wms(&site, &srv, &caps, &layer, &opt, 0, &progress)
-                }
-            }),
-            Quick::Wfs { server, typename, label, aci } => gis::servers::find(server).ok_or_else(|| format!("server {server} onbekend")).and_then(|srv| {
-                let caps = gis::caps::fetch_wfs(&srv.url)?;
-                let ft = caps.types.iter().find(|t| t.name.eq_ignore_ascii_case(typename)).cloned().ok_or_else(|| format!("objecttype {typename} niet gevonden"))?;
-                let res = import::wfs_fetch(&site, &caps, &ft, 20_000, &progress)?;
-                let style = import::VectorStyle { aci: *aci, label_field: label.map(str::to_string), text_m: 1.0, clip: true };
-                import::wfs_place(&site, &ft, &res, &style)
-            }),
+            Quick::Data(d) => import::run_dataset(&site, d, &progress),
             Quick::Osm => {
                 let ids: Vec<&str> = gis::osm::THEMES.iter().filter(|t| t.default_on).map(|t| t.id).collect();
                 import::osm(&site, &ids, true, 2.0, true, &progress)
@@ -282,6 +271,7 @@ impl BuiltinPlugin for OpenInfra {
             "GIS_KAART" | "GIS_WMS" => open(host, ui::Tab::Raster),
             "GIS_WFS" => open(host, ui::Tab::Wfs),
             "GIS_OSM" => open(host, ui::Tab::Osm),
+            "GIS_PDOK" => open(host, ui::Tab::Pdok),
             "GIS_SERVERS" => open(host, ui::Tab::Servers),
             "GIS_COORD" => open(host, ui::Tab::Coords),
             "GIS_GEBIED" | "GIS_PUNT" => {
@@ -295,9 +285,9 @@ impl BuiltinPlugin for OpenInfra {
                 }
             }
             "GIS_HELP" => host.push_info(
-                "[Open Infra] GIS_LOCATIE, GIS_GEBIED, GIS_PUNT, GIS_KAART, GIS_WFS, GIS_OSM, GIS_COORD, GIS_SERVERS; \
+                "[Open Infra] GIS_LOCATIE, GIS_GEBIED, GIS_PUNT, GIS_KAART, GIS_WFS, GIS_OSM, GIS_PDOK, GIS_COORD, GIS_SERVERS; \
                  snel: GIS_Q_LUCHTFOTO, GIS_Q_KADASTER, GIS_Q_AHN, GIS_Q_OSMKAART, GIS_Q_SATELLIET, GIS_Q_BAG, \
-                 GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_SPOOR, GIS_Q_OSM.",
+                 GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM.",
             ),
             v => match QUICK.iter().find(|(c, ..)| *c == v) {
                 Some((_, label, q)) => quick(host, q, label),

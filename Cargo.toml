@@ -28,6 +28,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg"]
 # Workbench window (runs in the plugin process, beside the host)
 eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
 winit = "0.30"
+egui_extras = { version = "0.37", default-features = false, features = ["svg"] }
 
 [profile.release]
 opt-level = 3

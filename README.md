@@ -4,20 +4,36 @@ Plugin for [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio) for 
 
 ## In Open CAD Studio
 
-A ribbon tab **"Open Infra — GIS"**:
+A ribbon tab **"Open Infra — GIS"**, grouped like the toolbars of the FreeCAD GIS workbench:
 
 | Group | Button | What it does |
 |---|---|---|
-| Locatie | **Locatie** | Opens the workbench window: search for an address, place, parcel or `lat, lon` (PDOK Locatieserver + OpenStreetMap Nominatim), choose a coordinate system, base point, import area, and absolute or relative coordinates. The location is stored in the drawing (NOD XRecord `OPENINFRA/SITE`) and travels with the DWG. |
-| | **Gebied** | Pick two corners in the drawing to set the import area. |
-| | **Punt info** | Pick a point; the command line shows it in the project CRS, WGS 84, RD and UTM. |
-| Kaartlagen | **WMS / Tegels** | Window: choose a server, browse the layers from GetCapabilities, set resolution and fade, import as IMAGE underlays (sent to the back). |
-| | **Snel ▾** | One click: aerial photo, cadastral map, AHN (PDOK), OSM map, Sentinel-2 satellite. |
-| Vectordata | **WFS** | Window: choose a server and feature type, fetch (with paging), pick a label attribute, colour, clipping, place. |
-| | **OpenStreetMap** | Worldwide: buildings, roads, rail, water, civil structures (kunstwerken), land use, cables/pipelines, fences, house numbers. Each theme goes on its own layer. |
-| | **Snel ▾** | BAG buildings, cadastral parcels, NWB road sections, ProRail track axes, OSM themes. |
-| Werkbank | **Coördinaten** | Coordinate converter between systems. |
-| | **Servers** | Server management: presets plus your own WMS/WFS/XYZ servers (tested with GetCapabilities). |
+| Webservices | **Geo-locatie** | Set the project location: click it on the map or search an address, place, parcel or `lat, lon` (PDOK Locatieserver + Nominatim), choose the coordinate system, draw or type the bounding box, choose absolute or relative coordinates. Optionally place a base-point marker (GeoOrigin) and import an aerial photo. Stored in the drawing (NOD XRecord `OPENINFRA/SITE`). |
+| | **WMS / TMS** | Choose a server, browse the layers from GetCapabilities, **Test** shows a preview on the map, **OK en importeren** places IMAGE underlays (sent to the back). |
+| | **WFS** | Choose a server and feature type, **Test** fetches the objects and draws them on the map, then label attribute, colour and clipping, **OK en importeren**. |
+| | **OpenStreetMap** | Worldwide themes (buildings, roads, rail, water, civil structures, land use, cables/pipelines, fences, house numbers). **Test** shows them on the map; OK reuses that result. |
+| | **PDOK (NL)** | Dutch base registers in one go: aerial photo, cadastral map, AHN, BAG, parcels, NWB road sections and hectometre markers, ProRail track axes and kilometre markers, waterways. |
+| Snel importeren | **Kaartbeeld ▾ / Vectordata ▾** | One click, no window, using the saved location. |
+| Hulpmiddelen | **Gebied** · **Punt info** · **Coördinaten** · **Servers** | Pick the import area in the drawing, read a point's coordinates, convert coordinates (also by clicking the map), manage presets and your own WMS/WFS/XYZ servers. |
+
+### The workbench window
+
+Every page follows the FreeCAD GIS dialogs:
+
+1. A **map** at the top shows the project location and the bounding box.
+2. Grouped settings follow: *Locatie / Begrenzing*, *Webserver / verzoek* and *Import-instellingen*.
+3. A fixed action bar holds **OK en importeren**, **Test** and **Annuleren**.
+
+The map is a slippy map with OpenStreetMap, PDOK BRT (standard and grey), PDOK aerial photo and Sentinel-2 backgrounds. You choose the background in a **Leaflet-style layer switcher** at the top right, which also toggles the bounding box and the import preview.
+
+Controls on the map:
+
+| Action | Effect |
+|---|---|
+| Drag | Pan |
+| Wheel | Zoom |
+| Click | Set the location |
+| Shift+drag, or *Gebied tekenen* | Draw the bounding box |
 
 ### Coordinate systems
 

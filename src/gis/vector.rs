@@ -91,7 +91,13 @@ fn sample(features: &[Feature]) -> Vec<XY> {
 /// Data CRS → project CRS. Some servers answer EPSG:4326 in lat/lon order;
 /// pick whichever axis order lands near the site.
 pub fn data_to_site(site: &Site, data_crs: &str, features: &[Feature]) -> Result<Box<dyn Fn(XY) -> Option<XY>>, String> {
+    data_to(site, data_crs, &site.crs, features)
+}
+
+/// Data CRS → any CRS, with the same axis-order detection (judged at the site).
+pub fn data_to(site: &Site, data_crs: &str, to: &str, features: &[Feature]) -> Result<Box<dyn Fn(XY) -> Option<XY>>, String> {
     let t = Transformer::new(data_crs, &site.crs)?;
+    let out = Transformer::new(data_crs, to)?;
     let pts = sample(features);
     let near = |swap: bool| {
         pts.iter()
@@ -102,7 +108,32 @@ pub fn data_to_site(site: &Site, data_crs: &str, features: &[Feature]) -> Result
             .count()
     };
     let swap = !pts.is_empty() && near(true) > near(false);
-    Ok(Box::new(move |p: XY| t.apply(if swap { [p[1], p[0]] } else { p }).ok()))
+    Ok(Box::new(move |p: XY| out.apply(if swap { [p[1], p[0]] } else { p }).ok()))
+}
+
+/// Feature outlines in lon/lat, for the workbench map preview.
+pub fn preview_lines(site: &Site, data_crs: &str, features: &[Feature]) -> Result<Vec<Vec<XY>>, String> {
+    let f = data_to(site, data_crs, "EPSG:4326", features)?;
+    let mut out = Vec::new();
+    for feat in features {
+        for (line, closed) in &feat.lines {
+            let mut pts: Vec<XY> = line.iter().filter_map(|p| f(*p)).collect();
+            if *closed && pts.len() > 2 && pts.first() != pts.last() {
+                pts.push(pts[0]);
+            }
+            if pts.len() > 1 {
+                out.push(pts);
+            }
+        }
+        for p in &feat.points {
+            if let Some(q) = f(*p) {
+                let d = 0.00002;
+                out.push(vec![[q[0] - d, q[1]], [q[0] + d, q[1]]]);
+                out.push(vec![[q[0], q[1] - d], [q[0], q[1] + d]]);
+            }
+        }
+    }
+    Ok(out)
 }
 
 pub type Rect = [f64; 4];

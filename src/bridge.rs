@@ -144,6 +144,9 @@ pub fn add_entities_handles(label: &str, entities: Vec<EntityType>) -> Result<Ve
         }
     }
     let _ = request(PluginRequest::SetDirty);
+    // Many fast additions can leave the host's draw cache partly stale
+    // (seen with an image underlay hiding newer lines): force a rebuild.
+    let _ = request(PluginRequest::BumpGeometry);
     Ok(handles)
 }
 
@@ -155,6 +158,7 @@ pub fn send_to_back(handles: &[Handle]) {
     if request(PluginRequest::SetSelection { handles: handles.to_vec() }).is_ok() {
         let _ = request(PluginRequest::ExecuteCommand("DRAWORDER_BACK".into()));
         let _ = request(PluginRequest::SetSelection { handles: Vec::new() });
+        let _ = request(PluginRequest::BumpGeometry);
     }
 }
 

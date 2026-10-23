@@ -7,6 +7,7 @@
 
 mod app;
 mod jobs;
+mod map;
 
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Mutex, OnceLock};
@@ -19,6 +20,7 @@ pub enum Tab {
     Raster,
     Wfs,
     Osm,
+    Pdok,
     Servers,
     Coords,
 }
@@ -70,8 +72,8 @@ pub fn open(tab: Tab) -> Result<(), String> {
                 viewport: egui::ViewportBuilder::default()
                     .with_title("Open Infra — GIS-workbench")
                     .with_app_id("open-infra-gis")
-                    .with_inner_size([820.0, 640.0])
-                    .with_min_inner_size([560.0, 420.0]),
+                    .with_inner_size([1060.0, 900.0])
+                    .with_min_inner_size([760.0, 560.0]),
                 ..Default::default()
             };
             options.event_loop_builder = Some(Box::new(|builder| {
