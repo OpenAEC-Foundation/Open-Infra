@@ -1,7 +1,7 @@
 [plugin]
 id = "openaec.open-infra"
 name = "Open Infra — GIS"
-version = "0.2.0"
+version = "0.2.1"
 description = "GIS-workbench voor infra en civiele techniek: projectlocatie en coördinatenstelsels, WMS/WFS-servers, OpenStreetMap. Nederland (PDOK) en wereldwijd."
 author = "OpenAEC Foundation"
 license = "GPL-3.0-only"

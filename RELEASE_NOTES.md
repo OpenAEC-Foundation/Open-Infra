@@ -3,7 +3,10 @@ Open Infra — GIS-workbench voor **Open CAD Studio v2026.42** (plugin-API 10), 
 **Installeren:** in Open CAD Studio `PLUGINS` → *Add a repository* → `OpenAEC-Foundation/Open-Infra`. Installeer deze release en herstart.
 Handmatig kan ook: zet `openaec.open-infra-<platform>` en `plugin.toml` in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 
-**Nieuw in 0.2.0**
+**Nieuw in 0.2.1**
+- **Groter locatiescherm:** het werkbankvenster opent op 1280 × 1000 en de kaart op de pagina *Geografische locatie* vult het grootste deel van het venster, zoals de kaart in de FreeCAD-dialoog "Set Geographic Location".
+
+**Uit 0.2.0**
 - **Lint-tab *Open Infra — GIS***, ingedeeld zoals de werkbalken van de FreeCAD GIS-workbench:
   - *Webservices*: Geo-locatie, WMS/TMS, WFS, OpenStreetMap, PDOK (NL).
   - *Snel importeren*: kaartbeeld en vectordata met één klik.
