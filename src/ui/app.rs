@@ -1336,7 +1336,7 @@ impl App {
                 ui.checkbox(&mut self.nlcs.labels, "Teksten: straatnamen, huisnummers, perceelnummers, leidinglabels");
                 ui.checkbox(&mut self.nlcs.clip, "Bijsnijden op het importgebied");
             });
-            ui.label(RichText::new("Laagnaam: STATUS-DISCIPLINE-HOOFDGROEP-OBJECT-ELEMENT, bijv. B-XX-VH-GESLOTENVERHARDING_ASFALT-G. Lijntypen in papier-mm met de lijntypeschaal van de tekenschaal; tekstkleur en -dikte volgen de NLCS-tekstklasse.").small().weak());
+            ui.label(RichText::new("Laagnaam: STATUS-DISCIPLINE-HOOFDGROEP-OBJECT-ELEMENT, bijv. B-XX-VH-GESLOTENVERHARDING_ASFALT-G. Lijntypen in papier-mm met de lijntypeschaal van de tekenschaal; teksten krijgen de stijl van hun objectlaag, de teksten van het tekenblad volgen de NLCS-tekstklassen.").small().weak());
         });
 
         ui.columns(2, |cols| {
