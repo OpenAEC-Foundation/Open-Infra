@@ -21,6 +21,7 @@ pub enum Tab {
     Wfs,
     Osm,
     Pdok,
+    Nlcs,
     Servers,
     Coords,
 }
@@ -31,6 +32,8 @@ pub(crate) enum UiMsg {
     Picked([f64; 2]),
     /// The import area was set in the drawing; reload the site.
     SiteChanged,
+    /// A KLIC delivery chosen in Open CAD Studio's file dialog.
+    Klic(std::path::PathBuf),
 }
 
 struct Handle {

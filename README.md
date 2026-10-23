@@ -14,6 +14,10 @@ A ribbon tab **"Open Infra — GIS"**, grouped like the toolbars of the FreeCAD 
 | | **OpenStreetMap** | Worldwide themes (buildings, roads, rail, water, civil structures, land use, cables/pipelines, fences, house numbers). **Test** shows them on the map; OK reuses that result. |
 | | **PDOK (NL)** | Dutch base registers in one go: aerial photo, cadastral map, AHN, BAG, parcels, NWB road sections and hectometre markers, ProRail track axes and kilometre markers, waterways. |
 | Snel importeren | **Kaartbeeld ▾ / Vectordata ▾** | One click, no window, using the saved location. |
+| Basisdata NL (NLCS) | **BGT · BRK · KLIC** | Page for Dutch base data drawn conform NLCS 5.02, like the InfraCAD Map imports. See below. |
+| | **BGT** · **Kadaster** | One click: the current BGT (PDOK OGC API) or the cadastral boundaries and parcel numbers (BRK), on NLCS layers. |
+| | **KLIC** | Open a KLIC delivery (Kadaster zip or `GI_gebiedsinformatielevering_*.xml`, IMKL 2.0). It is read with OpenAEC's `klic2geo` and shown on the map, then drawn. |
+| | **Tekenblad** | NLCS drawing sheet around the import area: frame, title block, legend of the layers used, north arrow, scale bar and RD coordinate crosses. |
 | Hulpmiddelen | **Gebied** · **Punt info** · **Coördinaten** · **Servers** | Pick the import area in the drawing, read a point's coordinates, convert coordinates (also by clicking the map), manage presets and your own WMS/WFS/XYZ servers. |
 
 ### The workbench window
@@ -34,6 +38,27 @@ Controls on the map:
 | Wheel | Zoom |
 | Click | Set the location |
 | Shift+drag, or *Gebied tekenen* | Draw the bounding box |
+
+### Dutch base data conform NLCS
+
+The NLCS tables (objects, colours, linetypes, statuses, disciplines) and the official NLCS-BGT 5.0 mapping are built in from `assets/nlcs` (DigiGO / Stichting NLCS, CC BY 4.0; regenerate them with `tools/nlcs_tables.py`).
+
+- **Layers:** every object goes on its NLCS layer `STATUS-DISCIPLINE-HOOFDGROEP-OBJECT-ELEMENT`, e.g. `B-XX-VH-GESLOTENVERHARDING_ASFALT-G`.
+  - The layer gets the NLCS colour, lineweight and linetype for the chosen drawing status (B/N/T/V).
+  - Linetypes are created in paper millimetres, and entities get the linetype scale of the plot scale. Linetypes with shapes or text keep only their dashes.
+  - Elements: G for lines and areas, S for points, T for texts.
+- **Mapping:**
+  - BGT objects are mapped to the most specific rule of the NLCS-BGT mapping (function, physical appearance, plus attributes).
+  - KLIC themes map to the KL/RI objects: low/medium/high voltage, data, gas low/high pressure, water, district heating, sewer.
+  - Cadastral boundaries go to KG-GRENS_PERCEEL.
+- **Object data:** each entity carries its source attributes as XDATA `OPENINFRA` (`key=value`), e.g. BGT `lokaal_id`, function, material, operator and KLIC diameter.
+- **Texts:**
+  - BGT street names and house numbers are placed with their BGT rotation, and parcel numbers with their BRK rotation.
+  - KLIC cables and pipes get a short label such as `W Evides 174 mm GIJ`.
+  - Texts on the drawing sheet follow the NLCS text classes (T1.8, T2.5, …).
+- **BGT history:** the PDOK collection keeps every version of an object. Only current objects are fetched (`eind_registratie IS NULL`).
+
+Script commands: `GIS_SITE RD <x> <y> <breedte> <hoogte>`, `GIS_Q_BGT`, `GIS_Q_BRK`, `GIS_KLIC_IMPORT <bestand>`, `GIS_TEKENBLAD [onderwerp]`.
 
 ### Coordinate systems
 
@@ -57,6 +82,10 @@ Map images are saved next to the drawing in `<name>_GIS/`, or in the plugin's co
 ```
 src/gis/      host-free engine: crs (proj4rs), site, servers, caps (WMS/WFS GetCapabilities),
               geocode, raster (GetMap/XYZ + reprojection), wfs, osm (Overpass), vector (GeoJSON + clipping)
+src/gis/      … bgt (PDOK BGT), ogcapi (OGC API Features), klic (IMKL via klic2geo)
+src/nlcs.rs   NLCS 5.02 tables, layer names and styles, BGT/KLIC → NLCS mapping
+src/basisdata.rs  BGT, cadastre and KLIC drawn conform NLCS, with object data
+src/tekenblad.rs  NLCS drawing sheet: frame, title block, legend, north arrow, scale bar
 src/emit.rs   engine output → DWG entities (LWPOLYLINE, TEXT, CIRCLE, IMAGE)
 src/bridge.rs host requests from worker/window threads (PluginRequestSender), site in the DWG
 src/import.rs import flows shared by the window and the ribbon quick buttons
@@ -97,6 +126,7 @@ Linux (X11/Wayland) and Windows. On macOS the workbench window is not available 
 ## Data sources and licences
 
 - PDOK, Kadaster, Rijkswaterstaat and ProRail: open data. Credit the source.
+- NLCS tables and the NLCS-BGT mapping: DigiGO / Stichting NLCS, CC BY 4.0 (see `assets/nlcs/NOTICE.md`).
 - OpenStreetMap: © OpenStreetMap contributors (ODbL), via Overpass, Nominatim and the OSM tile server. Follow their usage policies (light, interactive use).
 - Sentinel-2 cloudless by EOX: CC BY-NC-SA 4.0 (non-commercial).
 

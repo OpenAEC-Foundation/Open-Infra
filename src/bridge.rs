@@ -5,12 +5,13 @@
 //! import workers use it to add layers and entities while the host stays
 //! responsive. Each import is one undo step.
 
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 
 use ocs_plugin_api::host::{
-    codec::{Color, EntityType, Handle},
-    HostApi, LayerConfig, PluginRequestSender, XRecordEntry, XRecordValue,
+    codec::{Color, EntityType, Handle, LineWeight},
+    ExtendedDataRecord, HostApi, LayerConfig, PluginRequestSender, TableOperation, XDataValue, XRecordEntry, XRecordValue,
 };
 use ocs_plugin_api::ipc::protocol::{PluginRequest, PluginResponse};
 
@@ -29,6 +30,10 @@ pub struct Target {
 struct Shared {
     target: Option<Target>,
     site: Option<Site>,
+    /// NLCS layers and linetypes already set up, per tab.
+    made: HashSet<(u64, String)>,
+    /// The NLCS layers imports drew on, per tab, for the legend.
+    nlcs_layers: Vec<(u64, crate::nlcs::LayerSpec)>,
 }
 
 fn shared() -> &'static Mutex<Shared> {
@@ -120,6 +125,89 @@ pub fn ensure_layer(name: &str, color: Color) {
     let _ = request(PluginRequest::AddLayer(LayerConfig { name: name.into(), color: Some(color), ..Default::default() }));
 }
 
+/// Application name of the object data (XDATA) on imported entities.
+pub const XDATA_APP: &str = "OPENINFRA";
+
+/// Create an NLCS layer with its colour, lineweight and linetype. The NLCS
+/// linetype is defined in paper millimetres when the drawing lacks it (shape
+/// and text elements left out); an undefinable one leaves the layer
+/// Continuous.
+pub fn ensure_nlcs_layer(spec: &crate::nlcs::LayerSpec) {
+    let Some(tab) = target().map(|t| t.tab_id) else { return };
+    {
+        let mut s = shared().lock().unwrap();
+        if !s.made.insert((tab, format!("LA:{}", spec.name))) {
+            return;
+        }
+        s.nlcs_layers.push((tab, spec.clone()));
+    }
+    let linetype = crate::nlcs::linetype_pattern(&spec.linetype).and_then(|pattern| {
+        if !shared().lock().unwrap().made.insert((tab, format!("LT:{}", spec.linetype))) {
+            return Some(spec.linetype.clone());
+        }
+        let description = if crate::nlcs::linetype_is_complex(&spec.linetype) {
+            format!("NLCS {} (vereenvoudigd, zonder symbolen)", spec.linetype)
+        } else {
+            format!("NLCS {}", spec.linetype)
+        };
+        let op = TableOperation::LinetypeCreate { name: spec.linetype.clone(), description, pattern };
+        match request(PluginRequest::TableOperation { operation: op }) {
+            Ok(PluginResponse::TableResult(Ok(_))) => Some(spec.linetype.clone()),
+            // Already in the drawing (an NLCS template, an earlier import).
+            Ok(PluginResponse::TableResult(Err(e))) if e.contains("already exists") => Some(spec.linetype.clone()),
+            _ => None,
+        }
+    });
+    let config = |linetype: Option<String>| LayerConfig {
+        name: spec.name.clone(),
+        color: Some(match spec.true_color {
+            Some((r, g, b)) => Color::Rgb { r, g, b },
+            None => Color::Index(spec.color.max(1)),
+        }),
+        linetype,
+        lineweight: spec.lineweight.map(LineWeight::from_value),
+        description: Some(format!("NLCS object {}", spec.object_id)),
+        ..Default::default()
+    };
+    let made = matches!(request(PluginRequest::AddLayer(config(linetype.clone()))), Ok(PluginResponse::OptHandle(Some(_))));
+    if !made && linetype.is_some() {
+        let _ = request(PluginRequest::AddLayer(config(None)));
+    }
+}
+
+/// The NLCS layers set up in the active drawing during this session.
+pub fn nlcs_layers() -> Vec<crate::nlcs::LayerSpec> {
+    let Some(tab) = target().map(|t| t.tab_id) else { return Vec::new() };
+    shared().lock().unwrap().nlcs_layers.iter().filter(|(t, _)| *t == tab).map(|(_, s)| s.clone()).collect()
+}
+
+/// An XDATA record with `key=value` strings (each at most 255 characters).
+pub fn object_data<'a>(pairs: impl IntoIterator<Item = (&'a str, String)>) -> ExtendedDataRecord {
+    let mut r = ExtendedDataRecord::new(XDATA_APP);
+    for (k, v) in pairs {
+        let v = v.replace(['\n', '\r'], " ");
+        if v.trim().is_empty() {
+            continue;
+        }
+        let mut s = format!("{k}={}", v.trim());
+        if s.len() > 255 {
+            let mut cut = 255;
+            while !s.is_char_boundary(cut) {
+                cut -= 1;
+            }
+            s.truncate(cut);
+        }
+        r.add_value(XDataValue::String(s));
+    }
+    r
+}
+
+/// The host registers an XDATA application name only through WriteRecord:
+/// rewrite one entity's record so the drawing carries the APPID.
+pub fn register_object_data(handle: Handle, record: ExtendedDataRecord) {
+    let _ = request(PluginRequest::WriteRecord { handle, record });
+}
+
 /// Add entities as one undo step, in chunks that stay well under the IPC
 /// frame limit.
 pub fn add_entities(label: &str, entities: Vec<EntityType>) -> Result<usize, String> {
@@ -134,6 +222,10 @@ pub fn add_entities_handles(label: &str, entities: Vec<EntityType>) -> Result<Ve
     if entities.is_empty() {
         return Ok(Vec::new());
     }
+    // Imports run on their own threads: one at a time keeps each its own
+    // undo step.
+    static WRITING: Mutex<()> = Mutex::new(());
+    let _one = WRITING.lock().unwrap_or_else(|e| e.into_inner());
     request(PluginRequest::PushUndo { label: label.into() })?;
     let mut handles = Vec::with_capacity(entities.len());
     let mut it = entities.into_iter().peekable();

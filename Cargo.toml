@@ -24,6 +24,8 @@ roxmltree = "0.21"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+# KLIC (IMKL 2.0) reader from the OpenAEC crates warehouse (MIT)
+klic2geo = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse" }
 
 # Workbench window (runs in the plugin process, beside the host)
 eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }

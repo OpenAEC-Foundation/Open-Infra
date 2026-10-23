@@ -138,7 +138,7 @@ pub fn preview_lines(site: &Site, data_crs: &str, features: &[Feature]) -> Resul
 
 pub type Rect = [f64; 4];
 
-fn inside(p: XY, r: Rect) -> bool {
+pub fn inside(p: XY, r: Rect) -> bool {
     p[0] >= r[0] && p[0] <= r[2] && p[1] >= r[1] && p[1] <= r[3]
 }
 
@@ -239,42 +239,13 @@ fn prop_text(v: &Value) -> Option<String> {
 
 /// Features (in the data CRS) → drawing geometry.
 pub fn to_drawing(site: &Site, features: &[Feature], to_site: &dyn Fn(XY) -> Option<XY>, opt: &Options) -> Geometry {
-    let rect = site.drawing_rect(opt.unit_factor);
-    let conv = |p: XY| to_site(p).map(|q| site.to_drawing(q, opt.unit_factor));
     let mut g = Geometry::default();
     for f in features {
-        let mut anchor: Vec<XY> = Vec::new();
-        for (raw, closed) in &f.lines {
-            let mut pts: Vec<XY> = raw.iter().filter_map(|p| conv(*p)).collect();
-            if *closed && pts.len() > 2 && pts.first() == pts.last() {
-                pts.pop();
-            }
-            if pts.len() < 2 {
-                continue;
-            }
-            let pieces: Vec<(Vec<XY>, bool)> = if !opt.clip {
-                vec![(pts, *closed)]
-            } else if *closed {
-                let r = clip_ring(&pts, rect);
-                if r.len() > 2 { vec![(r, true)] } else { vec![] }
-            } else {
-                clip_line(&pts, rect).into_iter().map(|l| (l, false)).collect()
-            };
-            for (piece, c) in pieces {
-                if anchor.is_empty() {
-                    anchor = piece.clone();
-                }
-                g.polylines.push((piece, c));
-            }
-        }
-        for p in &f.points {
-            if let Some(q) = conv(*p) {
-                if !opt.clip || inside(q, rect) {
-                    g.points.push(q);
-                    anchor.push(q);
-                }
-            }
-        }
+        let (lines, points) = feature_to_drawing(site, f, to_site, opt.unit_factor, opt.clip);
+        let mut anchor: Vec<XY> = lines.first().map(|(l, _)| l.clone()).unwrap_or_default();
+        anchor.extend(points.iter().copied());
+        g.polylines.extend(lines);
+        g.points.extend(points);
         if let (Some(field), false) = (&opt.label_field, anchor.is_empty()) {
             if let Some(text) = f.props.get(field).and_then(prop_text) {
                 let n = anchor.len() as f64;
@@ -284,6 +255,83 @@ pub fn to_drawing(site: &Site, features: &[Feature], to_site: &dyn Fn(XY) -> Opt
         }
     }
     g
+}
+
+/// One feature in drawing coordinates: its (clipped) lines and rings, and
+/// its points inside the site.
+pub fn feature_to_drawing(site: &Site, f: &Feature, to_site: &dyn Fn(XY) -> Option<XY>, unit_factor: f64, clip: bool) -> (Vec<(Vec<XY>, bool)>, Vec<XY>) {
+    let rect = site.drawing_rect(unit_factor);
+    let conv = |p: XY| to_site(p).map(|q| site.to_drawing(q, unit_factor));
+    let mut lines = Vec::new();
+    for (raw, closed) in &f.lines {
+        let mut pts: Vec<XY> = raw.iter().filter_map(|p| conv(*p)).collect();
+        if *closed && pts.len() > 2 && pts.first() == pts.last() {
+            pts.pop();
+        }
+        if pts.len() < 2 {
+            continue;
+        }
+        if !clip {
+            lines.push((pts, *closed));
+        } else if *closed {
+            let r = clip_ring(&pts, rect);
+            if r.len() > 2 {
+                lines.push((r, true));
+            }
+        } else {
+            lines.extend(clip_line(&pts, rect).into_iter().map(|l| (l, false)));
+        }
+    }
+    let points = f.points.iter().filter_map(|p| conv(*p)).filter(|q| !clip || inside(*q, rect)).collect();
+    (lines, points)
+}
+
+/// A point inside a ring for its label: the centroid when it lies inside,
+/// otherwise the middle of the widest inside span through it.
+pub fn label_point(ring: &[XY]) -> Option<XY> {
+    if ring.len() < 3 {
+        return None;
+    }
+    let (mut a, mut cx, mut cy) = (0.0, 0.0, 0.0);
+    // Relative to the first vertex, for precision with RD coordinates.
+    let o = ring[0];
+    for i in 0..ring.len() {
+        let p = [ring[i][0] - o[0], ring[i][1] - o[1]];
+        let q = [ring[(i + 1) % ring.len()][0] - o[0], ring[(i + 1) % ring.len()][1] - o[1]];
+        let c = p[0] * q[1] - q[0] * p[1];
+        a += c;
+        cx += (p[0] + q[0]) * c;
+        cy += (p[1] + q[1]) * c;
+    }
+    if a.abs() < 1e-12 {
+        return None;
+    }
+    let c = [cx / (3.0 * a) + o[0], cy / (3.0 * a) + o[1]];
+    if point_in_ring(c, ring) {
+        return Some(c);
+    }
+    let mut xs: Vec<f64> = Vec::new();
+    for i in 0..ring.len() {
+        let (p, q) = (ring[i], ring[(i + 1) % ring.len()]);
+        if (p[1] > c[1]) != (q[1] > c[1]) {
+            xs.push(p[0] + (c[1] - p[1]) / (q[1] - p[1]) * (q[0] - p[0]));
+        }
+    }
+    xs.sort_by(f64::total_cmp);
+    xs.chunks(2).filter(|w| w.len() == 2).max_by(|a, b| (a[1] - a[0]).total_cmp(&(b[1] - b[0]))).map(|w| [(w[0] + w[1]) / 2.0, c[1]])
+}
+
+pub fn point_in_ring(p: XY, ring: &[XY]) -> bool {
+    let mut inside = false;
+    let mut j = ring.len() - 1;
+    for i in 0..ring.len() {
+        let (a, b) = (ring[i], ring[j]);
+        if (a[1] > p[1]) != (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0] {
+            inside = !inside;
+        }
+        j = i;
+    }
+    inside
 }
 
 /// Attribute names present on the features (for the label picker).

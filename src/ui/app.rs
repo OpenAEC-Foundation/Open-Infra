@@ -4,6 +4,7 @@
 //! groups, and OK / Test / Annuleren at the bottom.
 
 use std::sync::mpsc::Receiver;
+use std::sync::Arc;
 
 use eframe::egui::{self, Color32, RichText, TextureHandle, Vec2};
 
@@ -20,7 +21,11 @@ use crate::gis::servers::{self, MapServer, ServerKind};
 use crate::gis::site::Site;
 use crate::gis::vector::{self, Feature};
 use crate::gis::wfs::WfsResult;
+use crate::basisdata::{self, Cadastre, KlicOptions, NlcsOptions};
+use crate::gis::{bgt, klic};
 use crate::import::{self, VectorStyle, PDOK};
+use crate::nlcs::{self, Element, Status};
+use crate::tekenblad::{self, SheetInfo};
 
 const ACI_CHOICES: &[(i16, &str)] = &[(1, "rood"), (2, "geel"), (3, "groen"), (4, "cyaan"), (5, "blauw"), (6, "magenta"), (7, "wit/zwart"), (8, "grijs"), (30, "oranje")];
 const ACCENT: Color32 = Color32::from_rgb(33, 150, 220);
@@ -56,6 +61,7 @@ fn icon(name: &str) -> egui::Image<'static> {
         "point" => include_str!("../../assets/point.svg"),
         "server" => include_str!("../../assets/server.svg"),
         "area" => include_str!("../../assets/area.svg"),
+        "nlcs" => include_str!("../../assets/bgt.svg"),
         _ => include_str!("../../assets/list.svg"),
     };
     let bytes = svg.replace("currentColor", "#dfe5ea").into_bytes();
@@ -141,6 +147,136 @@ struct PdokPage {
     run: Option<Job<String>>,
 }
 
+type Preview2 = Vec<(Vec<LonLat>, Color32)>;
+/// Fetched BGT/BRK for the chosen groups, with its map preview.
+type NlcsFetched = (Vec<&'static str>, bool, Arc<Vec<(String, Vec<Feature>)>>, Option<Arc<Cadastre>>, Preview2);
+
+struct NlcsPage {
+    status: Status,
+    discipline: String,
+    scale: f64,
+    object_data: bool,
+    labels: bool,
+    clip: bool,
+    bgt_on: Vec<bool>,
+    brk: bool,
+    klic_path: String,
+    klic: Option<Arc<klic::Levering>>,
+    klic_preview: Preview2,
+    klic_job: Option<Job<(klic::Levering, Preview2)>>,
+    klic_on: Vec<(String, usize, bool)>,
+    klic_discipline: String,
+    imkl_colors: bool,
+    sheet: bool,
+    info: SheetInfo,
+    fetch: Option<Job<NlcsFetched>>,
+    fetched: Option<NlcsFetched>,
+    run: Option<Job<String>>,
+}
+
+impl Default for NlcsPage {
+    fn default() -> Self {
+        let o = NlcsOptions::default();
+        Self {
+            status: o.status,
+            discipline: o.discipline,
+            scale: o.scale,
+            object_data: o.object_data,
+            labels: o.labels,
+            clip: o.clip,
+            bgt_on: bgt::GROUPS.iter().map(|g| g.default_on).collect(),
+            brk: true,
+            klic_path: String::new(),
+            klic: None,
+            klic_preview: Vec::new(),
+            klic_job: None,
+            klic_on: Vec::new(),
+            klic_discipline: "OI".into(),
+            imkl_colors: false,
+            sheet: true,
+            info: SheetInfo::default(),
+            fetch: None,
+            fetched: None,
+            run: None,
+        }
+    }
+}
+
+impl NlcsPage {
+    fn options(&self) -> NlcsOptions {
+        NlcsOptions { status: self.status, discipline: self.discipline.clone(), scale: self.scale, object_data: self.object_data, labels: self.labels, clip: self.clip }
+    }
+    fn klic_options(&self) -> KlicOptions {
+        let mut nlcs = self.options();
+        nlcs.discipline = self.klic_discipline.clone();
+        nlcs.clip = false;
+        KlicOptions { nlcs, imkl_colors: self.imkl_colors, themes: self.klic_on.iter().filter(|t| t.2).map(|t| t.0.clone()).collect() }
+    }
+    fn collections(&self) -> Vec<&'static str> {
+        bgt::GROUPS.iter().zip(&self.bgt_on).filter(|(_, on)| **on).flat_map(|(g, _)| g.collections.iter().copied()).collect()
+    }
+}
+
+fn preview_color(rgb: (u8, u8, u8)) -> Color32 {
+    // NLCS colour 7 is white on a dark CAD background: dark on the map.
+    if rgb == (255, 255, 255) { Color32::from_gray(40) } else { Color32::from_rgb(rgb.0, rgb.1, rgb.2) }
+}
+
+fn rd_lines(to: &dyn Fn([f64; 2]) -> Option<[f64; 2]>, f: &Feature, color: Color32, out: &mut Preview2) {
+    for (line, closed) in &f.lines {
+        let mut pts: Vec<LonLat> = line.iter().filter_map(|p| to(*p)).collect();
+        if *closed {
+            if let Some(first) = pts.first().copied() {
+                pts.push(first);
+            }
+        }
+        if pts.len() > 1 {
+            out.push((pts, color));
+        }
+    }
+}
+
+fn bgt_preview(site: &Site, data: &[(String, Vec<Feature>)], cad: Option<&Cadastre>) -> Result<Preview2, String> {
+    let to = vector::data_to(site, "EPSG:28992", "EPSG:4326", &[])?;
+    let mut out = Vec::new();
+    for (c, feats) in data {
+        if bgt::is_label(c) {
+            continue;
+        }
+        for f in feats {
+            let rgb = nlcs::bgt_lookup(c, &f.props).map(|x| x.0).or_else(|| nlcs::bgt_default(c)).and_then(nlcs::object).map(|o| nlcs::layer(o, Status::B, "XX", Element::G).rgb).unwrap_or((128, 128, 128));
+            rd_lines(&*to, f, preview_color(rgb), &mut out);
+        }
+    }
+    if let Some(cad) = cad {
+        let rgb = nlcs::object_by_name("KG", "GRENS_PERCEEL").map(|o| nlcs::layer(o, Status::B, "XX", Element::G).rgb).unwrap_or((255, 0, 0));
+        for f in &cad.boundaries {
+            rd_lines(&*to, f, preview_color(rgb), &mut out);
+        }
+    }
+    Ok(out)
+}
+
+fn klic_preview(site: &Site, lev: &klic::Levering) -> Result<Preview2, String> {
+    let to = vector::data_to(site, "EPSG:28992", "EPSG:4326", &[])?;
+    let mut out = Vec::new();
+    for f in &lev.features {
+        rd_lines(&*to, f, preview_color(nlcs::imkl_rgb(klic::thema(f))), &mut out);
+    }
+    Ok(out)
+}
+
+/// The RD extent of a delivery.
+fn klic_extent(lev: &klic::Levering) -> Option<[f64; 4]> {
+    let mut b = [f64::MAX, f64::MAX, f64::MIN, f64::MIN];
+    for f in &lev.features {
+        for p in f.lines.iter().flat_map(|(l, _)| l.iter()).chain(f.points.iter()) {
+            b = [b[0].min(p[0]), b[1].min(p[1]), b[2].max(p[0]), b[3].max(p[1])];
+        }
+    }
+    (b[0] < b[2]).then_some(b)
+}
+
 #[derive(Default)]
 struct ServersPage {
     kind: Option<ServerKind>,
@@ -171,6 +307,7 @@ pub struct App {
     wfs: WfsPage,
     osm: OsmPage,
     pdok: PdokPage,
+    nlcs: NlcsPage,
     srv: ServersPage,
     coords: CoordsPage,
     servers: Vec<MapServer>,
@@ -202,6 +339,7 @@ impl App {
             wfs: WfsPage { server: None, caps: None, caps_job: None, ft: None, filter: String::new(), limit: 5000, fetch: None, result: None, preview: Vec::new(), label: String::new(), text_m: 1.0, aci: 2, clip: true, place: None },
             osm: OsmPage { on: THEMES.iter().map(|t| t.default_on).collect(), labels: true, text_m: 2.0, clip: true, fetch: None, fetched: None, run: None },
             pdok: PdokPage { on: PDOK.iter().map(|d| d.default_on).collect(), run: None },
+            nlcs: NlcsPage::default(),
             srv: ServersPage { region: "Eigen servers".into(), ..Default::default() },
             coords: CoordsPage { crs: "EPSG:4326".into(), xy: [4.660_612, 51.814_158], picked: None, job: None },
             servers: servers::all(),
@@ -253,6 +391,15 @@ impl App {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
                 }
                 UiMsg::SiteChanged => self.reload_site(),
+                UiMsg::Klic(path) => {
+                    self.tab = Tab::Nlcs;
+                    self.reload_site();
+                    self.nlcs.klic_path = path.to_string_lossy().into_owned();
+                    self.load_klic(ctx);
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                }
             }
         }
     }
@@ -1096,6 +1243,242 @@ impl App {
         });
     }
 
+    // ── BGT · Kadaster · KLIC (NLCS) ────────────────────────────────────────
+    fn load_klic(&mut self, ctx: &egui::Context) {
+        let path = std::path::PathBuf::from(self.nlcs.klic_path.trim().trim_matches('"'));
+        let Some(site) = bridge::site().or_else(|| Some(self.draft.clone())) else { return };
+        self.nlcs.klic = None;
+        self.nlcs.klic_preview.clear();
+        self.nlcs.klic_job = Some(Job::spawn(ctx, "KLIC-levering lezen…", move |_| {
+            let lev = klic::read(&path)?;
+            let preview = klic_preview(&site, &lev)?;
+            Ok((lev, preview))
+        }));
+    }
+
+    fn nlcs_page(&mut self, ui: &mut egui::Ui) {
+        if let Some(r) = poll(&mut self.nlcs.klic_job) {
+            match r {
+                Ok((lev, preview)) => {
+                    self.message = Some((true, format!("KLIC {}: {} objecten van {} netbeheerders.", lev.meldnummer, lev.features.len(), lev.operators.len())));
+                    self.nlcs.klic_on = lev.themes.iter().map(|(t, n)| (t.clone(), *n, true)).collect();
+                    self.nlcs.klic = Some(Arc::new(lev));
+                    self.nlcs.klic_preview = preview;
+                }
+                Err(e) => self.err(format!("KLIC: {e}")),
+            }
+        }
+        if let Some(r) = poll(&mut self.nlcs.fetch) {
+            match r {
+                Ok(f) => {
+                    let n: usize = f.2.iter().map(|(_, v)| v.len()).sum();
+                    self.message = Some((true, format!("{n} BGT-objecten opgehaald — zie de kaart.")));
+                    self.nlcs.fetched = Some(f);
+                }
+                Err(e) => self.err(e),
+            }
+        }
+        if let Some(r) = poll(&mut self.nlcs.run) {
+            match r {
+                Ok(m) => self.ok(m),
+                Err(e) => self.err(e),
+            }
+        }
+        // A delivery dropped on the window.
+        let dropped: Vec<std::path::PathBuf> = ui.ctx().input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).filter(|p| !p.as_os_str().is_empty()).collect());
+        if let Some(p) = dropped.into_iter().next() {
+            self.nlcs.klic_path = p.to_string_lossy().into_owned();
+            let ctx = ui.ctx().clone();
+            self.load_klic(&ctx);
+        }
+
+        page_header(ui, "nlcs", "BGT, kadaster en KLIC conform NLCS", "Basisdata voor een infra-ontwerp: elk object op zijn NLCS-laag, met kleur, lijndikte, lijntype en objectgegevens.");
+        let Some(site) = self.saved_site(ui) else { return };
+        let mut lines: Preview2 = self.nlcs.fetched.as_ref().map(|f| f.4.clone()).unwrap_or_default();
+        lines.extend(self.nlcs.klic_preview.iter().cloned());
+        self.map_section(ui, Some(&site), None, None, &lines);
+        if !(site.lon > 3.2 && site.lon < 7.3 && site.lat > 50.7 && site.lat < 53.7) {
+            ui.colored_label(WARN, "Let op: BGT, BRK en KLIC bestaan alleen voor Nederland.");
+        }
+
+        group(ui, "Tekenstandaard NLCS 5.02", |ui| {
+            egui::Grid::new("nlcs_std").num_columns(4).spacing([12.0, 6.0]).show(ui, |ui| {
+                ui.label("Tekenstatus");
+                egui::ComboBox::from_id_salt("nlcs_status").selected_text(self.nlcs.status.label()).show_ui(ui, |ui| {
+                    for st in Status::ALL {
+                        ui.selectable_value(&mut self.nlcs.status, st, st.label());
+                    }
+                });
+                ui.label("Schaal");
+                egui::ComboBox::from_id_salt("nlcs_scale").selected_text(format!("1:{}", self.nlcs.scale)).show_ui(ui, |ui| {
+                    for sc in [100.0, 200.0, 250.0, 500.0, 1000.0, 2000.0, 5000.0] {
+                        ui.selectable_value(&mut self.nlcs.scale, sc, format!("1:{sc}"));
+                    }
+                });
+                ui.end_row();
+                let disciplines = nlcs::disciplines();
+                let combo = |ui: &mut egui::Ui, id: &str, value: &mut String| {
+                    let current = disciplines.iter().find(|d| d.0 == value.as_str()).map(|d| format!("{} — {}", d.0, d.1)).unwrap_or(value.clone());
+                    egui::ComboBox::from_id_salt(id).width(260.0).selected_text(current).show_ui(ui, |ui| {
+                        for (c, d) in &disciplines {
+                            ui.selectable_value(value, c.to_string(), format!("{c} — {d}"));
+                        }
+                    });
+                };
+                ui.label("Discipline BGT/BRK");
+                combo(ui, "nlcs_disc", &mut self.nlcs.discipline);
+                ui.label("Discipline KLIC");
+                combo(ui, "nlcs_disc_klic", &mut self.nlcs.klic_discipline);
+                ui.end_row();
+            });
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut self.nlcs.object_data, "Objectgegevens (XDATA)");
+                ui.checkbox(&mut self.nlcs.labels, "Teksten: straatnamen, huisnummers, perceelnummers, leidinglabels");
+                ui.checkbox(&mut self.nlcs.clip, "Bijsnijden op het importgebied");
+            });
+            ui.label(RichText::new("Laagnaam: STATUS-DISCIPLINE-HOOFDGROEP-OBJECT-ELEMENT, bijv. B-XX-VH-GESLOTENVERHARDING_ASFALT-G. Lijntypen in papier-mm met de lijntypeschaal van de tekenschaal; tekstkleur en -dikte volgen de NLCS-tekstklasse.").small().weak());
+        });
+
+        ui.columns(2, |cols| {
+            group(&mut cols[0], "BGT (PDOK, actueel)", |ui| {
+                for (i, g) in bgt::GROUPS.iter().enumerate() {
+                    ui.checkbox(&mut self.nlcs.bgt_on[i], g.label);
+                }
+            });
+            group(&mut cols[1], "Kadastrale kaart (BRK)", |ui| {
+                ui.checkbox(&mut self.nlcs.brk, "Perceelgrenzen en -nummers (KG-GRENS_PERCEEL)");
+            });
+            group(&mut cols[1], "Tekenblad", |ui| {
+                ui.checkbox(&mut self.nlcs.sheet, "Kader, titelblok, legenda, noordpijl, schaalbalk en RD-kruisen");
+                let (paper, _, _) = tekenblad::paper_for(&site, self.nlcs.scale);
+                ui.label(RichText::new(format!("Formaat bij 1:{}: {paper} liggend", self.nlcs.scale)).small().weak());
+                egui::Grid::new("sheet").num_columns(2).spacing([8.0, 4.0]).show(ui, |ui| {
+                    ui.label("Project");
+                    ui.add(egui::TextEdit::singleline(&mut self.nlcs.info.project).hint_text(site.label.as_str()).desired_width(240.0));
+                    ui.end_row();
+                    ui.label("Onderwerp");
+                    ui.add(egui::TextEdit::singleline(&mut self.nlcs.info.subject).desired_width(240.0));
+                    ui.end_row();
+                    ui.label("Tekeningnummer");
+                    ui.add(egui::TextEdit::singleline(&mut self.nlcs.info.number).desired_width(240.0));
+                    ui.end_row();
+                    ui.label("Getekend");
+                    ui.add(egui::TextEdit::singleline(&mut self.nlcs.info.drawn_by).desired_width(240.0));
+                    ui.end_row();
+                });
+            });
+        });
+
+        group(ui, "KLIC-levering (WIBON, IMKL 2.0)", |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Bestand");
+                ui.add(egui::TextEdit::singleline(&mut self.nlcs.klic_path).hint_text("Levering_….zip of GI_gebiedsinformatielevering_….xml — of sleep het bestand op dit venster").desired_width(ui.available_width() - 90.0));
+                if ui.add_enabled(!self.nlcs.klic_path.trim().is_empty() && self.nlcs.klic_job.is_none(), egui::Button::new("Lezen")).clicked() {
+                    let ctx = ui.ctx().clone();
+                    self.load_klic(&ctx);
+                }
+            });
+            job_status(ui, &self.nlcs.klic_job);
+            if let Some(lev) = self.nlcs.klic.clone() {
+                ui.label(RichText::new(format!("Melding {} · {} objecten · {}", lev.meldnummer, lev.features.len(), lev.operators.join(", "))).small());
+                egui::Grid::new("klic_themes").num_columns(3).spacing([14.0, 4.0]).show(ui, |ui| {
+                    for (i, (t, n, on)) in self.nlcs.klic_on.iter_mut().enumerate() {
+                        let (rect, _) = ui.allocate_exact_size(Vec2::splat(12.0), egui::Sense::hover());
+                        ui.painter().rect_filled(rect, 2.0, preview_color(nlcs::imkl_rgb(t)));
+                        ui.checkbox(on, format!("{} ({n})", klic::theme_label(t)));
+                        if i % 2 == 1 {
+                            ui.end_row();
+                        }
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut self.nlcs.imkl_colors, "IMKL-themakleuren in plaats van NLCS-kleuren");
+                    if ui.button("Importgebied op deze levering zetten").clicked() {
+                        if let Some(b) = klic_extent(&lev) {
+                            let mut s = site.clone();
+                            let c = [(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0];
+                            let c = if s.crs == "EPSG:28992" { Ok(c) } else { crs::transform("EPSG:28992", &s.crs, c) };
+                            if let Ok(c) = c {
+                                s.set_origin((c[0] * 10.0).round() / 10.0, (c[1] * 10.0).round() / 10.0);
+                                s.width = ((b[2] - b[0]) + 40.0).ceil();
+                                s.height = ((b[3] - b[1]) + 40.0).ceil();
+                                s.label = format!("KLIC {}", lev.meldnummer);
+                                match bridge::save_site(&s) {
+                                    Ok(()) => {
+                                        self.draft = s;
+                                        self.fit_pending = true;
+                                        self.nlcs.fetched = None;
+                                        self.ok("Importgebied aangepast aan de KLIC-levering.");
+                                    }
+                                    Err(e) => self.err(e),
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    fn nlcs_actions(&mut self, ui: &mut egui::Ui) {
+        let ctx = ui.ctx().clone();
+        let Some(site) = bridge::site() else { return };
+        let collections = self.nlcs.collections();
+        let brk = self.nlcs.brk;
+        let klic_ready = self.nlcs.klic.is_some() && self.nlcs.klic_on.iter().any(|t| t.2);
+        let busy = self.nlcs.fetch.is_some() || self.nlcs.run.is_some();
+        let anything = !collections.is_empty() || brk || klic_ready;
+        button_bar(ui, |ui| {
+            if ui.add_enabled(anything && !busy, primary_button("OK en importeren")).clicked() {
+                let cached = self.nlcs.fetched.take().filter(|f| f.0 == collections && f.1 == brk);
+                let (opt, kopt, lev, sheet, info) = (self.nlcs.options(), self.nlcs.klic_options(), self.nlcs.klic.clone().filter(|_| klic_ready), self.nlcs.sheet, self.nlcs.info.clone());
+                let (s, cols) = (site.clone(), collections.clone());
+                self.nlcs.run = Some(Job::spawn(&ctx, "Basisdata…", move |p| {
+                    let mut done = Vec::new();
+                    let (bgt_data, cad) = match cached {
+                        Some(c) => (c.2, c.3),
+                        None => {
+                            let b = if cols.is_empty() { Arc::new(Vec::new()) } else { Arc::new(bgt::fetch(&s, &cols, p)?) };
+                            let c = if brk { Some(Arc::new(basisdata::cadastre_fetch(&s, opt.labels, p)?)) } else { None };
+                            (b, c)
+                        }
+                    };
+                    if !bgt_data.is_empty() {
+                        p("BGT tekenen…".into());
+                        done.push(basisdata::bgt_place(&s, &bgt_data, &opt)?);
+                    }
+                    if let Some(c) = cad {
+                        p("Kadaster tekenen…".into());
+                        done.push(basisdata::cadastre_place(&s, &c, &opt)?);
+                    }
+                    let mut info = info;
+                    if let Some(lev) = lev {
+                        p("KLIC tekenen…".into());
+                        done.push(basisdata::klic_place(&s, &lev, &kopt)?);
+                        info.sources.push_str(&format!(" · KLIC {}", lev.meldnummer));
+                    }
+                    if sheet {
+                        p("Tekenblad…".into());
+                        done.push(tekenblad::draw(&s, &opt, &info)?);
+                    }
+                    bridge::zoom_extents();
+                    Ok(done.join(" "))
+                }));
+            }
+            if ui.add_enabled((!collections.is_empty() || brk) && !busy, egui::Button::new("Test — ophalen en tonen")).clicked() {
+                let (s, cols, labels) = (site.clone(), collections.clone(), self.nlcs.labels);
+                self.nlcs.fetch = Some(Job::spawn(&ctx, "BGT ophalen…", move |p| {
+                    let data = if cols.is_empty() { Vec::new() } else { bgt::fetch(&s, &cols, p)? };
+                    let cad = if brk { Some(basisdata::cadastre_fetch(&s, labels, p)?) } else { None };
+                    let preview = bgt_preview(&s, &data, cad.as_ref())?;
+                    Ok((cols, brk, Arc::new(data), cad.map(Arc::new), preview))
+                }));
+            }
+            job_status(ui, &self.nlcs.run);
+            job_status(ui, &self.nlcs.fetch);
+        });
+    }
+
     // ── Servers ─────────────────────────────────────────────────────────────
     fn servers_page(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
@@ -1310,6 +1693,9 @@ impl eframe::App for App {
             nav(ui, Tab::Osm, "globe", "OpenStreetMap");
             nav(ui, Tab::Pdok, "pdok", "PDOK (NL)");
             ui.add_space(8.0);
+            ui.label(RichText::new("BASISDATA NL").small().weak());
+            nav(ui, Tab::Nlcs, "nlcs", "BGT · Kadaster · KLIC");
+            ui.add_space(8.0);
             ui.label(RichText::new("HULPMIDDELEN").small().weak());
             nav(ui, Tab::Coords, "point", "Coördinaten");
             nav(ui, Tab::Servers, "server", "Servers");
@@ -1342,7 +1728,7 @@ impl eframe::App for App {
         });
         egui::CentralPanel::default().show(ui, |ui| {
             // OK / Test / Annuleren stay visible at the bottom, as in the FreeCAD dialogs.
-            let has_actions = matches!(self.tab, Tab::Location | Tab::Raster | Tab::Wfs | Tab::Osm | Tab::Pdok);
+            let has_actions = matches!(self.tab, Tab::Location | Tab::Raster | Tab::Wfs | Tab::Osm | Tab::Pdok | Tab::Nlcs);
             if has_actions {
                 egui::Panel::bottom("actions").frame(egui::Frame::new().inner_margin(egui::Margin::symmetric(4, 8))).show(ui, |ui| match self.tab {
                     Tab::Location => self.location_actions(ui),
@@ -1350,6 +1736,7 @@ impl eframe::App for App {
                     Tab::Wfs => self.wfs_actions(ui),
                     Tab::Osm => self.osm_actions(ui),
                     Tab::Pdok => self.pdok_actions(ui),
+                    Tab::Nlcs => self.nlcs_actions(ui),
                     _ => {}
                 });
             }
@@ -1361,6 +1748,7 @@ impl eframe::App for App {
                     Tab::Wfs => self.wfs(ui),
                     Tab::Osm => self.osm(ui),
                     Tab::Pdok => self.pdok(ui),
+                    Tab::Nlcs => self.nlcs_page(ui),
                     Tab::Servers => self.servers_page(ui),
                     Tab::Coords => self.coords(ui),
                 }

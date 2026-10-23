@@ -9,6 +9,9 @@ pub mod bridge;
 pub mod emit;
 pub mod gis;
 pub mod import;
+pub mod basisdata;
+pub mod nlcs;
+pub mod tekenblad;
 mod ui;
 
 use std::sync::OnceLock;
@@ -40,6 +43,10 @@ const I_POINT: IconKind = IconKind::Svg(include_bytes!("../assets/point.svg"));
 const I_SERVER: IconKind = IconKind::Svg(include_bytes!("../assets/server.svg"));
 const I_QUICK: IconKind = IconKind::Svg(include_bytes!("../assets/quick.svg"));
 const I_PDOK: IconKind = IconKind::Svg(include_bytes!("../assets/pdok.svg"));
+const I_BGT: IconKind = IconKind::Svg(include_bytes!("../assets/bgt.svg"));
+const I_KADASTER: IconKind = IconKind::Svg(include_bytes!("../assets/kadaster.svg"));
+const I_KLIC: IconKind = IconKind::Svg(include_bytes!("../assets/klic.svg"));
+const I_SHEET: IconKind = IconKind::Svg(include_bytes!("../assets/sheet.svg"));
 
 /// One-click imports from the ribbon (no window): command → what to fetch.
 enum Quick {
@@ -113,6 +120,27 @@ impl CadModule for GisModule {
                             items: quick(|q| !is_raster(q)),
                             default: "GIS_Q_BAG",
                         },
+                    ],
+                },
+                // The InfraCAD Map base data, drawn conform NLCS.
+                RibbonGroup {
+                    title: "Basisdata NL (NLCS)",
+                    tools: vec![
+                        tool("GIS_BGT", "BGT · BRK · KLIC", I_BGT),
+                        tool("GIS_Q_BGT", "BGT", I_BGT),
+                        tool("GIS_Q_BRK", "Kadaster", I_KADASTER),
+                        RibbonItem::LargeTool(ToolDef {
+                            id: "GIS_KLIC",
+                            label: "KLIC",
+                            icon: I_KLIC,
+                            event: ModuleEvent::PluginFileDialog {
+                                command: "GIS_KLIC".into(),
+                                title: "KLIC-levering openen".into(),
+                                filter_name: "KLIC-levering (zip, xml)".into(),
+                                extensions: vec!["zip".into(), "xml".into()],
+                            },
+                        }),
+                        tool("GIS_TEKENBLAD", "Tekenblad", I_SHEET),
                     ],
                 },
                 RibbonGroup {
@@ -247,6 +275,75 @@ fn quick(host: &mut dyn HostApi, q: &'static Quick, label: &'static str) {
     });
 }
 
+/// `GIS_SITE <lon> <lat> [breedte] [hoogte] [EPSG:code]` or
+/// `GIS_SITE RD <x> <y> [breedte] [hoogte]`: set the project location from a
+/// script, without the window.
+fn site_command(host: &mut dyn HostApi, cmd: &str) {
+    let args: Vec<&str> = cmd.split_whitespace().skip(1).collect();
+    let num = |i: usize| args.get(i).and_then(|a| a.replace(',', ".").parse::<f64>().ok());
+    let mut site = bridge::site().unwrap_or_default();
+    let rd = args.first().is_some_and(|a| a.eq_ignore_ascii_case("RD"));
+    let at = if rd { 1 } else { 0 };
+    let (Some(a), Some(b)) = (num(at), num(at + 1)) else {
+        host.push_error("[Open Infra] GIS_SITE <lon> <lat> [breedte] [hoogte] [EPSG:code]  of  GIS_SITE RD <x> <y> [breedte] [hoogte]");
+        return;
+    };
+    if let Some(code) = args.iter().find(|a| a.to_ascii_uppercase().starts_with("EPSG:")) {
+        site.crs = code.to_ascii_uppercase();
+    } else if rd {
+        site.crs = "EPSG:28992".into();
+    }
+    site.width = num(at + 2).unwrap_or(site.width);
+    site.height = num(at + 3).unwrap_or(site.width);
+    site.label = if rd { format!("RD {a:.0} {b:.0}") } else { format!("{b:.5} N {a:.5} E") };
+    if rd {
+        site.reproject_origin();
+        site.set_origin(a, b);
+    } else {
+        site.lon = a;
+        site.lat = b;
+        site.reproject_origin();
+    }
+    std::thread::spawn(move || match bridge::save_site(&site) {
+        Ok(()) => {
+            bridge::info(&format!("Projectlocatie {}: X {:.2} Y {:.2} ({}), {} × {} m.", site.label, site.origin_e, site.origin_n, site.crs, site.width, site.height));
+            ui::send(ui::UiMsg::SiteChanged);
+        }
+        Err(e) => bridge::error(&format!("GIS_SITE: {e}")),
+    });
+}
+
+/// Base data from the command line or a ribbon button, without the window.
+fn base_data(host: &mut dyn HostApi, verb: &str, arg: &str) {
+    let Some(site) = require_site(host) else { return };
+    let verb = verb.to_string();
+    let arg = arg.trim().trim_matches('"').to_string();
+    host.push_info(&format!("[Open Infra] {verb} …"));
+    std::thread::spawn(move || {
+        let progress = |_: String| {};
+        let opt = basisdata::NlcsOptions::default();
+        let result = match verb.as_str() {
+            "GIS_Q_BGT" => {
+                let cols: Vec<&str> = gis::bgt::GROUPS.iter().filter(|g| g.default_on).flat_map(|g| g.collections.iter().copied()).collect();
+                basisdata::bgt(&site, &cols, &opt, &progress)
+            }
+            "GIS_Q_BRK" => basisdata::cadastre(&site, &opt, &progress),
+            "GIS_KLIC_IMPORT" => basisdata::klic(&site, std::path::Path::new(&arg), &basisdata::KlicOptions::default()),
+            _ => {
+                let mut info = tekenblad::SheetInfo::default();
+                if !arg.is_empty() {
+                    info.subject = arg.clone();
+                }
+                tekenblad::draw(&site, &opt, &info)
+            }
+        };
+        match result {
+            Ok(m) => bridge::info(&m),
+            Err(e) => bridge::error(&format!("{verb}: {e}")),
+        }
+    });
+}
+
 impl BuiltinPlugin for OpenInfra {
     fn manifest(&self) -> &'static PluginManifest {
         &MANIFEST
@@ -274,6 +371,23 @@ impl BuiltinPlugin for OpenInfra {
             "GIS_PDOK" => open(host, ui::Tab::Pdok),
             "GIS_SERVERS" => open(host, ui::Tab::Servers),
             "GIS_COORD" => open(host, ui::Tab::Coords),
+            "GIS_BGT" | "GIS_NLCS" => open(host, ui::Tab::Nlcs),
+            "GIS_SITE" => site_command(host, cmd),
+            "GIS_Q_BGT" | "GIS_Q_BRK" | "GIS_TEKENBLAD" | "GIS_KLIC_IMPORT" => {
+                let arg = cmd.split_once(char::is_whitespace).map(|(_, a)| a).unwrap_or("");
+                base_data(host, &verb, arg);
+            }
+            "GIS_KLIC" => {
+                // From the ribbon's file dialog: "GIS_KLIC <path>" (original case).
+                let arg = cmd.split_once(char::is_whitespace).map(|(_, a)| a.trim().trim_matches('"')).unwrap_or("");
+                if arg.is_empty() {
+                    open(host, ui::Tab::Nlcs);
+                } else if ui::open(ui::Tab::Nlcs).is_ok() {
+                    ui::send(ui::UiMsg::Klic(arg.into()));
+                } else {
+                    base_data(host, "GIS_KLIC_IMPORT", arg);
+                }
+            }
             "GIS_GEBIED" | "GIS_PUNT" => {
                 let site = bridge::site().unwrap_or_default();
                 site.register_crs();
@@ -287,7 +401,9 @@ impl BuiltinPlugin for OpenInfra {
             "GIS_HELP" => host.push_info(
                 "[Open Infra] GIS_LOCATIE, GIS_GEBIED, GIS_PUNT, GIS_KAART, GIS_WFS, GIS_OSM, GIS_PDOK, GIS_COORD, GIS_SERVERS; \
                  snel: GIS_Q_LUCHTFOTO, GIS_Q_KADASTER, GIS_Q_AHN, GIS_Q_OSMKAART, GIS_Q_SATELLIET, GIS_Q_BAG, \
-                 GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM.",
+                 GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM; \
+                 GIS_SITE <lon> <lat> [b] [h] [EPSG:code] | GIS_SITE RD <x> <y> [b] [h]; \
+                 NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp].",
             ),
             v => match QUICK.iter().find(|(c, ..)| *c == v) {
                 Some((_, label, q)) => quick(host, q, label),
