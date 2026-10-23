@@ -60,6 +60,12 @@ The NLCS tables (objects, colours, linetypes, statuses, disciplines) and the off
 
 Script commands: `GIS_SITE RD <x> <y> <breedte> <hoogte>`, `GIS_Q_BGT`, `GIS_Q_BRK`, `GIS_KLIC_IMPORT <bestand>`, `GIS_TEKENBLAD [onderwerp]`.
 
+### Example drawing
+
+[`examples/dordrecht-nlcs`](examples/dordrecht-nlcs) contains an A1 sheet at 1:500 of the area around the Grote Kerk in Dordrecht, conform NLCS: BGT, cadastre, a KLIC delivery, legend and title block. It comes as DWG, PDF and PNG.
+
+![Example: Dordrecht, Grote Kerk](examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
+
 ### Coordinate systems
 
 - Built in: RD New (EPSG:28992), ETRS89/UTM 31–33N, Belgian Lambert 72/2008, British National Grid, CH1903+/LV95, Lambert-93, WGS 84 and Web Mercator.

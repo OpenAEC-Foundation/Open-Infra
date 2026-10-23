@@ -275,9 +275,9 @@ fn quick(host: &mut dyn HostApi, q: &'static Quick, label: &'static str) {
     });
 }
 
-/// `GIS_SITE <lon> <lat> [breedte] [hoogte] [EPSG:code]` or
-/// `GIS_SITE RD <x> <y> [breedte] [hoogte]`: set the project location from a
-/// script, without the window.
+/// `GIS_SITE <lon> <lat> [breedte] [hoogte] [EPSG:code] [naam]` or
+/// `GIS_SITE RD <x> <y> [breedte] [hoogte] [naam]`: set the project location
+/// from a script, without the window.
 fn site_command(host: &mut dyn HostApi, cmd: &str) {
     let args: Vec<&str> = cmd.split_whitespace().skip(1).collect();
     let num = |i: usize| args.get(i).and_then(|a| a.replace(',', ".").parse::<f64>().ok());
@@ -295,7 +295,15 @@ fn site_command(host: &mut dyn HostApi, cmd: &str) {
     }
     site.width = num(at + 2).unwrap_or(site.width);
     site.height = num(at + 3).unwrap_or(site.width);
-    site.label = if rd { format!("RD {a:.0} {b:.0}") } else { format!("{b:.5} N {a:.5} E") };
+    // Words after the numbers name the location (title block, window).
+    let name: Vec<&str> = args.iter().skip(at + 2).filter(|a| a.replace(',', ".").parse::<f64>().is_err() && !a.to_ascii_uppercase().starts_with("EPSG:")).copied().collect();
+    site.label = if !name.is_empty() {
+        name.join(" ")
+    } else if rd {
+        format!("RD {a:.0} {b:.0}")
+    } else {
+        format!("{b:.5} N {a:.5} E")
+    };
     if rd {
         site.reproject_origin();
         site.set_origin(a, b);

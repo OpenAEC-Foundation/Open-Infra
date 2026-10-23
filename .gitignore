@@ -3,3 +3,7 @@
 .cargo/config.toml
 .claude/
 CLAUDE.md
+# Open CAD Studio side files
+*.bak
+.*.ocs.lock
+*.ocs-autosave.sv$

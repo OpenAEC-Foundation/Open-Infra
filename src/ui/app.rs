@@ -1451,11 +1451,9 @@ impl App {
                         p("Kadaster tekenen…".into());
                         done.push(basisdata::cadastre_place(&s, &c, &opt)?);
                     }
-                    let mut info = info;
                     if let Some(lev) = lev {
                         p("KLIC tekenen…".into());
                         done.push(basisdata::klic_place(&s, &lev, &kopt)?);
-                        info.sources.push_str(&format!(" · KLIC {}", lev.meldnummer));
                     }
                     if sheet {
                         p("Tekenblad…".into());

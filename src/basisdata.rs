@@ -165,6 +165,7 @@ pub fn bgt_place(site: &Site, data: &[(String, Vec<Feature>)], opt: &NlcsOptions
     }
     let total: usize = data.iter().map(|(_, v)| v.len()).sum();
     let (n, layers) = batch.write("BGT (NLCS)")?;
+    bridge::note_source("BGT (PDOK, CC0)");
     let mut msg = format!("BGT: {total} objecten → {n} elementen op {layers} NLCS-lagen.");
     if unmapped > 0 {
         msg.push_str(&format!(" {unmapped} zonder NLCS-object overgeslagen."));
@@ -233,6 +234,7 @@ pub fn cadastre_place(site: &Site, data: &Cadastre, opt: &NlcsOptions) -> Result
         batch.push(&text_spec, vec![emit::text(at, &number, opt.paper(1.8, f), emit::readable(rot), &text_spec.name, d.as_ref())], d.as_ref());
     }
     let (n, _) = batch.write("Kadastrale kaart (NLCS)")?;
+    bridge::note_source("BRK kadastrale kaart (Kadaster, CC BY 4.0)");
     Ok(format!("Kadastrale kaart: {} grenzen en {} perceelnummers ({n} elementen) op {}.", data.boundaries.len(), data.parcels.len(), line_spec.name))
 }
 
@@ -325,6 +327,7 @@ pub fn klic_place(site: &Site, lev: &klic::Levering, opt: &KlicOptions) -> Resul
         }
     }
     let (n, layers) = batch.write(&format!("KLIC {}", lev.meldnummer))?;
+    bridge::note_source(&format!("KLIC-levering {} (Kadaster)", lev.meldnummer));
     Ok(format!("KLIC {}: {drawn} objecten → {n} elementen op {layers} NLCS-lagen ({} netbeheerders).", lev.meldnummer, lev.operators.len()))
 }
 

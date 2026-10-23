@@ -34,6 +34,8 @@ struct Shared {
     made: HashSet<(u64, String)>,
     /// The NLCS layers imports drew on, per tab, for the legend.
     nlcs_layers: Vec<(u64, crate::nlcs::LayerSpec)>,
+    /// Data sources of the imports, per tab, for the title block.
+    sources: Vec<(u64, String)>,
 }
 
 fn shared() -> &'static Mutex<Shared> {
@@ -179,6 +181,20 @@ pub fn ensure_nlcs_layer(spec: &crate::nlcs::LayerSpec) {
 pub fn nlcs_layers() -> Vec<crate::nlcs::LayerSpec> {
     let Some(tab) = target().map(|t| t.tab_id) else { return Vec::new() };
     shared().lock().unwrap().nlcs_layers.iter().filter(|(t, _)| *t == tab).map(|(_, s)| s.clone()).collect()
+}
+
+/// Record a data source of an import into the active drawing.
+pub fn note_source(source: &str) {
+    let Some(tab) = target().map(|t| t.tab_id) else { return };
+    let mut s = shared().lock().unwrap();
+    if !s.sources.iter().any(|(t, v)| *t == tab && v == source) {
+        s.sources.push((tab, source.to_string()));
+    }
+}
+
+pub fn sources() -> Vec<String> {
+    let Some(tab) = target().map(|t| t.tab_id) else { return Vec::new() };
+    shared().lock().unwrap().sources.iter().filter(|(t, _)| *t == tab).map(|(_, v)| v.clone()).collect()
 }
 
 /// An XDATA record with `key=value` strings (each at most 255 characters).
