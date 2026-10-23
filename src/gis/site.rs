@@ -31,9 +31,12 @@ pub struct Site {
 impl Default for Site {
     fn default() -> Self {
         let mut s = Site {
-            label: "Utrecht Centraal".into(),
-            lon: 5.110_000,
-            lat: 52.089_444,
+            // Grote Kerk (Onze-Lieve-Vrouwekerk), Dordrecht — building centre in
+            // OSM; Lange Geldersekade is also the default
+            // of the FreeCAD GIS2BIM location dialog.
+            label: "Grote Kerk, Dordrecht".into(),
+            lon: 4.660_612,
+            lat: 51.814_158,
             crs: "EPSG:28992".into(),
             crs_proj4: String::new(),
             crs_name: String::new(),
@@ -161,6 +164,13 @@ pub fn unit_factor_for_insunits(insunits: i64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn default_site_is_dordrecht_grote_kerk() {
+        let s = Site::default();
+        assert_eq!(s.crs, "EPSG:28992");
+        assert!((s.origin_e - 104_897.5).abs() < 1.0 && (s.origin_n - 425_309.8).abs() < 1.0, "{} {}", s.origin_e, s.origin_n);
+    }
 
     #[test]
     fn relative_and_absolute_mapping() {

@@ -201,7 +201,7 @@ impl App {
             osm: OsmPage { on: THEMES.iter().map(|t| t.default_on).collect(), labels: true, text_m: 2.0, clip: true, fetch: None, fetched: None, run: None },
             pdok: PdokPage { on: PDOK.iter().map(|d| d.default_on).collect(), run: None },
             srv: ServersPage { region: "Eigen servers".into(), ..Default::default() },
-            coords: CoordsPage { crs: "EPSG:4326".into(), xy: [5.1214, 52.0907], picked: None, job: None },
+            coords: CoordsPage { crs: "EPSG:4326".into(), xy: [4.660_612, 51.814_158], picked: None, job: None },
             servers: servers::all(),
         }
     }
@@ -359,7 +359,7 @@ impl App {
             egui::Grid::new("loc").num_columns(2).spacing([14.0, 7.0]).min_col_width(170.0).show(ui, |ui| {
                 ui.label("Zoek plaats / adres");
                 ui.horizontal(|ui| {
-                    let edit = ui.add(egui::TextEdit::singleline(&mut self.loc.query).hint_text("bijv. Domplein 21 Utrecht, A2 Vught, Hamburg Hafen, 52.09, 5.11").desired_width(ui.available_width() - 90.0));
+                    let edit = ui.add(egui::TextEdit::singleline(&mut self.loc.query).hint_text("bijv. Lange Geldersekade 2 Dordrecht, A2 Vught, Hamburg Hafen, 51.814, 4.660").desired_width(ui.available_width() - 90.0));
                     let enter = edit.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
                     if (ui.add_enabled(self.loc.search.is_none(), egui::Button::new("Zoeken")).clicked() || enter) && !self.loc.query.trim().is_empty() {
                         let q = self.loc.query.clone();
