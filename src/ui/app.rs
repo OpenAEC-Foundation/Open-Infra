@@ -26,6 +26,9 @@ use crate::gis::{bgt, klic};
 use crate::import::{self, VectorStyle, PDOK};
 use crate::nlcs::{self, Element, Status};
 use crate::tekenblad::{self, SheetInfo};
+use crate::gis::ahn::{self, Model};
+use crate::gis::pointcloud::{self, Colouring, Edition};
+use crate::hoogte::{self, AhnOptions};
 
 const ACI_CHOICES: &[(i16, &str)] = &[(1, "rood"), (2, "geel"), (3, "groen"), (4, "cyaan"), (5, "blauw"), (6, "magenta"), (7, "wit/zwart"), (8, "grijs"), (30, "oranje")];
 const ACCENT: Color32 = Color32::from_rgb(33, 150, 220);
@@ -62,6 +65,7 @@ fn icon(name: &str) -> egui::Image<'static> {
         "server" => include_str!("../../assets/server.svg"),
         "area" => include_str!("../../assets/area.svg"),
         "nlcs" => include_str!("../../assets/bgt.svg"),
+        "ahn" => include_str!("../../assets/ahn.svg"),
         _ => include_str!("../../assets/list.svg"),
     };
     let bytes = svg.replace("currentColor", "#dfe5ea").into_bytes();
@@ -150,6 +154,35 @@ struct PdokPage {
 type Preview2 = Vec<(Vec<LonLat>, Color32)>;
 /// Fetched BGT/BRK for the chosen groups, with its map preview.
 type NlcsFetched = (Vec<&'static str>, bool, Arc<Vec<(String, Vec<Feature>)>>, Option<Arc<Cadastre>>, Preview2);
+
+/// Contours for the map preview, with the height range.
+type AhnPreview = (Preview2, (f64, f64), f64);
+
+struct AhnPage {
+    opt: AhnOptions,
+    spots: bool,
+    contours: bool,
+    cloud: bool,
+    class_on: Vec<bool>,
+    preview: Option<AhnPreview>,
+    test: Option<Job<AhnPreview>>,
+    run: Option<Job<String>>,
+}
+
+impl Default for AhnPage {
+    fn default() -> Self {
+        let opt = hoogte::settings();
+        let class_on = pointcloud::CLASSES.iter().map(|c| opt.cloud.classes.is_empty() || opt.cloud.classes.contains(&c.0)).collect();
+        Self { opt, spots: false, contours: true, cloud: false, class_on, preview: None, test: None, run: None }
+    }
+}
+
+/// Blue (low) to red (high).
+fn height_colour(t: f64) -> Color32 {
+    let t = t.clamp(0.0, 1.0);
+    let (r, g, b) = if t < 0.5 { (40.0 + 60.0 * t * 2.0, 120.0 + 100.0 * t * 2.0, 220.0 - 140.0 * t * 2.0) } else { (100.0 + 130.0 * (t - 0.5) * 2.0, 220.0 - 160.0 * (t - 0.5) * 2.0, 80.0 - 40.0 * (t - 0.5) * 2.0) };
+    Color32::from_rgb(r as u8, g as u8, b as u8)
+}
 
 struct NlcsPage {
     status: Status,
@@ -308,6 +341,7 @@ pub struct App {
     osm: OsmPage,
     pdok: PdokPage,
     nlcs: NlcsPage,
+    ahn: AhnPage,
     srv: ServersPage,
     coords: CoordsPage,
     servers: Vec<MapServer>,
@@ -340,6 +374,7 @@ impl App {
             osm: OsmPage { on: THEMES.iter().map(|t| t.default_on).collect(), labels: true, text_m: 2.0, clip: true, fetch: None, fetched: None, run: None },
             pdok: PdokPage { on: PDOK.iter().map(|d| d.default_on).collect(), run: None },
             nlcs: NlcsPage::default(),
+            ahn: AhnPage::default(),
             srv: ServersPage { region: "Eigen servers".into(), ..Default::default() },
             coords: CoordsPage { crs: "EPSG:4326".into(), xy: [4.660_612, 51.814_158], picked: None, job: None },
             servers: servers::all(),
@@ -1477,6 +1512,196 @@ impl App {
         });
     }
 
+    // ── AHN · Profiel · Puntenwolk ──────────────────────────────────────────
+    fn ahn_page(&mut self, ui: &mut egui::Ui) {
+        if let Some(r) = poll(&mut self.ahn.test) {
+            match r {
+                Ok(p) => {
+                    self.message = Some((true, format!("AHN: {} – {} m NAP, {} hoogtelijnen — zie de kaart.", hoogte::nap(p.1 .0, 2), hoogte::nap(p.1 .1, 2), p.0.len())));
+                    self.ahn.preview = Some(p);
+                }
+                Err(e) => self.err(e),
+            }
+        }
+        if let Some(r) = poll(&mut self.ahn.run) {
+            match r {
+                Ok(m) => self.ok(m),
+                Err(e) => self.err(e),
+            }
+        }
+        page_header(ui, "ahn", "AHN-hoogtes, profielen en puntenwolk", "Actueel Hoogtebestand Nederland: hoogtepunten, hoogtelijnen en lengteprofielen uit AHN4, de puntenwolk uit AHN5.");
+        let Some(site) = self.saved_site(ui) else { return };
+        let lines = self.ahn.preview.as_ref().map(|p| p.0.clone()).unwrap_or_default();
+        self.map_section(ui, Some(&site), None, None, &lines);
+        if !(site.lon > 3.2 && site.lon < 7.3 && site.lat > 50.7 && site.lat < 53.7) {
+            ui.colored_label(WARN, "Let op: AHN bestaat alleen voor Nederland.");
+        }
+        let o = &mut self.ahn.opt;
+        group(ui, "Tekenen", |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Schaal");
+                egui::ComboBox::from_id_salt("ahn_scale").selected_text(format!("1:{}", o.nlcs.scale)).show_ui(ui, |ui| {
+                    for sc in [100.0, 200.0, 250.0, 500.0, 1000.0, 2000.0, 5000.0] {
+                        ui.selectable_value(&mut o.nlcs.scale, sc, format!("1:{sc}"));
+                    }
+                });
+                ui.label("Tekenstatus");
+                egui::ComboBox::from_id_salt("ahn_status").selected_text(o.nlcs.status.label()).show_ui(ui, |ui| {
+                    for st in nlcs::Status::ALL {
+                        ui.selectable_value(&mut o.nlcs.status, st, st.label());
+                    }
+                });
+                ui.checkbox(&mut o.nlcs.labels, "Hoogtes als tekst");
+                ui.checkbox(&mut o.nlcs.clip, "Bijsnijden op het importgebied");
+            });
+            ui.label(RichText::new("Hoogtes in m NAP; lijnen en punten liggen op hun hoogte (Z). Lagen: OG-HOOGTEPUNT, OG-HOOGTELIJN_MINOR/MAJOR, GW-MAAIVELD, AL-PROFIELBALK.").small().weak());
+        });
+        ui.columns(2, |cols| {
+            group(&mut cols[0], "Hoogtepunten", |ui| {
+                ui.checkbox(&mut self.ahn.spots, "Hoogtepunten in een raster");
+                ui.horizontal(|ui| {
+                    ui.label("Raster");
+                    egui::ComboBox::from_id_salt("ahn_spacing").selected_text(format!("{} m", o.spot_spacing)).show_ui(ui, |ui| {
+                        for v in [2.0, 5.0, 10.0, 20.0, 25.0, 50.0, 100.0] {
+                            ui.selectable_value(&mut o.spot_spacing, v, format!("{v} m"));
+                        }
+                    });
+                    ui.label("Model");
+                    egui::ComboBox::from_id_salt("ahn_model").selected_text(o.model.label()).show_ui(ui, |ui| {
+                        for m in [Model::Dtm, Model::Dsm] {
+                            ui.selectable_value(&mut o.model, m, m.label());
+                        }
+                    });
+                });
+            });
+            group(&mut cols[0], "Hoogtelijnen (maaiveld)", |ui| {
+                ui.checkbox(&mut self.ahn.contours, "Hoogtelijnen");
+                ui.horizontal(|ui| {
+                    ui.label("Interval");
+                    egui::ComboBox::from_id_salt("ahn_interval").selected_text(format!("{} m", o.interval)).show_ui(ui, |ui| {
+                        for v in [0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 5.0] {
+                            ui.selectable_value(&mut o.interval, v, format!("{v} m"));
+                        }
+                    });
+                    ui.label("hoofdlijn elke");
+                    ui.add(egui::DragValue::new(&mut o.major_every).range(1..=20));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Rastercel");
+                    egui::ComboBox::from_id_salt("ahn_cell").selected_text(format!("{} m", o.contour_cell)).show_ui(ui, |ui| {
+                        for v in [0.5, 1.0, 2.0, 5.0] {
+                            ui.selectable_value(&mut o.contour_cell, v, format!("{v} m"));
+                        }
+                    });
+                    ui.checkbox(&mut o.smooth, "Gladstrijken");
+                });
+            });
+            group(&mut cols[1], "Lengteprofiel", |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Stations om de");
+                    ui.add(egui::DragValue::new(&mut o.step).range(0.25..=50.0).speed(0.25).suffix(" m"));
+                    ui.label("overhoging");
+                    ui.add(egui::DragValue::new(&mut o.exaggeration).range(1.0..=50.0).speed(0.5).suffix("×"));
+                });
+                ui.checkbox(&mut o.surface, "Ook het oppervlak (DSM: gebouwen, bomen)");
+                ui.label(RichText::new("Kies in Open CAD Studio Profiel in het lint (of GIS_PROFIEL): selecteer eerst een polyline of wijs de punten aan, Enter, en wijs dan de linkeronderhoek van het profiel aan.").small().weak());
+            });
+            group(&mut cols[1], "Puntenwolk (COPC)", |ui| {
+                ui.checkbox(&mut self.ahn.cloud, "AHN-puntenwolk koppelen (.rcs naast de tekening)");
+                ui.horizontal(|ui| {
+                    egui::ComboBox::from_id_salt("ahn_ed").selected_text(o.cloud.edition.label()).show_ui(ui, |ui| {
+                        for e in Edition::ALL {
+                            ui.selectable_value(&mut o.cloud.edition, e, e.label());
+                        }
+                    });
+                    ui.label("puntafstand");
+                    egui::ComboBox::from_id_salt("ahn_spacing_pc").selected_text(format!("{} m", o.cloud.spacing)).show_ui(ui, |ui| {
+                        for v in [0.1, 0.25, 0.5, 1.0, 2.0] {
+                            ui.selectable_value(&mut o.cloud.spacing, v, format!("{v} m"));
+                        }
+                    });
+                    ui.label("kleur");
+                    egui::ComboBox::from_id_salt("ahn_col").selected_text(o.cloud.colouring.label()).show_ui(ui, |ui| {
+                        for c in Colouring::ALL {
+                            ui.selectable_value(&mut o.cloud.colouring, c, c.label());
+                        }
+                    });
+                });
+                egui::Grid::new("ahn_classes").num_columns(3).spacing([10.0, 3.0]).show(ui, |ui| {
+                    for (i, (_, label, rgb)) in pointcloud::CLASSES.iter().enumerate() {
+                        let (rect, _) = ui.allocate_exact_size(Vec2::splat(10.0), egui::Sense::hover());
+                        ui.painter().rect_filled(rect, 2.0, Color32::from_rgb(rgb[0], rgb[1], rgb[2]));
+                        ui.checkbox(&mut self.ahn.class_on[i], *label);
+                        if i % 2 == 1 {
+                            ui.end_row();
+                        }
+                    }
+                });
+                let area = site.width * site.height;
+                let estimate = area * (1.0 / (o.cloud.spacing * o.cloud.spacing)).min(20.0);
+                ui.label(RichText::new(format!("Ongeveer {:.1} miljoen punten voor {:.0} × {:.0} m; alleen de nodige delen van de 1 km-tegels worden gedownload.", estimate / 1e6, site.width, site.height)).small().weak());
+            });
+        });
+        // Keep the shared settings in step: the ribbon buttons use them too.
+        let all = self.ahn.class_on.iter().all(|c| *c);
+        self.ahn.opt.cloud.classes = if all { Vec::new() } else { pointcloud::CLASSES.iter().zip(&self.ahn.class_on).filter(|(_, on)| **on).map(|(c, _)| c.0).collect() };
+        hoogte::set_settings(self.ahn.opt.clone());
+    }
+
+    fn ahn_actions(&mut self, ui: &mut egui::Ui) {
+        let ctx = ui.ctx().clone();
+        let Some(site) = bridge::site() else { return };
+        let busy = self.ahn.test.is_some() || self.ahn.run.is_some();
+        let any = self.ahn.spots || self.ahn.contours || self.ahn.cloud;
+        button_bar(ui, |ui| {
+            if ui.add_enabled(any && !busy, primary_button("OK en importeren")).clicked() {
+                let (s, opt, spots, contours, cloud) = (site.clone(), self.ahn.opt.clone(), self.ahn.spots, self.ahn.contours, self.ahn.cloud);
+                self.ahn.run = Some(Job::spawn(&ctx, "AHN…", move |p| {
+                    let mut done = Vec::new();
+                    if contours {
+                        done.push(hoogte::contour_lines(&s, &opt, p)?);
+                    }
+                    if spots {
+                        done.push(hoogte::spot_heights(&s, &opt, p)?);
+                    }
+                    if cloud {
+                        done.push(hoogte::point_cloud(&s, &opt, p)?);
+                    }
+                    Ok(done.join(" "))
+                }));
+            }
+            if ui.add_enabled(!busy, egui::Button::new("Test — hoogtelijnen op de kaart")).clicked() {
+                let (s, opt) = (site.clone(), self.ahn.opt.clone());
+                self.ahn.test = Some(Job::spawn(&ctx, "AHN ophalen…", move |p| {
+                    let b = crate::basisdata::rd_bbox(&s)?;
+                    let mut grid = ahn::fetch(b, Model::Dtm, opt.contour_cell, p)?;
+                    if opt.smooth {
+                        grid = grid.smoothed();
+                    }
+                    let range = grid.range().ok_or("AHN heeft hier geen hoogtes")?;
+                    let lines = ahn::contours(&grid, &ahn::levels(range, opt.interval), (8.0 * opt.contour_cell).max(10.0));
+                    let to = vector::data_to(&s, "EPSG:28992", "EPSG:4326", &[])?;
+                    let mut out = Vec::new();
+                    for (level, polys) in &lines {
+                        let c = height_colour((level - range.0) / (range.1 - range.0).max(0.01));
+                        for (pts, closed) in polys {
+                            let mut ll: Vec<LonLat> = pts.iter().filter_map(|p| to(*p)).collect();
+                            if *closed {
+                                if let Some(f) = ll.first().copied() {
+                                    ll.push(f);
+                                }
+                            }
+                            out.push((ll, c));
+                        }
+                    }
+                    Ok((out, range, grid.coverage()))
+                }));
+            }
+            job_status(ui, &self.ahn.run);
+            job_status(ui, &self.ahn.test);
+        });
+    }
+
     // ── Servers ─────────────────────────────────────────────────────────────
     fn servers_page(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
@@ -1693,6 +1918,7 @@ impl eframe::App for App {
             ui.add_space(8.0);
             ui.label(RichText::new("BASISDATA NL").small().weak());
             nav(ui, Tab::Nlcs, "nlcs", "BGT · Kadaster · KLIC");
+            nav(ui, Tab::Ahn, "ahn", "AHN-hoogtes");
             ui.add_space(8.0);
             ui.label(RichText::new("HULPMIDDELEN").small().weak());
             nav(ui, Tab::Coords, "point", "Coördinaten");
@@ -1726,7 +1952,7 @@ impl eframe::App for App {
         });
         egui::CentralPanel::default().show(ui, |ui| {
             // OK / Test / Annuleren stay visible at the bottom, as in the FreeCAD dialogs.
-            let has_actions = matches!(self.tab, Tab::Location | Tab::Raster | Tab::Wfs | Tab::Osm | Tab::Pdok | Tab::Nlcs);
+            let has_actions = matches!(self.tab, Tab::Location | Tab::Raster | Tab::Wfs | Tab::Osm | Tab::Pdok | Tab::Nlcs | Tab::Ahn);
             if has_actions {
                 egui::Panel::bottom("actions").frame(egui::Frame::new().inner_margin(egui::Margin::symmetric(4, 8))).show(ui, |ui| match self.tab {
                     Tab::Location => self.location_actions(ui),
@@ -1735,6 +1961,7 @@ impl eframe::App for App {
                     Tab::Osm => self.osm_actions(ui),
                     Tab::Pdok => self.pdok_actions(ui),
                     Tab::Nlcs => self.nlcs_actions(ui),
+                    Tab::Ahn => self.ahn_actions(ui),
                     _ => {}
                 });
             }
@@ -1747,6 +1974,7 @@ impl eframe::App for App {
                     Tab::Osm => self.osm(ui),
                     Tab::Pdok => self.pdok(ui),
                     Tab::Nlcs => self.nlcs_page(ui),
+                    Tab::Ahn => self.ahn_page(ui),
                     Tab::Servers => self.servers_page(ui),
                     Tab::Coords => self.coords(ui),
                 }

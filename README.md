@@ -10,6 +10,7 @@ Plugin for [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio) for 
 
 - **GIS workbench**, modelled on the FreeCAD GIS(2BIM) workbench. Set the project location and coordinate system, then pull aerial photos, WMS/WFS layers and OpenStreetMap straight into the DWG.
 - **Dutch base data conform NLCS**, like InfraCAD Map: BGT, cadastral map and KLIC deliveries on NLCS layers, with object data and a finished drawing sheet.
+- **AHN heights**: spot heights, contour lines and length profiles from AHN4, and the AHN5 point cloud attached in 3D.
 
 ![Example: situatie bestaand around the Grote Kerk in Dordrecht, A1 1:500](examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
 
@@ -26,9 +27,10 @@ Plugin for [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio) for 
 | **KLIC** | 13 IMKL 2.0 themes: electricity (LS/MS/HS), data, gas (LD/HD), water, district heating, sewer, chemicals |
 | **Server presets** | 19: 10 WMS, 8 WFS and 1 XYZ, covering the Netherlands (12), Flanders (2) and worldwide (5), plus your own servers |
 | **One-click imports** | 11 PDOK datasets, 11 OpenStreetMap themes, 11 quick buttons |
+| **AHN** | AHN4 DTM/DSM at 0.5 m (PDOK WCS); AHN4/AHN5 point clouds (COPC), only the octree nodes of the project area are downloaded |
 | **Coordinate systems** | 14 built in, automatic UTM worldwide, any EPSG code via epsg.io |
 | **Map backgrounds** | 5: OpenStreetMap, PDOK BRT (standard and grey), PDOK aerial photo, Sentinel-2 |
-| **Commands** | 28 `GIS_*` commands for the ribbon, scripts and automation |
+| **Commands** | 33 `GIS_*` commands for the ribbon, scripts and automation |
 | **Code** | about 6,900 lines of Rust, 17 unit tests; Linux, Windows and macOS builds |
 
 ## In Open CAD Studio
@@ -49,6 +51,10 @@ The ribbon tab **"Open Infra — GIS"**:
 | | **BGT** · **Kadaster** | One click: the current BGT, or cadastral boundaries and parcel numbers, on NLCS layers. |
 | | **KLIC** | Open a KLIC delivery: the Kadaster zip or `GI_gebiedsinformatielevering_*.xml`. It is shown on the map, then drawn. |
 | | **Tekenblad** | NLCS drawing sheet around the import area: frame, title block, legend of the layers used, north arrow, scale bar and RD coordinate crosses. |
+| Hoogte (AHN) | **AHN** | The AHN page of the workbench: options, and **Test** to show contour lines on the map. |
+| | **Hoogtepunten** · **Hoogtelijnen** | Spot heights in a grid, and contour lines (minor/major, labelled) from AHN4, at their true elevation. |
+| | **Profiel** | Length profile along a selected polyline or picked points: ground (DTM) and optionally surface (DSM), height grid, profile band with distances and heights, and section line A–A' in plan. |
+| | **Puntenwolk** | The AHN5 (or AHN4) point cloud of the import area, coloured by class, height or RGB. It is written as `.rcs` next to the drawing and attached; it shows in a 3D visual style. |
 | Hulpmiddelen | **Gebied** · **Punt info** · **Coördinaten** · **Servers** | Pick the import area in the drawing, read a point's coordinates, convert coordinates, and manage presets and your own WMS/WFS/XYZ servers. |
 
 ## The workbench window
@@ -89,6 +95,26 @@ The NLCS tables and the official NLCS-BGT 5.0 mapping are built in from [`assets
   - The legend shows the NLCS layers used, grouped by main group.
   - Sheet texts follow the NLCS text classes (T1.8, T2.5, …).
 
+## AHN heights, profiles and point clouds
+
+- **Heights:** AHN4 from the PDOK WCS: DTM (ground level) and DSM (surface), 0.5 m float grids in m NAP. Larger areas are fetched in tiles or at a coarser cell size.
+- **Spot heights** go on `OG-HOOGTEPUNT`, with labels such as `+2,43`. **Contour lines** go on `OG-HOOGTELIJN_MINOR/MAJOR` (marching squares on a lightly smoothed grid). Both sit at their real height (Z).
+- **Length profile (`GIS_PROFIEL`):**
+  - Select a polyline or line, or pick points and press Enter. Then pick the lower-left corner of the profile.
+  - The profile draws the ground line on `GW-MAAIVELD`, optionally the surface line, and a height grid with NAP labels.
+  - The profile band (`AL-PROFIELBALK`) lists distances and heights. The NAP line is drawn when it is in range, and the section line A–A' in plan.
+  - The profile breaks where AHN has no ground level (buildings, water).
+- **Point cloud (`GIS_PUNTENWOLK`):**
+  - AHN5 or AHN4 is read as COPC (Cloud Optimized Point Cloud) from Het Waterschapshuis' 1 km tiles. Only the octree nodes in the import area are downloaded, at the chosen point spacing.
+  - The cloud is coloured by class (ground, buildings, water, structures, other), by height or by RGB.
+  - It is saved as `.rcs` next to the drawing and attached with POINTCLOUDATTACH.
+  - Example: 300 × 250 m at 0.25 m spacing is about 1.4 million points and a 29 MB file.
+- **Punt info** also reports the AHN ground and surface height of the picked point.
+
+| Point cloud (AHN5, by class) with BGT and the drawing sheet | Length profile across the Grotekerksplein |
+|---|---|
+| ![AHN5 point cloud](docs/images/ahn-pointcloud.png) | ![Length profile](docs/images/ahn-profile.png) |
+
 ## Example drawing
 
 [`examples/dordrecht-nlcs`](examples/dordrecht-nlcs) is the existing situation around the Grote Kerk in Dordrecht. It is 300 × 250 m in RD, on an A1 sheet at 1:500.
@@ -126,6 +152,7 @@ For the command line, scripts and automation:
 | Map images | `GIS_Q_LUCHTFOTO`, `GIS_Q_KADASTER`, `GIS_Q_AHN`, `GIS_Q_OSMKAART`, `GIS_Q_SATELLIET` |
 | Vector data | `GIS_Q_BAG`, `GIS_Q_PERCELEN`, `GIS_Q_NWB`, `GIS_Q_HECTO`, `GIS_Q_SPOOR`, `GIS_Q_OSM` |
 | NLCS base data | `GIS_Q_BGT`, `GIS_Q_BRK`, `GIS_KLIC [file]` (opens the page), `GIS_KLIC_IMPORT <file>`, `GIS_TEKENBLAD [subject]` |
+| AHN | `GIS_AHN` (page), `GIS_HOOGTEPUNTEN`, `GIS_HOOGTELIJNEN`, `GIS_PROFIEL`, `GIS_PUNTENWOLK` |
 | Help | `GIS_HELP` |
 
 ## Coordinate systems and units
@@ -152,10 +179,12 @@ For the command line, scripts and automation:
 ```
 src/gis/          host-free engine: crs (proj4rs), site, servers, caps (WMS/WFS GetCapabilities),
                   geocode, raster (GetMap/XYZ + reprojection), wfs, osm (Overpass), vector (GeoJSON + clipping),
-                  ogcapi (OGC API Features), bgt (PDOK BGT), klic (IMKL via klic2geo)
+                  ogcapi (OGC API Features), bgt (PDOK BGT), klic (IMKL via klic2geo),
+                  ahn (WCS height grids, contours, profiles), pointcloud (COPC over HTTP, .rcs writer)
 src/nlcs.rs       NLCS 5.02 tables, layer names and styles, BGT/KLIC → NLCS mapping
 src/basisdata.rs  BGT, cadastre and KLIC drawn conform NLCS, with object data
 src/tekenblad.rs  NLCS drawing sheet: frame, title block, legend, north arrow, scale bar
+src/hoogte.rs     AHN spot heights, contour lines, length profiles and point clouds in the drawing
 src/emit.rs       engine output → DWG entities (LWPOLYLINE, TEXT, CIRCLE, IMAGE)
 src/bridge.rs     host requests from worker/window threads, NLCS layers and linetypes, site in the DWG
 src/import.rs     import flows shared by the window and the ribbon quick buttons
@@ -200,6 +229,7 @@ ocs_plugin_api = { path = "../OpenCADStudio/crates/ocs_plugin_api" }
 ## Data sources and licences
 
 - PDOK, Kadaster, Rijkswaterstaat and ProRail: open data (BGT CC0, BRK CC BY 4.0). Credit the source; the title block does this for the imports.
+- AHN (Actueel Hoogtebestand Nederland): open data (CC0). Height grids come via the PDOK WCS, point clouds from Het Waterschapshuis' object storage.
 - NLCS tables and the NLCS-BGT mapping: DigiGO / Stichting NLCS, CC BY 4.0 (see [`assets/nlcs/NOTICE.md`](assets/nlcs/NOTICE.md)).
 - OpenStreetMap: © OpenStreetMap contributors (ODbL), via Overpass, Nominatim and the OSM tile server. Follow their usage policies (light, interactive use).
 - Sentinel-2 cloudless by EOX: CC BY-NC-SA 4.0 (non-commercial).

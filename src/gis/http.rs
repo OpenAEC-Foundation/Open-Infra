@@ -75,6 +75,38 @@ pub fn get_json(url: &str) -> Result<serde_json::Value, String> {
     })
 }
 
+/// Bytes `start..=end` of a remote file (HTTP range request), for cloud
+/// optimised formats such as COPC.
+pub fn get_range(url: &str, start: u64, end: u64) -> Result<Vec<u8>, String> {
+    let range = format!("bytes={start}-{end}");
+    let mut last = String::new();
+    // Object storage occasionally drops a connection: try a few times.
+    for attempt in 0..3 {
+        if attempt > 0 {
+            std::thread::sleep(Duration::from_millis(500 * attempt));
+        }
+        match finish(url, default_agent().get(url).header("Range", &range).call()) {
+            Ok(f) => return Ok(f.body),
+            Err(e) => last = e,
+        }
+    }
+    Err(last)
+}
+
+/// Size of a remote file from a HEAD request.
+pub fn content_length(url: &str) -> Result<u64, String> {
+    let resp = default_agent().head(url).call().map_err(|e| format!("{}: {e}", host_of(url)))?;
+    let status = resp.status().as_u16();
+    if !(200..300).contains(&status) {
+        return Err(format!("HTTP {status} van {}", host_of(url)));
+    }
+    resp.headers()
+        .get("content-length")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.parse().ok())
+        .ok_or_else(|| format!("{}: geen bestandsgrootte", host_of(url)))
+}
+
 /// POST `application/x-www-form-urlencoded` with an explicit timeout.
 pub fn post_form(url: &str, form: &[(&str, &str)], timeout_s: u64) -> Result<Fetched, String> {
     finish(url, agent(timeout_s).post(url).send_form(form.iter().copied()))

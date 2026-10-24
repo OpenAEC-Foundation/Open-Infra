@@ -2,6 +2,7 @@
 //! here knows about Open CAD Studio; `crate::emit` turns its output into
 //! drawing entities.
 
+pub mod ahn;
 pub mod bgt;
 pub mod caps;
 pub mod crs;
@@ -10,6 +11,7 @@ pub mod http;
 pub mod klic;
 pub mod ogcapi;
 pub mod osm;
+pub mod pointcloud;
 pub mod raster;
 pub mod servers;
 pub mod site;

@@ -28,6 +28,9 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg"]
 klic2geo = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse" }
 # Local date for the title block
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+# AHN: height grids (WCS GeoTIFF float32) and point clouds (COPC)
+tiff = "0.11"
+copc-rs = "0.5"
 
 # Workbench window (runs in the plugin process, beside the host)
 eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }

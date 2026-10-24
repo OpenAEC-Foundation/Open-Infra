@@ -7,6 +7,7 @@
 
 pub mod bridge;
 pub mod emit;
+pub mod hoogte;
 pub mod gis;
 pub mod import;
 pub mod basisdata;
@@ -47,6 +48,10 @@ const I_BGT: IconKind = IconKind::Svg(include_bytes!("../assets/bgt.svg"));
 const I_KADASTER: IconKind = IconKind::Svg(include_bytes!("../assets/kadaster.svg"));
 const I_KLIC: IconKind = IconKind::Svg(include_bytes!("../assets/klic.svg"));
 const I_SHEET: IconKind = IconKind::Svg(include_bytes!("../assets/sheet.svg"));
+const I_AHN: IconKind = IconKind::Svg(include_bytes!("../assets/ahn.svg"));
+const I_CONTOURS: IconKind = IconKind::Svg(include_bytes!("../assets/hoogtelijnen.svg"));
+const I_PROFILE: IconKind = IconKind::Svg(include_bytes!("../assets/profiel.svg"));
+const I_CLOUD: IconKind = IconKind::Svg(include_bytes!("../assets/puntenwolk.svg"));
 
 /// One-click imports from the ribbon (no window): command → what to fetch.
 enum Quick {
@@ -143,6 +148,17 @@ impl CadModule for GisModule {
                         tool("GIS_TEKENBLAD", "Tekenblad", I_SHEET),
                     ],
                 },
+                // InfraCAD Map / CE height tools on AHN.
+                RibbonGroup {
+                    title: "Hoogte (AHN)",
+                    tools: vec![
+                        tool("GIS_AHN", "AHN", I_AHN),
+                        tool("GIS_HOOGTEPUNTEN", "Hoogtepunten", I_POINT),
+                        tool("GIS_HOOGTELIJNEN", "Hoogtelijnen", I_CONTOURS),
+                        tool("GIS_PROFIEL", "Profiel", I_PROFILE),
+                        tool("GIS_PUNTENWOLK", "Puntenwolk", I_CLOUD),
+                    ],
+                },
                 RibbonGroup {
                     title: "Hulpmiddelen",
                     tools: vec![
@@ -232,11 +248,117 @@ impl InteractiveCommand for PointCmd {
                 }
             }
             let _ = unit;
+            let rd = if site == "EPSG:28992" { Ok(p) } else { gis::crs::transform(&site, "EPSG:28992", p) };
+            if let Ok(rd) = rd {
+                if (0.0..300_000.0).contains(&rd[0]) && (290_000.0..630_000.0).contains(&rd[1]) {
+                    let (dtm, dsm) = hoogte::heights_at(rd);
+                    let show = |z: Option<f64>| z.map(|z| format!("{} m NAP", hoogte::nap(z, 2))).unwrap_or_else(|| "—".into());
+                    lines.push(format!("AHN4 maaiveld {} · oppervlak {}", show(dtm), show(dsm)));
+                }
+            }
             bridge::info(&lines.join("  |  "));
             ui::send(ui::UiMsg::Picked(p));
         });
         CommandStep::Done
     }
+}
+
+/// `GIS_PROFIEL`: the route (picked, or a selected polyline), then the
+/// lower-left corner of the profile drawing.
+struct ProfileCmd {
+    route: Vec<[f64; 2]>,
+    picking_route: bool,
+    site: Site,
+}
+
+impl InteractiveCommand for ProfileCmd {
+    fn prompt(&self) -> String {
+        match (self.picking_route, self.route.len()) {
+            (true, 0) => "GIS-profiel: beginpunt van de profiellijn".into(),
+            (true, 1) => "GIS-profiel: volgend punt".into(),
+            (true, _) => "GIS-profiel: volgend punt [Enter = klaar]".into(),
+            (false, _) => "GIS-profiel: linkeronderhoek van het lengteprofiel".into(),
+        }
+    }
+    fn on_point(&mut self, pt: [f64; 3]) -> CommandStep {
+        if self.picking_route {
+            self.route.push([pt[0], pt[1]]);
+            return CommandStep::NeedPoint;
+        }
+        let (site, route, at) = (self.site.clone(), self.route.clone(), [pt[0], pt[1]]);
+        // A worker: this callback runs inside the host's input handling.
+        std::thread::spawn(move || {
+            let opt = hoogte::settings();
+            match hoogte::profile(&site, &route, at, &opt, &|_| {}) {
+                Ok(m) => bridge::info(&m),
+                Err(e) => bridge::error(&format!("Profiel: {e}")),
+            }
+        });
+        CommandStep::Done
+    }
+    fn on_enter(&mut self) -> CommandStep {
+        if self.picking_route && self.route.len() >= 2 {
+            self.picking_route = false;
+            CommandStep::NeedPoint
+        } else {
+            CommandStep::Cancel
+        }
+    }
+    fn on_cursor_move(&mut self, pt: [f64; 3]) -> Vec<PreviewWire> {
+        let mut pts: Vec<[f64; 3]> = self.route.iter().map(|p| [p[0], p[1], 0.0]).collect();
+        if self.picking_route {
+            if pts.is_empty() {
+                return Vec::new();
+            }
+            pts.push(pt);
+            return vec![PreviewWire::with_color(pts, [0.95, 0.6, 0.15, 1.0])];
+        }
+        // The profile's foot: as long as the route, at the cursor.
+        let length: f64 = self.route.windows(2).map(|w| (w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1])).sum();
+        let unit = bridge::target().map(|t| t.unit_factor).unwrap_or(1.0);
+        let foot = vec![[pt[0], pt[1], 0.0], [pt[0] + length * unit, pt[1], 0.0]];
+        vec![PreviewWire::with_color(pts, [0.95, 0.6, 0.15, 1.0]), PreviewWire::with_color(foot, [0.4, 0.8, 1.0, 1.0])]
+    }
+}
+
+/// The route of a selected polyline or line, in drawing coordinates.
+fn selected_route(host: &mut dyn HostApi) -> Option<Vec<[f64; 2]>> {
+    use ocs_plugin_api::host::codec::EntityType;
+    let sel = host.selection();
+    if sel.len() != 1 {
+        return None;
+    }
+    match host.document().get_entity(sel[0])? {
+        EntityType::LwPolyline(l) if l.vertices.len() >= 2 => {
+            let mut pts: Vec<[f64; 2]> = l.vertices.iter().map(|v| [v.location.x, v.location.y]).collect();
+            if l.is_closed {
+                pts.push(pts[0]);
+            }
+            Some(pts)
+        }
+        EntityType::Line(l) => Some(vec![[l.start.x, l.start.y], [l.end.x, l.end.y]]),
+        _ => None,
+    }
+}
+
+/// AHN outputs from a ribbon button or the command line.
+fn ahn_command(host: &mut dyn HostApi, verb: &str) {
+    let Some(site) = require_site(host) else { return };
+    let verb = verb.to_string();
+    host.push_info(&format!("[Open Infra] {verb} …"));
+    std::thread::spawn(move || {
+        let opt = hoogte::settings();
+        let progress = |_: String| {};
+        let result = match verb.as_str() {
+            "GIS_HOOGTEPUNTEN" => hoogte::spot_heights(&site, &opt, &progress),
+            "GIS_HOOGTELIJNEN" => hoogte::contour_lines(&site, &opt, &progress),
+            _ => hoogte::point_cloud(&site, &opt, &progress),
+        };
+        match result {
+            Ok(m) => bridge::info(&m),
+            Err(e) => bridge::error(&format!("{verb}: {e}")),
+        }
+    });
 }
 
 struct OpenInfra;
@@ -380,6 +502,19 @@ impl BuiltinPlugin for OpenInfra {
             "GIS_SERVERS" => open(host, ui::Tab::Servers),
             "GIS_COORD" => open(host, ui::Tab::Coords),
             "GIS_BGT" | "GIS_NLCS" => open(host, ui::Tab::Nlcs),
+            "GIS_AHN" => open(host, ui::Tab::Ahn),
+            "GIS_HOOGTEPUNTEN" | "GIS_HOOGTELIJNEN" | "GIS_PUNTENWOLK" => ahn_command(host, &verb),
+            "GIS_PROFIEL" => {
+                let Some(site) = require_site(host) else { return true };
+                site.register_crs();
+                match selected_route(host) {
+                    Some(route) => {
+                        host.push_info("[Open Infra] Profiel langs de geselecteerde lijn.");
+                        host.start_interactive(Box::new(ProfileCmd { route, picking_route: false, site }));
+                    }
+                    None => host.start_interactive(Box::new(ProfileCmd { route: Vec::new(), picking_route: true, site })),
+                }
+            }
             "GIS_SITE" => site_command(host, cmd),
             "GIS_Q_BGT" | "GIS_Q_BRK" | "GIS_TEKENBLAD" | "GIS_KLIC_IMPORT" => {
                 let arg = cmd.split_once(char::is_whitespace).map(|(_, a)| a).unwrap_or("");
@@ -411,6 +546,7 @@ impl BuiltinPlugin for OpenInfra {
                  snel: GIS_Q_LUCHTFOTO, GIS_Q_KADASTER, GIS_Q_AHN, GIS_Q_OSMKAART, GIS_Q_SATELLIET, GIS_Q_BAG, \
                  GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM; \
                  GIS_SITE <lon> <lat> [b] [h] [EPSG:code] | GIS_SITE RD <x> <y> [b] [h]; \
+                 AHN: GIS_AHN (venster), GIS_HOOGTEPUNTEN, GIS_HOOGTELIJNEN, GIS_PROFIEL, GIS_PUNTENWOLK; \
                  NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp].",
             ),
             v => match QUICK.iter().find(|(c, ..)| *c == v) {

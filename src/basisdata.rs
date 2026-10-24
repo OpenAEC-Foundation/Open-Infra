@@ -189,7 +189,7 @@ pub fn cadastre_fetch(site: &Site, numbers: bool, progress: &dyn Fn(String)) -> 
     Ok(Cadastre { boundaries, parcels })
 }
 
-fn rd_bbox(site: &Site) -> Result<[f64; 4], String> {
+pub fn rd_bbox(site: &Site) -> Result<[f64; 4], String> {
     if site.crs == "EPSG:28992" {
         Ok(site.bbox())
     } else {

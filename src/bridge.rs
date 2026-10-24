@@ -270,6 +270,14 @@ pub fn send_to_back(handles: &[Handle]) {
     }
 }
 
+/// Run a command line in the active drawing (tokens answer its prompts).
+pub fn execute(command: &str) -> Result<(), String> {
+    match request(PluginRequest::ExecuteCommand(command.into()))? {
+        PluginResponse::Bool(false) => Err(format!("Open CAD Studio voerde '{}' niet uit", command.split_whitespace().next().unwrap_or(""))),
+        _ => Ok(()),
+    }
+}
+
 pub fn zoom_extents() {
     let _ = request(PluginRequest::ExecuteCommand("ZOOMEXTENTS".into()));
 }

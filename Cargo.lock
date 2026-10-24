@@ -414,7 +414,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327"
 dependencies = [
  "iana-time-zone",
+ "js-sys",
  "num-traits",
+ "wasm-bindgen",
  "windows-link",
 ]
 
@@ -472,6 +474,22 @@ checksum = "86919cef3e37b9356ccf54d4421208c17ecfda01beae61393e7ffd72916c0ef1"
 dependencies = [
  "log",
  "web-sys",
+]
+
+[[package]]
+name = "copc-rs"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "944a5eff0072d2e9bd70ec07fc1c6f28b23725c9d9a893a4107da7d3986f133b"
+dependencies = [
+ "byteorder",
+ "crs-definitions",
+ "fastrand",
+ "las",
+ "las-crs",
+ "laz",
+ "log",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -553,6 +571,12 @@ name = "crossbeam-utils"
 version = "0.8.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a31eee39dddec8330830986fcd7625edb5a24ec90ea038215273bbc3adb08ac6"
+
+[[package]]
+name = "crs-definitions"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36aeb03b9e8d31aa9e8796d6d78957647761e96ee53935520cdda23cd19aa98b"
 
 [[package]]
 name = "crunchy"
@@ -902,6 +926,12 @@ checksum = "f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06"
 dependencies = [
  "num-traits",
 ]
+
+[[package]]
+name = "fastrand"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fax"
@@ -1581,6 +1611,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "las"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3363b1d6ce3d4999d2ec42eced71e4b90a9ef7bacf9a9b7b873d501f3d13502"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "laz",
+ "log",
+ "num-traits",
+ "thiserror 2.0.21",
+ "uuid",
+]
+
+[[package]]
+name = "las-crs"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0da1450a8f1fc97ceb3ac4d07d64dd192b8a630c443b92a60ae8a838677e84f"
+dependencies = [
+ "byteorder",
+ "las",
+ "log",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "laz"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e9be1582ff02cb56b08a4d273cc5f77eacd89d33a0c682ede9d0912e1c17773"
+dependencies = [
+ "byteorder",
+ "num-traits",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2165,6 +2232,7 @@ name = "open-infra"
 version = "2026.43.0"
 dependencies = [
  "chrono",
+ "copc-rs",
  "eframe",
  "egui_extras",
  "image",
@@ -2174,6 +2242,7 @@ dependencies = [
  "roxmltree 0.21.1",
  "serde",
  "serde_json",
+ "tiff",
  "ureq",
  "winit",
 ]

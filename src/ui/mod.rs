@@ -22,6 +22,7 @@ pub enum Tab {
     Osm,
     Pdok,
     Nlcs,
+    Ahn,
     Servers,
     Coords,
 }
