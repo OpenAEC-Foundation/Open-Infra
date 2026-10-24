@@ -72,6 +72,8 @@ You choose the map background in a **Leaflet-style layer switcher** at the top r
 | ![Location page](docs/images/workbench-location.png) | ![WMS page with preview](docs/images/workbench-wms-preview.png) |
 | **Server presets**, Netherlands, Flanders and worldwide | **BGT · Kadaster · KLIC** with the BGT preview in NLCS colours |
 | ![Server list](docs/images/workbench-servers.png) | ![NLCS page](docs/images/workbench-nlcs.png) |
+| **AHN-hoogtes** with the contour preview (coloured by height) | **AHN5 point cloud** in Open CAD Studio (3D, by class) |
+| ![AHN page](docs/images/workbench-ahn.png) | ![AHN5 point cloud](docs/images/ahn-pointcloud.png) |
 
 ## Dutch base data conform NLCS
 
@@ -111,9 +113,9 @@ The NLCS tables and the official NLCS-BGT 5.0 mapping are built in from [`assets
   - Example: 300 × 250 m at 0.25 m spacing is about 1.4 million points and a 29 MB file.
 - **Punt info** also reports the AHN ground and surface height of the picked point.
 
-| Point cloud (AHN5, by class) with BGT and the drawing sheet | Length profile across the Grotekerksplein |
-|---|---|
-| ![AHN5 point cloud](docs/images/ahn-pointcloud.png) | ![Length profile](docs/images/ahn-profile.png) |
+Length profile across the Grotekerksplein: the ground line breaks at the harbour water and the buildings.
+
+![Length profile](docs/images/ahn-profile.png)
 
 ## Example drawing
 
@@ -203,7 +205,7 @@ Or install by hand:
 2. Put them in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 3. Restart Open CAD Studio.
 
-Release numbers follow Open CAD Studio's calendar numbering. Release 2026.43 is built for Open CAD Studio v2026.42 (plugin API 10, opencadcodec `5d4f11a`, rustc 1.99.1). The host only loads a plugin built against its own opencadcodec revision and rustc.
+Release numbers follow Open CAD Studio's calendar numbering. Release 2026.44 is built for Open CAD Studio v2026.42 (plugin API 10, opencadcodec `5d4f11a`, rustc 1.99.1). The host only loads a plugin built against its own opencadcodec revision and rustc.
 
 ## Building
 

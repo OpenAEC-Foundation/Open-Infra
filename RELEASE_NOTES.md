@@ -1,11 +1,40 @@
-Open Infra — GIS-workbench en NLCS-basisdata voor **Open CAD Studio v2026.42** (plugin-API 10), voor infra en civiele techniek in Nederland en wereldwijd.
+Open Infra — GIS-workbench, NLCS-basisdata en AHN voor **Open CAD Studio v2026.42** (plugin-API 10), voor infra en civiele techniek in Nederland en wereldwijd.
 
-![Voorbeeld: situatie bestaand rond de Grote Kerk in Dordrecht, A1 1:500](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.43/examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
+![Voorbeeld: situatie bestaand rond de Grote Kerk in Dordrecht, A1 1:500](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44/examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
 
 **Installeren:** in Open CAD Studio `PLUGINS` → *Add a repository* → `OpenAEC-Foundation/Open-Infra`. Installeer deze release en herstart.
 Handmatig kan ook: zet `openaec.open-infra-<platform>` en `plugin.toml` in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 
-**Nieuw in 2026.43 — Basisdata NL conform NLCS**
+**Nieuw in 2026.44 — AHN-hoogtes, profielen en puntenwolk**
+
+![AHN5-puntenwolk in Open CAD Studio](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44/docs/images/ahn-pointcloud.png)
+
+- **Hoogtepunten:** AHN4-maaiveld (DTM) of -oppervlak (DSM) in een raster van 2 tot 100 m.
+  - Ze staan op `OG-HOOGTEPUNT`, met hoogtes als `+2,43` m NAP.
+- **Hoogtelijnen:** uit het AHN4-maaiveld.
+  - Interval naar keuze (0,1 – 5 m), met gelabelde hoofdlijnen op `OG-HOOGTELIJN_MINOR/MAJOR`.
+  - Licht gladgestreken en zonder snippers.
+  - Lijnen en punten liggen op hun hoogte (Z).
+- **Lengteprofiel** (`GIS_PROFIEL`):
+  - Selecteer een polyline of wijs punten aan, druk op Enter en wijs de plek van het profiel aan.
+  - Het profiel toont de maaiveldlijn (`GW-MAAIVELD`) en optioneel de oppervlaklijn (DSM), met een hoogteraster en NAP-labels.
+  - Een profielbalk geeft afstanden en hoogtes; de NAP-lijn verschijnt als die binnen het bereik valt.
+  - In de situatie komt doorsnedelijn A–A'.
+  - De overhoging is instelbaar.
+- **Puntenwolk** (`GIS_PUNTENWOLK`):
+  - AHN5 of AHN4 als COPC. Alleen het nodige deel van de tegels van 1 km² wordt gedownload, met een puntafstand naar keuze.
+  - Kleur naar klasse, hoogte of RGB, en een filter op klassen (maaiveld, gebouwen, water, kunstwerken, overig).
+  - De puntenwolk wordt opgeslagen als `.rcs` naast de tekening en gekoppeld; je ziet hem in een 3D-weergavestijl.
+- **Punt info** geeft nu ook de AHN-maaiveld- en oppervlakhoogte.
+- **Werkbank:** pagina *AHN-hoogtes* met **Test** (hoogtelijnen op de kaart). In het lint de groep *Hoogte (AHN)* met AHN, Hoogtepunten, Hoogtelijnen, Profiel en Puntenwolk.
+- **Nieuwe schermafbeeldingen** in de README.
+
+Data:
+- AHN4-hoogtegrids via de PDOK-WCS.
+- AHN4/AHN5-puntenwolken van Het Waterschapshuis.
+- Het AHN is open data (CC0).
+
+**Uit 2026.43 — Basisdata NL conform NLCS**
 
 Vanaf deze release volgen de versienummers de kalendernummering van Open CAD Studio. Release 2026.43 is gebouwd voor Open CAD Studio v2026.42.
 
