@@ -4,7 +4,7 @@
 [![Open CAD Studio](https://img.shields.io/badge/Open%20CAD%20Studio-v2026.42-2196dc)](https://github.com/HakanSeven12/OpenCADStudio)
 [![Plugin API](https://img.shields.io/badge/plugin%20API-10-6db7ed)](https://github.com/HakanSeven12/OpenCADStudio/tree/master/crates/ocs_plugin_api)
 [![NLCS](https://img.shields.io/badge/NLCS-5.02-98c379)](https://www.nlcs.nl)
-[![Licence](https://img.shields.io/badge/licence-GPL--3.0--only-lightgrey)](#data-sources-and-licences)
+[![Licence](https://img.shields.io/badge/licence-GPL--3.0--only-lightgrey)](LICENSE)
 
 Plugin for [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio) for infrastructure and civil engineering (infra en civiele techniek), in the Netherlands and worldwide.
 
@@ -236,4 +236,4 @@ ocs_plugin_api = { path = "../OpenCADStudio/crates/ocs_plugin_api" }
 - OpenStreetMap: © OpenStreetMap contributors (ODbL), via Overpass, Nominatim and the OSM tile server. Follow their usage policies (light, interactive use).
 - Sentinel-2 cloudless by EOX: CC BY-NC-SA 4.0 (non-commercial).
 
-Licence: GPL-3.0-only, the same as the Open CAD Studio plugin API.
+Licence: GPL-3.0-only ([LICENSE](LICENSE)), the same as the Open CAD Studio plugin API.
