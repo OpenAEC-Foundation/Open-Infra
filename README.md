@@ -205,7 +205,7 @@ Or install by hand:
 2. Put them in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 3. Restart Open CAD Studio.
 
-Release numbers follow Open CAD Studio's calendar numbering. Release 2026.44 is built for Open CAD Studio v2026.42 (plugin API 10, opencadcodec `5d4f11a`, rustc 1.99.1). The host only loads a plugin built against its own opencadcodec revision and rustc.
+Release numbers follow Open CAD Studio's calendar numbering. Release 2026.44.1 is built for Open CAD Studio v2026.42 (plugin API 10, opencadcodec `5d4f11a`, rustc 1.99.1). The host only loads a plugin built against its own opencadcodec revision and rustc.
 
 ## Building
 
