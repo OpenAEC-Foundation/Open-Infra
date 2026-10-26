@@ -1,11 +1,25 @@
 Open Infra — GIS-workbench, NLCS-basisdata en AHN voor **Open CAD Studio v2026.42** (plugin-API 10), voor infra en civiele techniek in Nederland en wereldwijd.
 
-![Voorbeeld: situatie bestaand rond de Grote Kerk in Dordrecht, A1 1:500](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44.1/examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
+![Voorbeeld: situatie bestaand rond de Grote Kerk in Dordrecht, A1 1:500](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44.2/examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
 
 **Installeren:** in Open CAD Studio `PLUGINS` → *Add a repository* → `OpenAEC-Foundation/Open-Infra`. Installeer deze release en herstart.
 Handmatig kan ook: zet `openaec.open-infra-<platform>` en `plugin.toml` in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 
-**Nieuw in 2026.44.1 — testset en reparaties**
+**Nieuw in 2026.44.2 — overzichtelijk zoeken bij Geo-locatie**
+
+- **Suggesties tijdens het typen:** na een korte pauze verschijnt een lijst met Nederlandse adressen (PDOK). Enter of **Zoeken** zoekt ook wereldwijd (OpenStreetMap).
+- **Elke treffer op twee regels:** de naam vet, eronder de plaats ("3311 CJ Dordrecht"). Een gekleurd label toont het soort treffer: adres, straat, plaats, perceel of coördinaat. Bij treffers uit beide bronnen zijn ze gegroepeerd onder *Nederland · PDOK* en *Wereldwijd · OpenStreetMap*.
+- **Geen rommel:**
+  - Geen dubbele treffers meer (dezelfde straat als straat, postcode én OSM).
+  - Zonder huisnummer één regel per straat.
+  - Losse, niet-passende treffers vallen weg.
+  - Een exacte treffer staat bovenaan.
+  - Wereldwijde namen zijn kort en in het Nederlands.
+- **Bediening:** pijltjes en Enter om te kiezen, Esc om te sluiten. "Zoeken…" en "Niets gevonden" staan in de lijst zelf.
+- **RD-coördinaten** (`104885 425320`) worden herkend, naast breedte- en lengtegraad.
+- **De lijst bedekt het zoekveld nooit:** hij opent boven het veld als er onder geen ruimte is.
+
+**Uit 2026.44.1 — testset en reparaties**
 
 Een nieuwe testset haalt data op op 16 locaties, van Dordrecht en de Vaalserberg tot Antwerpen, Londen, New York en de Noordzee. Hij bewerkt de tekening ook in Open CAD Studio. Dit vond hij, en dit is opgelost:
 
@@ -28,7 +42,7 @@ Bekend, in Open CAD Studio v2026.42 zelf:
 
 **Uit 2026.44 — AHN-hoogtes, profielen en puntenwolk**
 
-![AHN5-puntenwolk in Open CAD Studio](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44.1/docs/images/ahn-pointcloud.png)
+![AHN5-puntenwolk in Open CAD Studio](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44.2/docs/images/ahn-pointcloud.png)
 
 - **Hoogtepunten:** AHN4-maaiveld (DTM) of -oppervlak (DSM) in een raster van 2 tot 100 m.
   - Ze staan op `OG-HOOGTEPUNT`, met hoogtes als `+2,43` m NAP.
