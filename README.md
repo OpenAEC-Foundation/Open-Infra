@@ -41,7 +41,7 @@ The ribbon tab **"Open Infra — GIS"**:
 
 | Group | Button | What it does |
 |---|---|---|
-| Webservices | **Geo-locatie** | Set the project location. Click it on the map, or search an address, place, parcel or `lat, lon` (PDOK Locatieserver and Nominatim). Choose the coordinate system, draw or type the bounding box, and choose absolute or relative coordinates. Optionally place a base-point marker and import an aerial photo. The location is stored in the drawing (NOD XRecord `OPENINFRA/SITE`). |
+| Webservices | **Geo-locatie** | Set the project location. Click it on the map, or search an address, street, place, parcel, `lat, lon` or RD `x y`. Suggestions appear while you type (PDOK); Enter also searches worldwide (Nominatim). Each hit shows its kind, name and place; use the arrow keys and Enter to pick. Choose the coordinate system, draw or type the bounding box, and choose absolute or relative coordinates. Optionally place a base-point marker and import an aerial photo. The location is stored in the drawing (NOD XRecord `OPENINFRA/SITE`). |
 | | **WMS / TMS** | Choose a server and browse its layers. **Test** shows a preview on the map; **OK en importeren** places IMAGE underlays behind the drawing. |
 | | **WFS** | Choose a server and feature type. **Test** draws the objects on the map. Then set the label attribute, colour and clipping. |
 | | **OpenStreetMap** | Worldwide themes: buildings, roads, rail, water, civil structures, land use, cables and pipelines, fences, house numbers. |

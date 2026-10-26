@@ -94,8 +94,18 @@ fn site_ring(site: &Site) -> Option<Vec<LonLat>> {
 #[derive(Default)]
 struct LocationPage {
     query: String,
+    /// Suggestions (while typing) or full search results, for `hits_for`.
     hits: Vec<Hit>,
+    hits_for: String,
+    /// The hits come from the full search (PDOK and OpenStreetMap).
+    hits_full: bool,
     search: Option<Job<Vec<Hit>>>,
+    suggest: Option<Job<(String, Vec<Hit>)>>,
+    /// When the query last changed: suggestions wait for a pause in typing.
+    typed_at: Option<std::time::Instant>,
+    popup: bool,
+    /// Highlighted row, moved with the arrow keys.
+    highlight: Option<usize>,
     custom_epsg: String,
     crs_job: Option<Job<CrsInfo>>,
     geo_origin: bool,
@@ -497,9 +507,40 @@ impl App {
         let ctx = ui.ctx().clone();
         if let Some(r) = poll(&mut self.loc.search) {
             match r {
-                Ok(h) if h.is_empty() => self.err("Adres niet gevonden."),
-                Ok(h) => self.loc.hits = h,
+                Ok(h) => {
+                    self.loc.hits = h;
+                    self.loc.hits_for = self.loc.query.trim().to_string();
+                    self.loc.hits_full = true;
+                    self.loc.highlight = None;
+                    self.loc.popup = true;
+                }
                 Err(e) => self.err(e),
+            }
+        }
+        if let Some(r) = poll(&mut self.loc.suggest) {
+            if let Ok((q, h)) = r {
+                // Only for what is in the field now, and never over a full search.
+                if q == self.loc.query.trim() && !(self.loc.hits_full && self.loc.hits_for == q) {
+                    self.loc.hits = h;
+                    self.loc.hits_for = q;
+                    self.loc.hits_full = false;
+                    self.loc.highlight = None;
+                }
+            }
+        }
+        // Suggestions after a short pause in typing (PDOK only: Nominatim
+        // does not allow type-ahead).
+        let q = self.loc.query.trim().to_string();
+        if let Some(t) = self.loc.typed_at {
+            let wait = std::time::Duration::from_millis(300);
+            if t.elapsed() < wait {
+                ctx.request_repaint_after(wait - t.elapsed());
+            } else if self.loc.suggest.is_none() {
+                self.loc.typed_at = None;
+                if q.chars().count() >= 3 && q != self.loc.hits_for {
+                    let q2 = q.clone();
+                    self.loc.suggest = Some(Job::spawn(&ctx, "Suggesties…", move |_| geocode::suggest(&q2).map(|h| (q2, h))));
+                }
             }
         }
         if let Some(r) = poll(&mut self.loc.crs_job) {
@@ -540,53 +581,57 @@ impl App {
             None => {}
         }
 
+        let mut field: Option<egui::Rect> = None;
+        let mut pick: Option<usize> = None;
+        let mut search_all = false;
         group(ui, "Locatie", |ui| {
             egui::Grid::new("loc").num_columns(2).spacing([14.0, 7.0]).min_col_width(170.0).show(ui, |ui| {
                 ui.label("Zoek plaats / adres");
                 ui.horizontal(|ui| {
-                    let edit = ui.add(egui::TextEdit::singleline(&mut self.loc.query).hint_text("bijv. Lange Geldersekade 2 Dordrecht, A2 Vught, Hamburg Hafen, 51.814, 4.660").desired_width(ui.available_width() - 90.0));
-                    let enter = edit.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-                    if (ui.add_enabled(self.loc.search.is_none(), egui::Button::new("Zoeken")).clicked() || enter) && !self.loc.query.trim().is_empty() {
-                        let q = self.loc.query.clone();
-                        self.loc.search = Some(Job::spawn(&ctx, "Zoeken…", move |_| geocode::search(&q)));
+                    let edit = ui.add(
+                        egui::TextEdit::singleline(&mut self.loc.query)
+                            .hint_text("adres, plaats, perceel, straat — of 51.814, 4.660 / RD 104885 425320")
+                            .desired_width(ui.available_width() - 90.0),
+                    );
+                    field = Some(edit.rect);
+                    if edit.changed() {
+                        self.loc.typed_at = Some(std::time::Instant::now());
+                        self.loc.popup = !self.loc.query.trim().is_empty();
+                        self.loc.highlight = None;
+                        if self.loc.query.trim().is_empty() {
+                            self.loc.hits.clear();
+                            self.loc.hits_for.clear();
+                        }
+                    }
+                    if edit.gained_focus() && !self.loc.hits.is_empty() {
+                        self.loc.popup = true;
+                    }
+                    if edit.has_focus() || edit.lost_focus() {
+                        let (down, up, esc, enter) = ui.input(|i| (i.key_pressed(egui::Key::ArrowDown), i.key_pressed(egui::Key::ArrowUp), i.key_pressed(egui::Key::Escape), i.key_pressed(egui::Key::Enter)));
+                        let n = self.loc.hits.len();
+                        if down && n > 0 {
+                            self.loc.popup = true;
+                            self.loc.highlight = Some(self.loc.highlight.map_or(0, |h| (h + 1).min(n - 1)));
+                        }
+                        if up {
+                            self.loc.highlight = self.loc.highlight.and_then(|h| h.checked_sub(1));
+                        }
+                        if esc {
+                            self.loc.popup = false;
+                        }
+                        if enter && edit.lost_focus() {
+                            // A row picked with the arrow keys; otherwise search everywhere.
+                            match self.loc.highlight.filter(|h| self.loc.popup && *h < n) {
+                                Some(h) => pick = Some(h),
+                                None => search_all = true,
+                            }
+                        }
+                    }
+                    if ui.add_enabled(self.loc.search.is_none(), egui::Button::new("Zoeken")).on_hover_text("In Nederland (PDOK) en wereldwijd (OpenStreetMap)").clicked() {
+                        search_all = true;
                     }
                 });
                 ui.end_row();
-
-                if !self.loc.hits.is_empty() {
-                    ui.label("");
-                    let mut picked = None;
-                    egui::Frame::new().fill(ui.visuals().extreme_bg_color).inner_margin(egui::Margin::same(4)).show(ui, |ui| {
-                        egui::ScrollArea::vertical().id_salt("hits").max_height(130.0).show(ui, |ui| {
-                            for (i, h) in self.loc.hits.iter().enumerate() {
-                                let src = RichText::new(format!("{:<4}", h.source)).monospace().small().color(ACCENT);
-                                ui.horizontal(|ui| {
-                                    ui.label(src);
-                                    if ui.selectable_label(false, &h.label).clicked() {
-                                        picked = Some(i);
-                                    }
-                                });
-                            }
-                        });
-                    });
-                    if let Some(i) = picked {
-                        let h = self.loc.hits[i].clone();
-                        self.draft.label = h.label.clone();
-                        self.draft.lon = h.lon;
-                        self.draft.lat = h.lat;
-                        let code = crs::suggest_for(&h.country, h.lon, h.lat);
-                        if crs::known(&code).is_some() {
-                            self.draft.crs = code;
-                            self.draft.reproject_origin();
-                        } else {
-                            self.loc.crs_job = Some(Job::spawn(&ctx, "Stelsel laden…", move |_| crs::ensure(&code)));
-                        }
-                        self.map.center = [h.lon, h.lat];
-                        self.fit_pending = true;
-                        self.loc.hits.clear();
-                    }
-                    ui.end_row();
-                }
 
                 ui.label("Coördinatenstelsel (CRS)");
                 ui.horizontal(|ui| {
@@ -637,6 +682,21 @@ impl App {
             });
         });
 
+        if let Some(rect) = field {
+            if let Some(i) = self.search_popup(ui, rect) {
+                pick = Some(i);
+            }
+        }
+        if search_all && !self.loc.query.trim().is_empty() && self.loc.search.is_none() {
+            let q = self.loc.query.trim().to_string();
+            self.loc.popup = true;
+            self.loc.typed_at = None;
+            self.loc.search = Some(Job::spawn(&ctx, "Zoeken…", move |_| geocode::search(&q)));
+        }
+        if let Some(i) = pick {
+            self.pick_hit(&ctx, i);
+        }
+
         group(ui, "Begrenzing en plaatsing", |ui| {
             egui::Grid::new("bbox").num_columns(2).spacing([14.0, 7.0]).min_col_width(170.0).show(ui, |ui| {
                 ui.label("Basispunt X / Y (m)");
@@ -683,6 +743,108 @@ impl App {
             )).small().weak());
         });
 
+    }
+
+    /// The suggestion list under the search field. Returns a clicked row.
+    fn search_popup(&mut self, ui: &mut egui::Ui, field: egui::Rect) -> Option<usize> {
+        let busy = self.loc.search.is_some() || self.loc.suggest.is_some();
+        let q = self.loc.query.trim().to_string();
+        let current = !self.loc.hits.is_empty() && self.loc.hits_for == q;
+        let nothing = self.loc.hits_full && self.loc.hits_for == q && self.loc.hits.is_empty();
+        if !self.loc.popup || q.is_empty() || !(current || busy || nothing || q.chars().count() >= 3) {
+            return None;
+        }
+        let mut picked = None;
+        let width = field.width() + 90.0;
+        // Below the field when it fits, else above it: never over the field.
+        let rows = if current { self.loc.hits.len() } else { 1 };
+        let needed = rows as f32 * 40.0 + 70.0;
+        let screen = ui.ctx().content_rect();
+        let below = screen.bottom() - field.bottom() - 10.0;
+        let above = field.top() - screen.top() - 10.0;
+        let (pos, pivot, room) = if needed <= below || below >= above {
+            (field.left_bottom() + Vec2::new(0.0, 4.0), egui::Align2::LEFT_TOP, below)
+        } else {
+            (field.left_top() - Vec2::new(0.0, 4.0), egui::Align2::LEFT_BOTTOM, above)
+        };
+        let area = egui::Area::new(egui::Id::unique("open-infra-geo-suggest"))
+            .order(egui::Order::Foreground)
+            .pivot(pivot)
+            .fixed_pos(pos)
+            .constrain(false)
+            .show(ui.ctx(), |ui| {
+                egui::Frame::popup(ui.style()).inner_margin(egui::Margin::same(6)).show(ui, |ui| {
+                    ui.set_width(width);
+                    egui::ScrollArea::vertical().max_height((room - 60.0).max(120.0)).auto_shrink([false, true]).show(ui, |ui| {
+                    if current {
+                        // Grouped by source, the group of the best hit first.
+                        let first = self.loc.hits[0].source;
+                        let mut order: Vec<usize> = (0..self.loc.hits.len()).filter(|i| self.loc.hits[*i].source == first).collect();
+                        order.extend((0..self.loc.hits.len()).filter(|i| self.loc.hits[*i].source != first));
+                        let groups = order.iter().map(|i| self.loc.hits[*i].source).collect::<std::collections::BTreeSet<_>>().len();
+                        let mut last_source = "";
+                        for i in order {
+                            let h = &self.loc.hits[i];
+                            if groups > 1 && h.source != last_source {
+                                let title = match h.source {
+                                    "PDOK" => "NEDERLAND · PDOK",
+                                    "OSM" => "WERELDWIJD · OPENSTREETMAP",
+                                    _ => "INVOER",
+                                };
+                                ui.add_space(if last_source.is_empty() { 0.0 } else { 4.0 });
+                                ui.label(RichText::new(title).small().strong().color(ACCENT));
+                                last_source = h.source;
+                            }
+                            if hit_row(ui, h, self.loc.highlight == Some(i)).clicked() {
+                                picked = Some(i);
+                            }
+                        }
+                    } else if nothing {
+                        ui.label(RichText::new(format!("Niets gevonden voor \"{q}\".")).weak());
+                    }
+                    });
+                    ui.separator();
+                    ui.horizontal(|ui| {
+                        if busy {
+                            ui.spinner();
+                            ui.label(RichText::new(if self.loc.search.is_some() { "Zoeken in Nederland en wereldwijd…" } else { "Suggesties…" }).small().weak());
+                        } else if self.loc.hits_full {
+                            ui.label(RichText::new("Pijltjes en Enter om te kiezen · Esc sluit").small().weak());
+                        } else {
+                            ui.label(RichText::new("Enter of Zoeken: ook wereldwijd zoeken (OpenStreetMap) · pijltjes om te kiezen · Esc sluit").small().weak());
+                        }
+                    });
+                });
+            });
+        // A click elsewhere closes the list.
+        let clicked_outside = ui.ctx().input(|i| i.pointer.any_click() && i.pointer.interact_pos().is_some_and(|p| !area.response.rect.contains(p) && !field.expand2(Vec2::new(90.0, 0.0)).contains(p)));
+        if clicked_outside {
+            self.loc.popup = false;
+        }
+        picked
+    }
+
+    fn pick_hit(&mut self, ctx: &egui::Context, i: usize) {
+        let Some(h) = self.loc.hits.get(i).cloned() else { return };
+        self.draft.label = h.label.clone();
+        self.draft.lon = h.lon;
+        self.draft.lat = h.lat;
+        let code = crs::suggest_for(&h.country, h.lon, h.lat);
+        if crs::known(&code).is_some() {
+            self.draft.crs = code.clone();
+            self.draft.reproject_origin();
+        } else {
+            let c = code.clone();
+            self.loc.crs_job = Some(Job::spawn(ctx, "Stelsel laden…", move |_| crs::ensure(&c)));
+        }
+        self.map.center = [h.lon, h.lat];
+        self.fit_pending = true;
+        self.loc.query = h.label.clone();
+        self.loc.hits_for = h.label.clone();
+        self.loc.popup = false;
+        self.loc.highlight = None;
+        self.loc.typed_at = None;
+        self.message = Some((true, format!("Locatie: {} — stelsel {code}. Klik op OK om op te slaan.", h.label)));
     }
 
     // ── Rasterdata (WMS / TMS) ──────────────────────────────────────────────
@@ -1805,6 +1967,50 @@ impl App {
 }
 
 // ── Layout helpers ──────────────────────────────────────────────────────────
+
+/// Badge colour per kind of search hit.
+fn kind_colour(kind: &str) -> Color32 {
+    match kind {
+        "adres" => Color32::from_rgb(38, 150, 140),
+        "straat" => Color32::from_rgb(60, 120, 215),
+        "postcode" => Color32::from_rgb(110, 130, 145),
+        "plaats" | "gemeente" | "provincie" | "land" | "waterschap" => Color32::from_rgb(70, 160, 75),
+        "perceel" | "appartement" => Color32::from_rgb(220, 110, 30),
+        "coördinaat" => Color32::from_rgb(140, 105, 200),
+        "hectometer" => Color32::from_rgb(120, 120, 120),
+        _ => Color32::from_rgb(185, 140, 20),
+    }
+}
+
+/// One search hit: a coloured kind badge, the name and below it the place,
+/// the source on the right. Long texts end in "…".
+fn hit_row(ui: &mut egui::Ui, h: &Hit, highlighted: bool) -> egui::Response {
+    let (rect, resp) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 40.0), egui::Sense::click());
+    let painter = ui.painter_at(rect);
+    let visuals = ui.visuals();
+    if highlighted || resp.hovered() {
+        painter.rect_filled(rect, 4.0, if highlighted { ACCENT.gamma_multiply(0.35) } else { visuals.widgets.hovered.weak_bg_fill });
+    }
+    let badge_font = egui::FontId::proportional(10.5);
+    let badge = painter.layout_no_wrap(h.kind.clone(), badge_font, Color32::WHITE);
+    let badge_rect = egui::Rect::from_min_size(egui::pos2(rect.left() + 8.0, rect.center().y - 9.0), Vec2::new((badge.size().x + 12.0).max(58.0), 18.0));
+    painter.rect_filled(badge_rect, 9.0, kind_colour(&h.kind));
+    painter.galley(badge_rect.center() - badge.size() / 2.0, badge, Color32::WHITE);
+    let text_x = rect.left() + 82.0;
+    let source = painter.layout_no_wrap(h.source.to_string(), egui::FontId::proportional(10.0), visuals.weak_text_color());
+    let room = (rect.right() - 12.0 - source.size().x - 10.0 - text_x).max(40.0);
+    let line = |text: &str, size: f32, colour: Color32| {
+        let mut job = egui::text::LayoutJob::single_section(text.to_string(), egui::TextFormat::simple(egui::FontId::proportional(size), colour));
+        job.wrap = egui::text::TextWrapping::truncate_at_width(room);
+        ui.fonts_mut(|f| f.layout_job(job))
+    };
+    let name = line(&h.name, 14.0, visuals.strong_text_color());
+    let place = line(&h.place, 11.5, visuals.weak_text_color());
+    painter.galley(egui::pos2(text_x, rect.top() + 4.0), name, Color32::WHITE);
+    painter.galley(egui::pos2(text_x, rect.top() + 22.0), place, Color32::WHITE);
+    painter.galley(egui::pos2(rect.right() - 10.0 - source.size().x, rect.center().y - source.size().y / 2.0), source, Color32::WHITE);
+    resp.on_hover_cursor(egui::CursorIcon::PointingHand)
+}
 
 fn page_header(ui: &mut egui::Ui, icon_name: &str, title: &str, subtitle: &str) {
     ui.add_space(4.0);
