@@ -93,6 +93,8 @@ impl Default for Options {
 }
 
 pub struct Cloud {
+    /// Tiles taken from the older edition because the chosen one lacks them.
+    pub fallback_tiles: usize,
     /// RD + NAP.
     pub xyz: Vec<[f64; 3]>,
     pub class: Vec<u8>,
@@ -197,19 +199,33 @@ pub fn fetch(bbox: [f64; 4], opt: &Options, progress: &dyn Fn(String)) -> Result
         return Err(format!("het gebied raakt {} AHN-tegels van 1 km²; kies een kleiner gebied", tiles.len()));
     }
     let fetched = Arc::new(std::sync::atomic::AtomicU64::new(0));
-    let mut cloud = Cloud { xyz: Vec::new(), class: Vec::new(), intensity: Vec::new(), rgb: None, truncated: false, tiles: tiles.len() };
+    let mut cloud = Cloud { fallback_tiles: 0, xyz: Vec::new(), class: Vec::new(), intensity: Vec::new(), rgb: None, truncated: false, tiles: tiles.len() };
     let mut rgb: Vec<[u8; 3]> = Vec::new();
     let mut any_rgb = false;
     let keep = |c: u8| opt.classes.is_empty() || opt.classes.contains(&c);
     for (k, (tx, ty)) in tiles.iter().enumerate() {
-        let url = opt.edition.tile_url(*tx, *ty);
         progress(format!("{} tegel {}/{} ({}_{})…", opt.edition.short(), k + 1, tiles.len(), tx, ty));
-        let reader = match RangeReader::open(&url, fetched.clone()) {
-            Ok(r) => r,
-            // A tile at sea or outside the edition simply isn't there.
-            Err(e) if e.contains("404") || e.contains("403") => continue,
-            Err(e) => return Err(e),
-        };
+        // AHN5 is not complete yet: a tile it lacks comes from AHN4.
+        let mut editions = vec![opt.edition];
+        if opt.edition == Edition::Ahn5 {
+            editions.push(Edition::Ahn4);
+        }
+        let mut reader = None;
+        for (i, ed) in editions.iter().enumerate() {
+            match RangeReader::open(&ed.tile_url(*tx, *ty), fetched.clone()) {
+                Ok(r) => {
+                    if i > 0 {
+                        cloud.fallback_tiles += 1;
+                    }
+                    reader = Some(r);
+                    break;
+                }
+                // A tile at sea or outside the edition simply isn't there.
+                Err(e) if e.contains("404") || e.contains("403") => continue,
+                Err(e) => return Err(e),
+            }
+        }
+        let Some(reader) = reader else { continue };
         let mut copc = CopcReader::new(reader).map_err(|e| format!("{}: {e}", opt.edition.short()))?;
         let bounds = copc_rs::Bounds { min: Vector { x: bbox[0], y: bbox[1], z: -200.0 }, max: Vector { x: bbox[2], y: bbox[3], z: 2000.0 } };
         let points = copc

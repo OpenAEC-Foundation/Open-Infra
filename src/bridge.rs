@@ -50,11 +50,7 @@ const SITE_RECORD: &str = "SITE";
 pub fn attach(host: &mut dyn HostApi) {
     let Some(sender) = host.plugin_request_sender() else { return };
     let tab_id = host.tab_id();
-    let unit_factor = match host.system_variable("INSUNITS") {
-        Some(ocs_plugin_api::host::HostSettingValue::Number(n)) => unit_factor_for_insunits(n as i64),
-        Some(ocs_plugin_api::host::HostSettingValue::Text(t)) => unit_factor_for_insunits(t.trim().parse().unwrap_or(0)),
-        None => 1.0,
-    };
+    let unit_factor = units(host, tab_id, false);
     let stored = host
         .read_xrecord(SITE_DICT, SITE_RECORD)
         .ok()
@@ -76,6 +72,28 @@ pub fn attach(host: &mut dyn HostApi) {
         None if !same_tab => s.site = None,
         None => {}
     }
+}
+
+/// Drawing units → metres factor for the tab. Open CAD Studio's plugin API
+/// does not hand out INSUNITS as a system variable (v2026.42 knows CLAYER,
+/// SNAPANG and CTAB), so it comes from the drawing header: read once per
+/// drawing, again when `fresh` (a new project location), because the header
+/// means fetching the document.
+pub fn units(host: &mut dyn HostApi, tab_id: u64, fresh: bool) -> f64 {
+    static CACHE: OnceLock<Mutex<std::collections::HashMap<u64, f64>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(Default::default);
+    if !fresh {
+        if let Some(f) = cache.lock().unwrap().get(&tab_id) {
+            return *f;
+        }
+    }
+    let f = match host.system_variable("INSUNITS") {
+        Some(ocs_plugin_api::host::HostSettingValue::Number(n)) => unit_factor_for_insunits(n as i64),
+        Some(ocs_plugin_api::host::HostSettingValue::Text(t)) => unit_factor_for_insunits(t.trim().parse().unwrap_or(0)),
+        None => unit_factor_for_insunits(host.document().header.insertion_units as i64),
+    };
+    cache.lock().unwrap().insert(tab_id, f);
+    f
 }
 
 pub fn target() -> Option<Target> {

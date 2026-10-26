@@ -432,22 +432,26 @@ pub fn klic_object(thema: &str, kind: &str) -> Option<&'static Object> {
     candidates.iter().find_map(|(g, n)| object_by_name(g, n))
 }
 
-/// The IMKL theme colours (Handreiking visualisatie IMKL), for the optional
-/// "KLIC-kleuren" display instead of the NLCS colours.
+/// The IMKL theme colours of the PMKL "Handreiking visualisatie"
+/// (Geonovum, version 3.0), for the optional "IMKL-themakleuren" display
+/// instead of the NLCS colours.
 pub fn imkl_rgb(thema: &str) -> (u8, u8, u8) {
     match thema {
         "datatransport" => (0, 255, 0),
         "gasLageDruk" => (255, 215, 80),
         "gasHogeDruk" => (255, 175, 60),
+        "buisleidingGevaarlijkeInhoud" => (255, 127, 0),
         "hoogspanning" | "landelijkHoogspanningsnet" => (255, 0, 0),
         "middenspanning" => (200, 0, 0),
         "laagspanning" => (150, 0, 0),
-        "petrochemie" | "buisleidingGevaarlijkeInhoud" => (182, 74, 0),
+        "petrochemie" => (182, 74, 0),
         "rioolVrijverval" => (186, 56, 168),
         "rioolOnderOverOfOnderdruk" => (128, 0, 128),
         "warmte" => (0, 128, 128),
         "water" => (0, 0, 255),
-        _ => (128, 128, 128),
+        "wees" => (145, 138, 111),
+        // "overig" and anything else.
+        _ => (111, 92, 16),
     }
 }
 
@@ -477,6 +481,32 @@ mod tests {
         assert!(o.name.starts_with("OPENVERHARDING"), "{}", o.name);
         let empty = serde_json::Map::new();
         assert_eq!(bgt_lookup("wegdeel", &empty).map(|x| x.0), Some(1620));
+    }
+
+    #[test]
+    fn imkl_colours_follow_the_pmkl_handreiking() {
+        // Hex values of the PMKL Handreiking visualisatie 3.0.
+        let table = [
+            ("datatransport", "00ff00"),
+            ("gasLageDruk", "ffd750"),
+            ("gasHogeDruk", "ffaf3c"),
+            ("buisleidingGevaarlijkeInhoud", "ff7f00"),
+            ("landelijkHoogspanningsnet", "ff0000"),
+            ("hoogspanning", "ff0000"),
+            ("middenspanning", "c80000"),
+            ("laagspanning", "960000"),
+            ("petrochemie", "b64a00"),
+            ("rioolVrijverval", "ba38a8"),
+            ("rioolOnderOverOfOnderdruk", "800080"),
+            ("warmte", "008080"),
+            ("water", "0000ff"),
+            ("wees", "918a6f"),
+            ("overig", "6f5c10"),
+        ];
+        for (thema, hex) in table {
+            let (r, g, b) = imkl_rgb(thema);
+            assert_eq!(format!("{r:02x}{g:02x}{b:02x}"), hex, "{thema}");
+        }
     }
 
     #[test]

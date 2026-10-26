@@ -1,0 +1,491 @@
+{
+  "_toelichting": "Testlocaties voor Open Infra. Per locatie: zoekterm, coördinaat (WGS 84), land, verwacht coördinatenstelsel, importgebied (m) en wat de bronnen er moeten opleveren. 'ahn' is het verwachte bereik van de maaiveldhoogte in m NAP; null = buiten AHN. 'grens': ligt dicht bij een landsgrens (de stelselkeuze op positie wordt dan scherp getest).",
+  "locaties": [
+    {
+      "id": "dordrecht",
+      "naam": "Grote Kerk, Dordrecht",
+      "zoek": "Grote Kerk Dordrecht",
+      "lon": 4.660612,
+      "lat": 51.814158,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": [
+          0.0,
+          6.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true,
+        "klic": true
+      },
+      "type": "historische binnenstad, havens"
+    },
+    {
+      "id": "amsterdam",
+      "naam": "Dam, Amsterdam",
+      "zoek": "Dam Amsterdam",
+      "lon": 4.89307,
+      "lat": 52.3731,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": [
+          -2.0,
+          4.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true
+      },
+      "type": "dichte binnenstad, grachten, tram"
+    },
+    {
+      "id": "utrecht",
+      "naam": "Utrecht Centraal",
+      "zoek": "Utrecht Centraal",
+      "lon": 5.1104,
+      "lat": 52.0894,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 250,
+      "hoogte": 200,
+      "verwacht": {
+        "ahn": [
+          -1.0,
+          12.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true,
+        "spoor": true
+      },
+      "type": "spoorknooppunt, kunstwerken"
+    },
+    {
+      "id": "maasvlakte",
+      "naam": "Maasvlakte 2, Rotterdam",
+      "zoek": "Maasvlakte Rotterdam",
+      "lon": 4.018,
+      "lat": 51.956,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 300,
+      "hoogte": 250,
+      "verwacht": {
+        "ahn": [
+          -5.0,
+          15.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true
+      },
+      "type": "haven, opgespoten land"
+    },
+    {
+      "id": "lelystad",
+      "naam": "Stadhuisplein, Lelystad",
+      "zoek": "Stadhuisplein Lelystad",
+      "lon": 5.47622,
+      "lat": 52.50751,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 250,
+      "hoogte": 200,
+      "verwacht": {
+        "ahn": [
+          -7.0,
+          2.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true
+      },
+      "type": "polderstad onder NAP"
+    },
+    {
+      "id": "vaals",
+      "naam": "Vaalserberg (drielandenpunt)",
+      "zoek": "Viergrenzenweg Vaals",
+      "lon": 6.0207,
+      "lat": 50.7547,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": [
+          280.0,
+          330.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true
+      },
+      "grens": true,
+      "type": "hoogste punt van Nederland, aan de grens met België en Duitsland"
+    },
+    {
+      "id": "terschelling",
+      "naam": "West Aletalaan, West-Terschelling",
+      "zoek": "West Aletalaan West-Terschelling",
+      "lon": 5.21897,
+      "lat": 53.36821,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 250,
+      "hoogte": 200,
+      "verwacht": {
+        "ahn": [
+          -2.0,
+          30.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true
+      },
+      "type": "eilanddorp, duinen, rand van het land"
+    },
+    {
+      "id": "loppersum",
+      "naam": "Loppersum (Groningen)",
+      "zoek": "Loppersum",
+      "lon": 6.747,
+      "lat": 53.333,
+      "land": "nl",
+      "crs": "EPSG:28992",
+      "breedte": 250,
+      "hoogte": 200,
+      "verwacht": {
+        "ahn": [
+          -2.0,
+          4.0
+        ],
+        "bgt": true,
+        "brk": true,
+        "osm": true,
+        "puntenwolk": true
+      },
+      "type": "dorp en akkers"
+    },
+    {
+      "id": "antwerpen",
+      "naam": "Grote Markt, Antwerpen",
+      "zoek": "Grote Markt Antwerpen",
+      "lon": 4.4002,
+      "lat": 51.2213,
+      "land": "be",
+      "crs": "EPSG:31370",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": true
+      },
+      "grens": true,
+      "type": "België: geen AHN/BGT/BRK, wel OSM"
+    },
+    {
+      "id": "aken",
+      "naam": "Dom van Aken",
+      "zoek": "Aachener Dom",
+      "lon": 6.0839,
+      "lat": 50.7747,
+      "land": "de",
+      "crs": "EPSG:25832",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": true
+      },
+      "grens": true,
+      "type": "Duitsland, 3 km van de grens"
+    },
+    {
+      "id": "londen",
+      "naam": "Trafalgar Square, Londen",
+      "zoek": "Trafalgar Square London",
+      "lon": -0.1281,
+      "lat": 51.508,
+      "land": "gb",
+      "crs": "EPSG:27700",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": true
+      }
+    },
+    {
+      "id": "zurich",
+      "naam": "Hauptbahnhof, Zürich",
+      "zoek": "Zürich Hauptbahnhof",
+      "lon": 8.5402,
+      "lat": 47.3781,
+      "land": "ch",
+      "crs": "EPSG:2056",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": true
+      }
+    },
+    {
+      "id": "parijs",
+      "naam": "Notre-Dame, Parijs",
+      "zoek": "Notre-Dame de Paris",
+      "lon": 2.3499,
+      "lat": 48.853,
+      "land": "fr",
+      "crs": "EPSG:2154",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": true
+      }
+    },
+    {
+      "id": "newyork",
+      "naam": "Brooklyn Bridge, New York",
+      "zoek": "Brooklyn Bridge New York",
+      "lon": -73.9969,
+      "lat": 40.7061,
+      "land": "us",
+      "crs": "EPSG:32618",
+      "breedte": 250,
+      "hoogte": 200,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": true
+      }
+    },
+    {
+      "id": "sydney",
+      "naam": "Opera House, Sydney",
+      "zoek": "Sydney Opera House",
+      "lon": 151.2153,
+      "lat": -33.8568,
+      "land": "au",
+      "crs": "EPSG:32756",
+      "breedte": 250,
+      "hoogte": 200,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": true
+      },
+      "type": "zuidelijk halfrond"
+    },
+    {
+      "id": "noordzee",
+      "naam": "Noordzee (geen land)",
+      "zoek": "53.5, 3.5",
+      "lon": 3.5,
+      "lat": 53.5,
+      "land": "",
+      "crs": "EPSG:32631",
+      "breedte": 200,
+      "hoogte": 160,
+      "verwacht": {
+        "ahn": null,
+        "bgt": false,
+        "brk": false,
+        "osm": false
+      },
+      "type": "zee: overal leeg, nergens een fout die de werkbank laat vastlopen"
+    }
+  ],
+  "grenspunten": {
+    "_toelichting": "Stelselkeuze op positie (klik op de kaart zonder land): RD binnen Nederland, Belgisch Lambert 72 in België, anders het eerstvolgende stelsel.",
+    "nl": [
+      [
+        "Maastricht",
+        5.6909,
+        50.8514
+      ],
+      [
+        "Kerkrade",
+        6.064,
+        50.866
+      ],
+      [
+        "Vaals",
+        6.017,
+        50.772
+      ],
+      [
+        "Sittard",
+        5.869,
+        51.0
+      ],
+      [
+        "Venlo",
+        6.172,
+        51.37
+      ],
+      [
+        "Nijmegen",
+        5.853,
+        51.842
+      ],
+      [
+        "Enschede",
+        6.8937,
+        52.2215
+      ],
+      [
+        "Groningen",
+        6.5665,
+        53.2194
+      ],
+      [
+        "Hulst",
+        4.052,
+        51.28
+      ],
+      [
+        "Sluis",
+        3.387,
+        51.309
+      ],
+      [
+        "Baarle-Nassau",
+        4.929,
+        51.444
+      ],
+      [
+        "Eindhoven",
+        5.4697,
+        51.4416
+      ],
+      [
+        "Breda",
+        4.776,
+        51.589
+      ],
+      [
+        "Den Helder",
+        4.759,
+        52.956
+      ],
+      [
+        "Winterswijk",
+        6.72,
+        51.972
+      ]
+    ],
+    "be": [
+      [
+        "Antwerpen",
+        4.4002,
+        51.2213
+      ],
+      [
+        "Brussel",
+        4.3517,
+        50.8503
+      ],
+      [
+        "Gent",
+        3.7174,
+        51.0543
+      ],
+      [
+        "Brugge",
+        3.2247,
+        51.2093
+      ],
+      [
+        "Luik",
+        5.5797,
+        50.6326
+      ],
+      [
+        "Hasselt",
+        5.3378,
+        50.9307
+      ],
+      [
+        "Turnhout",
+        4.948,
+        51.322
+      ],
+      [
+        "Knokke",
+        3.287,
+        51.348
+      ],
+      [
+        "Hamont",
+        5.547,
+        51.251
+      ]
+    ],
+    "anders": [
+      [
+        "Aken",
+        6.0839,
+        50.7747,
+        "EPSG:25832"
+      ],
+      [
+        "Kleve",
+        6.139,
+        51.789,
+        "EPSG:25832"
+      ],
+      [
+        "Emmerich",
+        6.248,
+        51.832,
+        "EPSG:25832"
+      ],
+      [
+        "Gronau",
+        7.041,
+        52.21,
+        "EPSG:25832"
+      ],
+      [
+        "Lille",
+        3.0573,
+        50.6292,
+        "EPSG:2154"
+      ],
+      [
+        "Geilenkirchen",
+        6.119,
+        50.965,
+        "EPSG:25832"
+      ]
+    ]
+  }
+}

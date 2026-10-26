@@ -212,7 +212,19 @@ Release numbers follow Open CAD Studio's calendar numbering. Release 2026.44 is 
 ```bash
 ./scripts/install.sh      # cargo build --release + install into ~/.config/OpenCADStudio/plugins/openaec.open-infra
 cargo test --lib          # engine tests (CRS, clipping, tiling, parsing, NLCS tables)
+cargo test --test locaties                          # location test set, offline
+cargo test --test locaties -- --ignored --nocapture # fetch real data at 16 locations, report in target/locatietest
+python3 tests/e2e/ocs_e2e.py                        # end-to-end in Open CAD Studio: import, edit, save, reopen
 ```
+
+The test set ([`tests/`](tests/README.md)) covers 16 locations: Dutch cities, a polder, the Vaalserberg, the Wadden, and cities across the border and worldwide. It also covers 30 places around the Dutch border, real BGT attributes and a KLIC delivery. It found and fixed several problems:
+- the coordinate system for Antwerp and Aachen;
+- search results in the wrong town;
+- units of mm drawings;
+- AHN5 gaps;
+- one IMKL colour.
+
+It also lists the host issues still open in Open CAD Studio.
 
 `Cargo.toml` pins `ocs_plugin_api` to the Open CAD Studio v2026.42 release. For a newer Open CAD Studio, move the `rev` to the commit of that release, and update the rustc version in `.github/workflows/release.yml` to match.
 

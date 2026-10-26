@@ -117,11 +117,50 @@ pub fn suggest_for(country: &str, lon: f64, lat: f64) -> String {
     }
 }
 
-/// National grid where we know one (by bounding box), otherwise UTM.
+/// The Netherlands (land and Wadden islands), coarsely: a few km from the
+/// real border, enough to tell Hulst from Antwerp and Kerkrade from Aachen.
+const NL: &[[f64; 2]] = &[
+    [3.36, 51.37], [3.40, 51.56], [3.70, 51.70], [3.85, 51.85], [4.05, 52.00], [4.45, 52.40], [4.62, 52.80], [4.68, 53.05],
+    [4.80, 53.25], [5.10, 53.42], [5.60, 53.50], [6.10, 53.55], [6.70, 53.58], [7.00, 53.45], [7.23, 53.25], [7.20, 53.00],
+    [7.08, 52.85], [6.72, 52.63], [7.06, 52.60], [7.07, 52.39], [6.98, 52.22], [6.85, 52.12], [6.82, 51.97], [6.50, 51.84],
+    [6.25, 51.85], [6.10, 51.845], [6.03, 51.83], [5.96, 51.77], [6.00, 51.70], [6.22, 51.50], [6.23, 51.37], [6.08, 51.18],
+    [5.90, 51.05], [6.10, 50.90], [6.03, 50.756], [6.02, 50.7535], [5.70, 50.75], [5.64, 50.85], [5.77, 51.03], [5.85, 51.15], [5.55, 51.27],
+    [5.22, 51.26], [5.05, 51.42], [4.80, 51.42], [4.55, 51.43], [4.40, 51.37], [4.25, 51.37], [4.10, 51.27], [3.90, 51.21],
+    [3.60, 51.29], [3.38, 51.27],
+];
+
+/// Belgium, coarsely, sharing the Dutch border above.
+const BE: &[[f64; 2]] = &[
+    [2.54, 51.09], [3.10, 51.30], [3.36, 51.38], [3.38, 51.27], [3.60, 51.29], [3.90, 51.21], [4.10, 51.27], [4.25, 51.37],
+    [4.40, 51.37], [4.55, 51.43], [4.80, 51.42], [5.05, 51.42], [5.22, 51.26], [5.55, 51.27], [5.85, 51.15], [5.77, 51.03],
+    [5.64, 50.85], [5.70, 50.75], [6.02, 50.754], [6.10, 50.72], [6.27, 50.62], [6.40, 50.32], [6.13, 50.13], [5.95, 49.95],
+    [5.80, 49.55], [5.47, 49.50], [4.85, 49.79], [4.80, 50.15], [4.20, 49.96], [3.60, 50.49], [2.85, 50.70],
+];
+
+fn in_polygon(lon: f64, lat: f64, poly: &[[f64; 2]]) -> bool {
+    let mut inside = false;
+    let mut j = poly.len() - 1;
+    for i in 0..poly.len() {
+        let (a, b) = (poly[i], poly[j]);
+        if (a[1] > lat) != (b[1] > lat) && lon < (b[0] - a[0]) * (lat - a[1]) / (b[1] - a[1]) + a[0] {
+            inside = !inside;
+        }
+        j = i;
+    }
+    inside
+}
+
+/// Inside the Netherlands (coarse outline), for choices that depend on it.
+pub fn in_netherlands(lon: f64, lat: f64) -> bool {
+    in_polygon(lon, lat, NL)
+}
+
+/// National grid where we know one, otherwise UTM. The Netherlands and
+/// Belgium by their (coarse) outline, the others by bounding box.
 pub fn suggest(lon: f64, lat: f64) -> String {
     let inside = |w: f64, s: f64, e: f64, n: f64| lon > w && lon < e && lat > s && lat < n;
-    if inside(3.2, 50.7, 7.3, 53.7) { return "EPSG:28992".into(); }
-    if inside(2.5, 49.4, 6.5, 51.55) { return "EPSG:31370".into(); }
+    if in_polygon(lon, lat, NL) { return "EPSG:28992".into(); }
+    if in_polygon(lon, lat, BE) { return "EPSG:31370".into(); }
     if inside(-8.7, 49.8, 1.8, 60.9) { return "EPSG:27700".into(); }
     if inside(5.9, 45.8, 10.5, 47.9) { return "EPSG:2056".into(); }
     // Germany and Denmark: ETRS89 / UTM (official grids).

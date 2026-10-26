@@ -397,10 +397,14 @@ fn quick(host: &mut dyn HostApi, q: &'static Quick, label: &'static str) {
     });
 }
 
-/// `GIS_SITE <lon> <lat> [breedte] [hoogte] [EPSG:code] [naam]` or
-/// `GIS_SITE RD <x> <y> [breedte] [hoogte] [naam]`: set the project location
-/// from a script, without the window.
+/// `GIS_SITE <lon> <lat> [breedte] [hoogte] [EPSG:code] [RELATIEF] [naam]` or
+/// `GIS_SITE RD <x> <y> [breedte] [hoogte] [RELATIEF] [naam]`: set the project
+/// location from a script, without the window.
 fn site_command(host: &mut dyn HostApi, cmd: &str) {
+    // The units may have changed since the drawing was first used.
+    let tab = host.tab_id();
+    bridge::units(host, tab, true);
+    bridge::attach(host);
     let args: Vec<&str> = cmd.split_whitespace().skip(1).collect();
     let num = |i: usize| args.get(i).and_then(|a| a.replace(',', ".").parse::<f64>().ok());
     let mut site = bridge::site().unwrap_or_default();
@@ -417,8 +421,21 @@ fn site_command(host: &mut dyn HostApi, cmd: &str) {
     }
     site.width = num(at + 2).unwrap_or(site.width);
     site.height = num(at + 3).unwrap_or(site.width);
+    // RELATIEF: the base point becomes 0,0 in the drawing; ABSOLUUT: CRS
+    // coordinates (the default).
+    let keyword = |k: &str| args.iter().any(|a| a.eq_ignore_ascii_case(k));
+    if keyword("RELATIEF") {
+        site.absolute = false;
+    } else if keyword("ABSOLUUT") {
+        site.absolute = true;
+    }
     // Words after the numbers name the location (title block, window).
-    let name: Vec<&str> = args.iter().skip(at + 2).filter(|a| a.replace(',', ".").parse::<f64>().is_err() && !a.to_ascii_uppercase().starts_with("EPSG:")).copied().collect();
+    let name: Vec<&str> = args
+        .iter()
+        .skip(at + 2)
+        .filter(|a| a.replace(',', ".").parse::<f64>().is_err() && !a.to_ascii_uppercase().starts_with("EPSG:") && !a.eq_ignore_ascii_case("RELATIEF") && !a.eq_ignore_ascii_case("ABSOLUUT"))
+        .copied()
+        .collect();
     site.label = if !name.is_empty() {
         name.join(" ")
     } else if rd {
@@ -545,7 +562,7 @@ impl BuiltinPlugin for OpenInfra {
                 "[Open Infra] GIS_LOCATIE, GIS_GEBIED, GIS_PUNT, GIS_KAART, GIS_WFS, GIS_OSM, GIS_PDOK, GIS_COORD, GIS_SERVERS; \
                  snel: GIS_Q_LUCHTFOTO, GIS_Q_KADASTER, GIS_Q_AHN, GIS_Q_OSMKAART, GIS_Q_SATELLIET, GIS_Q_BAG, \
                  GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM; \
-                 GIS_SITE <lon> <lat> [b] [h] [EPSG:code] | GIS_SITE RD <x> <y> [b] [h]; \
+                 GIS_SITE <lon> <lat> [b] [h] [EPSG:code] [RELATIEF] [naam] | GIS_SITE RD <x> <y> [b] [h] [RELATIEF] [naam]; \
                  AHN: GIS_AHN (venster), GIS_HOOGTEPUNTEN, GIS_HOOGTELIJNEN, GIS_PROFIEL, GIS_PUNTENWOLK; \
                  NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp].",
             ),

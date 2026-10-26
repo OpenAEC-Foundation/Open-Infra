@@ -13,10 +13,17 @@ pub struct Hit {
 }
 
 fn pdok(q: &str) -> Result<Vec<Hit>, String> {
-    let url = format!(
-        "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?rows=6&fl=weergavenaam,centroide_ll,type&q={}",
-        encode(q)
-    );
+    pdok_query(&format!("q={}", encode(q)))
+}
+
+/// PDOK search within one place (woonplaats): "Grote Kerk Dordrecht" stays in
+/// Dordrecht instead of finding the street "Grote Kerk" in Hoorn.
+fn pdok_in_place(q: &str, place: &str) -> Result<Vec<Hit>, String> {
+    pdok_query(&format!("q={}&fq=woonplaatsnaam:{}", encode(q), encode(place)))
+}
+
+fn pdok_query(params: &str) -> Result<Vec<Hit>, String> {
+    let url = format!("https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?rows=6&fl=weergavenaam,centroide_ll,type&{params}");
     let json = http::get_json(&url)?;
     let docs = json["response"]["docs"].as_array().cloned().unwrap_or_default();
     Ok(docs
@@ -90,5 +97,58 @@ pub fn search(q: &str) -> Result<Vec<Hit>, String> {
     // PDOK always answers with (fuzzy) Dutch matches; put them first only when
     // the worldwide search also points to the Netherlands.
     let dutch = world.first().map_or(true, |h| h.country == "nl");
-    Ok(if dutch { [nl, world].concat() } else { [world, nl].concat() })
+    let mut hits = if dutch { [nl, world].concat() } else { [world, nl].concat() };
+    // A hit that names every word of the query beats a looser one ("Grote
+    // Kerk Dordrecht" → the church in Dordrecht, not the street "Grote Kerk"
+    // in Hoorn); the order above decides between equals.
+    let wanted = words(q);
+    let score = |h: &Hit| {
+        let label = words(&h.label).join(" ");
+        wanted.iter().filter(|w| label.contains(w.as_str())).count()
+    };
+    hits.sort_by_key(|h| std::cmp::Reverse(score(h)));
+    // Nothing names every word, and the query ends in a place: look in that
+    // place first.
+    let complete = hits.first().is_some_and(|h| score(h) == wanted.len());
+    let tokens: Vec<&str> = q.split_whitespace().collect();
+    if !complete && tokens.len() >= 2 {
+        let last = tokens[tokens.len() - 1].trim_matches(|c: char| !c.is_alphanumeric() && c != '-');
+        let mut place = last.to_string();
+        if let Some(first) = place.get(0..1) {
+            place = first.to_uppercase() + &place[1..];
+        }
+        let rest = tokens[..tokens.len() - 1].join(" ");
+        if let Ok(local) = pdok_in_place(&rest, &place) {
+            if !local.is_empty() {
+                hits = [local, hits].concat();
+            }
+        }
+    }
+    Ok(hits)
+}
+
+/// Lower-case words of at least two letters, accents folded.
+fn words(s: &str) -> Vec<String> {
+    let folded: String = s
+        .to_lowercase()
+        .chars()
+        .map(|c| match c {
+            'à' | 'á' | 'â' | 'ä' => 'a',
+            'è' | 'é' | 'ê' | 'ë' => 'e',
+            'ì' | 'í' | 'î' | 'ï' => 'i',
+            'ò' | 'ó' | 'ô' | 'ö' => 'o',
+            'ù' | 'ú' | 'û' | 'ü' => 'u',
+            c => c,
+        })
+        .collect();
+    folded.split(|c: char| !c.is_alphanumeric()).filter(|w| w.chars().count() >= 2).map(str::to_string).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn words_fold_case_and_accents() {
+        assert_eq!(super::words("Zürich Hauptbahnhof"), vec!["zurich", "hauptbahnhof"]);
+        assert_eq!(super::words("Grote Kerk, Hoorn (weg)"), vec!["grote", "kerk", "hoorn", "weg"]);
+    }
 }

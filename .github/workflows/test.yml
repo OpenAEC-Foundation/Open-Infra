@@ -1,0 +1,43 @@
+name: test
+
+# Offline tests (engine, NLCS, location set without network) on every push
+# and pull request. The online location test fetches real data from PDOK,
+# OpenStreetMap and AHN for every test location: weekly and on request, with
+# the report as an artifact.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+env:
+  RUST_TOOLCHAIN: "1.99.1"
+
+jobs:
+  offline:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - run: cargo test --lib --locked
+      - run: cargo test --test locaties --locked
+
+  online:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - run: cargo test --test locaties --locked -- --ignored --nocapture
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: locatietest-rapport
+          path: target/locatietest/

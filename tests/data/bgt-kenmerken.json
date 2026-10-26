@@ -1,0 +1,1043 @@
+{
+"_toelichting": "Unieke kenmerkcombinaties van actuele BGT-objecten (PDOK OGC API, opgehaald 2026-10-26) in Dordrecht, Amsterdam, Utrecht en Lelystad: testdata voor de NLCS-koppeling. Bron: BGT, CC0.",
+"objecten": [
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad op trap",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "parkeervlak",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetgangersgebied",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "cementbeton"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetgangersgebied",
+"fysiek_voorkomen": "open verharding"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "inrit",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gebakken klinkers"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gebakken klinkers"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "sierbestrating"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "struiken",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gras- en kruidachtigen"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "bodembedekkers"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "planten"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "struikrozen"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "erf",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "cementbeton"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "betonstraatstenen"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "onverhard",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "zand"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "tegels"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "waterdeel",
+"kenmerken": {
+"type": "waterloop"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "waterdeel",
+"kenmerken": {
+"plus_type": "rivier",
+"type": "waterloop"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "waterdeel",
+"kenmerken": {
+"plus_type": "haven",
+"type": "watervlakte"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "pand",
+"kenmerken": {},
+"plaats": "dordrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {
+"overbrugging_is_beweegbaar": "false",
+"type_overbruggingsdeel": "dek"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {},
+"plaats": "dordrecht"
+},
+{
+"collectie": "kunstwerkdeel_vlak",
+"kenmerken": {
+"type": "steiger"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "scheiding_vlak",
+"kenmerken": {
+"type": "muur"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "scheiding_vlak",
+"kenmerken": {
+"type": "kademuur"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "scheiding_lijn",
+"kenmerken": {
+"type": "hek"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "scheiding_lijn",
+"kenmerken": {
+"type": "muur"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "openbareruimtelabel",
+"kenmerken": {
+"openbareruimtetype": "Weg"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "openbareruimtelabel",
+"kenmerken": {
+"openbareruimtetype": "Water"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "openbareruimtelabel",
+"kenmerken": {
+"openbareruimtetype": "Kunstwerk"
+},
+"plaats": "dordrecht"
+},
+{
+"collectie": "pand_nummeraanduiding",
+"kenmerken": {},
+"plaats": "dordrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "OV-baan",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "fietspad",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "fietspad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gebakken klinkers"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "tegels"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "OV-baan",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "asfalt"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad op trap",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "spoorbaan",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "OV-baan",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "fietspad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_functie": "verkeersdrempel"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "berm",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "verkeerseiland",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gebakken klinkers"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "verkeerseiland",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "berm",
+"fysiek_voorkomen": "onverhard",
+"op_talud": "false"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "spoor",
+"kenmerken": {
+"functie": "tram"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "spoor",
+"kenmerken": {
+"functie": "sneltram"
+},
+"plaats": "amsterdam"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "spoorbaan",
+"fysiek_voorkomen": "half verhard",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "asfalt"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "cementbeton"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "betonstraatstenen"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "OV-baan",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "cementbeton"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "rijbaan lokale weg",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "beton element"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "beton element"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "betonstraatstenen"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "overweg",
+"fysiek_voorkomen": "gesloten verharding"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "open verharding"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "fietspad",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "asfalt"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "sierbestrating"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "parkeervlak",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "betonstraatstenen"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "spoorbaan",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "beton element"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "overweg",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad op trap",
+"fysiek_voorkomen": "gesloten verharding"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "overweg",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "cementbeton"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "half verhard",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad",
+"fysiek_voorkomen": "onverhard",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad op trap",
+"fysiek_voorkomen": "open verharding"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad op trap",
+"fysiek_voorkomen": "open verharding",
+"plus_fysiek_voorkomen": "beton element"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad op trap",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "beton element"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "voetpad op trap",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gebakken klinkers"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "parkeervlak",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gebakken klinkers"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "verkeerseiland",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "verkeerseiland",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "betonstraatstenen"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "verkeerseiland",
+"fysiek_voorkomen": "gesloten verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "asfalt"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "heesters"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "open verharding"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "onverhard",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "half verhard",
+"op_talud": "false"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "onbegroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "gesloten verharding"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overigbouwwerk",
+"kenmerken": {
+"type": "niet-bgt"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overigbouwwerk",
+"kenmerken": {
+"type": "overkapping"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {
+"hoort_bij_typeoverbrugging": "brug",
+"type_overbruggingsdeel": "landhoofd"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {
+"hoort_bij_typeoverbrugging": "brug",
+"type_overbruggingsdeel": "pijler"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {
+"hoort_bij_typeoverbrugging": "brug",
+"type_overbruggingsdeel": "dek"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {
+"hoort_bij_typeoverbrugging": "viaduct",
+"overbrugging_is_beweegbaar": "false",
+"type_overbruggingsdeel": "dek"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {
+"hoort_bij_typeoverbrugging": "viaduct",
+"type_overbruggingsdeel": "landhoofd"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "overbruggingsdeel",
+"kenmerken": {
+"hoort_bij_typeoverbrugging": "viaduct",
+"overbrugging_is_beweegbaar": "false",
+"type_overbruggingsdeel": "landhoofd"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "kunstwerkdeel_vlak",
+"kenmerken": {
+"type": "perron"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "scheiding_lijn",
+"kenmerken": {
+"type": "kademuur"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "scheiding_lijn",
+"kenmerken": {
+"type": "geluidsscherm"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "spoor",
+"kenmerken": {
+"functie": "trein"
+},
+"plaats": "utrecht"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "fietspad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "betonstraatstenen"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "fietspad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "tegels"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "inrit",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "betonstraatstenen"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "parkeervlak",
+"fysiek_voorkomen": "half verhard",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "grasklinkers"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "wegdeel",
+"kenmerken": {
+"functie": "fietspad",
+"fysiek_voorkomen": "open verharding",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "beton element"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "ondersteunendwegdeel",
+"kenmerken": {
+"functie": "berm",
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "gras- en kruidachtigen"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "true",
+"plus_fysiek_voorkomen": "gras- en kruidachtigen"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"plus_fysiek_voorkomen": "gras- en kruidachtigen"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "houtwal",
+"op_talud": "false"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "groenvoorziening",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "bosplantsoen"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "bouwland",
+"op_talud": "false",
+"plus_fysiek_voorkomen": "akkerbouw"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "begroeidterreindeel",
+"kenmerken": {
+"fysiek_voorkomen": "grasland overig",
+"op_talud": "false"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "waterdeel",
+"kenmerken": {
+"plus_type": "sloot",
+"type": "waterloop"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "waterdeel",
+"kenmerken": {
+"plus_type": "gracht",
+"type": "waterloop"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "ondersteunendwaterdeel",
+"kenmerken": {
+"type": "oever, slootkant"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "overigbouwwerk",
+"kenmerken": {
+"type": "lage trafo"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "overigbouwwerk",
+"kenmerken": {
+"type": "open loods"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "kunstwerkdeel_vlak",
+"kenmerken": {
+"plus_type": "duiker",
+"type": "niet-bgt"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "scheiding_lijn",
+"kenmerken": {
+"plus_type": "draadraster",
+"type": "niet-bgt"
+},
+"plaats": "lelystad"
+},
+{
+"collectie": "openbareruimtelabel",
+"kenmerken": {
+"openbareruimtetype": "Weg",
+"plus_status": "plan"
+},
+"plaats": "lelystad"
+}
+]
+}

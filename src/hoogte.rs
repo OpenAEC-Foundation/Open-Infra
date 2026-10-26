@@ -520,11 +520,12 @@ pub fn point_cloud(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) -> 
     bridge::execute(&format!("-POINTCLOUDATTACH {path} 0,0,0 1 0\n"))?;
     bridge::note_source(&format!("{} puntenwolk (Het Waterschapshuis, CC0)", c.edition.short()));
     Ok(format!(
-        "{} puntenwolk: {} punten{} uit {} tegel(s), gekoppeld als {}.",
+        "{} puntenwolk: {} punten{} uit {} tegel(s){}, gekoppeld als {}.",
         c.edition.short(),
         xyz.len(),
         if cloud.truncated { " (limiet bereikt)" } else { "" },
         cloud.tiles,
+        if cloud.fallback_tiles > 0 { format!(" waarvan {} uit AHN4 (AHN5 nog niet beschikbaar)", cloud.fallback_tiles) } else { String::new() },
         file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
     ))
 }

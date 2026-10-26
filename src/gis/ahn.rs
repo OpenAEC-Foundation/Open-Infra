@@ -161,7 +161,13 @@ fn request(bbox: [f64; 4], model: Model, cell: f64) -> Result<Grid, String> {
 
 /// Heights of `model` for an RD box at `cell` metres (0.5 = full AHN
 /// resolution), in tiles the WCS accepts, put together into one grid.
+/// The AHN coverage in RD (the Netherlands with a margin).
+pub const EXTENT: [f64; 4] = [-10_000.0, 290_000.0, 290_000.0, 630_000.0];
+
 pub fn fetch(bbox: [f64; 4], model: Model, cell: f64, progress: &dyn Fn(String)) -> Result<Grid, String> {
+    if bbox[2] < EXTENT[0] || bbox[0] > EXTENT[2] || bbox[3] < EXTENT[1] || bbox[1] > EXTENT[3] || !bbox.iter().all(|v| v.is_finite()) {
+        return Err("buiten het AHN-gebied: AHN heeft alleen hoogtes voor Nederland".into());
+    }
     let cell = cell.max(NATIVE_CELL);
     let snap = |v: f64, up: bool| if up { (v / cell).ceil() * cell } else { (v / cell).floor() * cell };
     let (x0, y0, x1, y1) = (snap(bbox[0], false), snap(bbox[1], false), snap(bbox[2], true), snap(bbox[3], true));
