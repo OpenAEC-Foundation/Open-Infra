@@ -57,33 +57,83 @@ fn preset(id: &str, kind: ServerKind, region: &str, name: &str, url: &str, layer
     }
 }
 
+/// A checked public service from the worldwide list (`assets/servers/world.json`,
+/// made from GIS2BIM's server catalogue by `tools/import_gis2bim_servers.py`).
+#[derive(Clone, Debug, Deserialize)]
+pub struct WorldPreset {
+    pub id: String,
+    pub kind: ServerKind,
+    pub name: String,
+    pub region_nl: String,
+    pub region_en: String,
+    pub country: String,
+    #[serde(default)]
+    pub category: String,
+    pub url: String,
+    #[serde(default)]
+    pub default_layer: String,
+    #[serde(default)]
+    pub attribution: String,
+    #[serde(default)]
+    pub terms: String,
+}
+
+pub fn world() -> &'static [WorldPreset] {
+    static W: std::sync::OnceLock<Vec<WorldPreset>> = std::sync::OnceLock::new();
+    W.get_or_init(|| serde_json::from_str(include_str!("../../assets/servers/world.json")).unwrap_or_default())
+}
+
+/// Country code of a worldwide preset (`DE`, `GLOBAL`, ...).
+pub fn country(id: &str) -> Option<&'static str> {
+    world().iter().find(|w| w.id == id).map(|w| w.country.as_str())
+}
+
 pub fn presets() -> Vec<MapServer> {
     use ServerKind::*;
-    const NL: &str = "Nederland";
+    let mut v = builtin();
+    v.extend(world().iter().map(|w| MapServer {
+        id: w.id.clone(),
+        kind: w.kind,
+        name: w.name.clone(),
+        region: crate::lang::tr(&w.region_nl, &w.region_en).to_string(),
+        url: w.url.clone(),
+        attribution: w.attribution.clone(),
+        default_layer: w.default_layer.clone(),
+        max_zoom: if w.kind == Xyz { Some(19) } else { None },
+        builtin: true,
+    }));
+    v
+}
+
+fn builtin() -> Vec<MapServer> {
+    use ServerKind::*;
+    let nl = crate::lang::tr("Nederland", "Netherlands");
+    let vl = crate::lang::tr("België (Vlaanderen)", "Belgium (Flanders)");
+    let world = crate::lang::tr("Wereld", "World");
     vec![
         // Nederland — PDOK WMS
-        preset("pdok-luchtfoto", Wms, NL, "PDOK Luchtfoto RGB (actueel, 8 cm)", "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0", "Actueel_orthoHR", "Beeldmateriaal.nl / PDOK"),
-        preset("pdok-kadastralekaart-wms", Wms, NL, "PDOK Kadastrale kaart", "https://service.pdok.nl/kadaster/kadastralekaart/wms/v5_0", "Kadastralekaart", "Kadaster / PDOK"),
-        preset("pdok-bag-wms", Wms, NL, "PDOK BAG (panden)", "https://service.pdok.nl/lv/bag/wms/v2_0", "pand", "Kadaster / PDOK"),
-        preset("pdok-top10nl-wms", Wms, NL, "PDOK TOP10NL topografie", "https://service.pdok.nl/brt/top10nl/wms/v1_0", "", "Kadaster / PDOK"),
-        preset("pdok-ahn-wms", Wms, NL, "PDOK AHN hoogtebestand (DTM 0,5 m)", "https://service.pdok.nl/rws/ahn/wms/v1_0", "dtm_05m", "AHN / Rijkswaterstaat / PDOK"),
+        preset("pdok-luchtfoto", Wms, nl, "PDOK Luchtfoto RGB (actueel, 8 cm)", "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0", "Actueel_orthoHR", "Beeldmateriaal.nl / PDOK"),
+        preset("pdok-kadastralekaart-wms", Wms, nl, "PDOK Kadastrale kaart", "https://service.pdok.nl/kadaster/kadastralekaart/wms/v5_0", "Kadastralekaart", "Kadaster / PDOK"),
+        preset("pdok-bag-wms", Wms, nl, "PDOK BAG (panden)", "https://service.pdok.nl/lv/bag/wms/v2_0", "pand", "Kadaster / PDOK"),
+        preset("pdok-top10nl-wms", Wms, nl, "PDOK TOP10NL topografie", "https://service.pdok.nl/brt/top10nl/wms/v1_0", "", "Kadaster / PDOK"),
+        preset("pdok-ahn-wms", Wms, nl, "PDOK AHN hoogtebestand (DTM 0,5 m)", "https://service.pdok.nl/rws/ahn/wms/v1_0", "dtm_05m", "AHN / Rijkswaterstaat / PDOK"),
         // Nederland — PDOK WFS
-        preset("pdok-bag-wfs", Wfs, NL, "PDOK BAG — panden en verblijfsobjecten", "https://service.pdok.nl/lv/bag/wfs/v2_0", "bag:pand", "Kadaster / PDOK"),
-        preset("pdok-kadastralekaart-wfs", Wfs, NL, "PDOK Kadastrale kaart — percelen", "https://service.pdok.nl/kadaster/kadastralekaart/wfs/v5_0", "kadastralekaart:Perceel", "Kadaster / PDOK"),
-        preset("pdok-nwbwegen-wfs", Wfs, NL, "PDOK NWB Wegen (wegvakken, hectopunten)", "https://service.pdok.nl/rws/nwbwegen/wfs/v1_0", "nwbwegen:wegvakken", "Rijkswaterstaat / PDOK"),
-        preset("pdok-nwbvaarwegen-wfs", Wfs, NL, "PDOK NWB Vaarwegen", "https://service.pdok.nl/rws/nwbvaarwegen/wfs/v1_0", "", "Rijkswaterstaat / PDOK"),
-        preset("pdok-spoorwegen-wfs", Wfs, NL, "PDOK Spoorwegen (ProRail)", "https://service.pdok.nl/prorail/spoorwegen/wfs/v1_0", "spoorwegen:spooras", "ProRail / PDOK"),
-        preset("pdok-bestuurlijk-wfs", Wfs, NL, "PDOK Bestuurlijke gebieden", "https://service.pdok.nl/kadaster/bestuurlijkegebieden/wfs/v1_0", "", "Kadaster / PDOK"),
-        preset("pdok-natura2000-wfs", Wfs, NL, "PDOK Natura 2000", "https://service.pdok.nl/rvo/natura2000/wfs/v1_0", "", "RVO / PDOK"),
+        preset("pdok-bag-wfs", Wfs, nl, "PDOK BAG — panden en verblijfsobjecten", "https://service.pdok.nl/lv/bag/wfs/v2_0", "bag:pand", "Kadaster / PDOK"),
+        preset("pdok-kadastralekaart-wfs", Wfs, nl, "PDOK Kadastrale kaart — percelen", "https://service.pdok.nl/kadaster/kadastralekaart/wfs/v5_0", "kadastralekaart:Perceel", "Kadaster / PDOK"),
+        preset("pdok-nwbwegen-wfs", Wfs, nl, "PDOK NWB Wegen (wegvakken, hectopunten)", "https://service.pdok.nl/rws/nwbwegen/wfs/v1_0", "nwbwegen:wegvakken", "Rijkswaterstaat / PDOK"),
+        preset("pdok-nwbvaarwegen-wfs", Wfs, nl, "PDOK NWB Vaarwegen", "https://service.pdok.nl/rws/nwbvaarwegen/wfs/v1_0", "", "Rijkswaterstaat / PDOK"),
+        preset("pdok-spoorwegen-wfs", Wfs, nl, "PDOK Spoorwegen (ProRail)", "https://service.pdok.nl/prorail/spoorwegen/wfs/v1_0", "spoorwegen:spooras", "ProRail / PDOK"),
+        preset("pdok-bestuurlijk-wfs", Wfs, nl, "PDOK Bestuurlijke gebieden", "https://service.pdok.nl/kadaster/bestuurlijkegebieden/wfs/v1_0", "", "Kadaster / PDOK"),
+        preset("pdok-natura2000-wfs", Wfs, nl, "PDOK Natura 2000", "https://service.pdok.nl/rvo/natura2000/wfs/v1_0", "", "RVO / PDOK"),
         // België — Vlaanderen
-        preset("vl-ortho-wms", Wms, "België (Vlaanderen)", "Digitaal Vlaanderen — Orthofoto", "https://geo.api.vlaanderen.be/OMWRGBMRVL/wms", "", "Digitaal Vlaanderen"),
-        preset("vl-grb-wfs", Wfs, "België (Vlaanderen)", "Digitaal Vlaanderen — GRB", "https://geo.api.vlaanderen.be/GRB/wfs", "", "Digitaal Vlaanderen"),
+        preset("vl-ortho-wms", Wms, vl, "Digitaal Vlaanderen — Orthofoto", "https://geo.api.vlaanderen.be/OMWRGBMRVL/wms", "", "Digitaal Vlaanderen"),
+        preset("vl-grb-wfs", Wfs, vl, "Digitaal Vlaanderen — GRB", "https://geo.api.vlaanderen.be/GRB/wfs", "", "Digitaal Vlaanderen"),
         // Wereldwijd
-        preset("osm-tiles", Xyz, "Wereld", "OpenStreetMap (tegels)", "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "", "© OpenStreetMap-bijdragers (ODbL)"),
-        preset("terrestris-osm-wms", Wms, "Wereld", "terrestris OSM WMS", "https://ows.terrestris.de/osm/service", "OSM-WMS", "© terrestris, © OpenStreetMap-bijdragers"),
-        preset("eox-s2-wms", Wms, "Wereld", "EOX Sentinel-2 cloudless (satelliet)", "https://tiles.maps.eox.at/wms", "s2cloudless-2023", "Sentinel-2 cloudless by EOX (CC BY-NC-SA 4.0)"),
-        preset("nasa-gibs-wms", Wms, "Wereld", "NASA GIBS (aardobservatie)", "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi", "BlueMarble_ShadedRelief_Bathymetry", "NASA EOSDIS GIBS"),
-        preset("gebco-wms", Wms, "Wereld", "GEBCO bathymetrie", "https://wms.gebco.net/mapserv", "GEBCO_LATEST_SUB_ICE_TOPO", "GEBCO Compilation Group"),
+        preset("osm-tiles", Xyz, world, "OpenStreetMap (tegels)", "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "", "© OpenStreetMap-bijdragers (ODbL)"),
+        preset("terrestris-osm-wms", Wms, world, "terrestris OSM WMS", "https://ows.terrestris.de/osm/service", "OSM-WMS", "© terrestris, © OpenStreetMap-bijdragers"),
+        preset("eox-s2-wms", Wms, world, "EOX Sentinel-2 cloudless (satelliet)", "https://tiles.maps.eox.at/wms", "s2cloudless-2023", "Sentinel-2 cloudless by EOX (CC BY-NC-SA 4.0)"),
+        preset("nasa-gibs-wms", Wms, world, "NASA GIBS (aardobservatie)", "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi", "BlueMarble_ShadedRelief_Bathymetry", "NASA EOSDIS GIBS"),
+        preset("gebco-wms", Wms, world, "GEBCO bathymetrie", "https://wms.gebco.net/mapserv", "GEBCO_LATEST_SUB_ICE_TOPO", "GEBCO Compilation Group"),
     ]
 }
 
