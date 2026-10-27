@@ -95,6 +95,16 @@ fn rear_group_centre(u: &Unit) -> Option<f64> {
     }
 }
 
+/// The coupling for the next unit, from this unit's front (m).
+pub fn hitch_x(u: &Unit) -> f64 {
+    hitch_of(u)
+}
+
+/// Where this unit hangs on the previous one, from its front (m).
+pub fn kingpin_x(u: &Unit) -> f64 {
+    kingpin_of(u)
+}
+
 fn hitch_of(u: &Unit) -> f64 {
     if let Some(h) = u.hitch_x {
         return h;
@@ -416,27 +426,38 @@ fn machine_top(v: &Vehicle, u: &Unit, front: f64, out: &mut Vec<Shape>) -> bool 
     false
 }
 
+fn unit_top(v: &Vehicle, i: usize, front: f64, out: &mut Vec<Shape>) {
+    let u = &v.units[i];
+    let n = v.units.len();
+    if machine_top(v, u, front, out) {
+        return;
+    }
+    match u.kind.as_str() {
+        "bike" => bike_top(v, u, front, out),
+        "rail_car" => rail_top(v, u, front, i, out),
+        "bus" | "bus_rear" => bus_top(v, u, front, i, n, out),
+        _ if v.category == "two_wheeler" => bike_top(v, u, front, out),
+        _ if matches!(v.category.as_str(), "bus" | "coach" | "articulated_bus") && !matches!(u.kind.as_str(), "trailer" | "semitrailer") => bus_top(v, u, front, i, n, out),
+        _ if v.category == "rail" => rail_top(v, u, front, i, out),
+        _ if is_car_like(v, u) => car_top(v, u, front, out),
+        _ => truck_top(v, u, front, i, out),
+    }
+}
+
 /// Plan view of the whole vehicle.
 pub fn top(v: &Vehicle) -> Vec<Shape> {
     let mut out = Vec::new();
-    let fronts = unit_fronts(v);
-    let n = v.units.len();
-    for (i, (u, d)) in v.units.iter().zip(&fronts).enumerate() {
-        let front = -d;
-        if machine_top(v, u, front, &mut out) {
-            continue;
-        }
-        match u.kind.as_str() {
-            "bike" => bike_top(v, u, front, &mut out),
-            "rail_car" => rail_top(v, u, front, i, &mut out),
-            "bus" | "bus_rear" => bus_top(v, u, front, i, n, &mut out),
-            _ if v.category == "two_wheeler" => bike_top(v, u, front, &mut out),
-            _ if matches!(v.category.as_str(), "bus" | "coach" | "articulated_bus") && !matches!(u.kind.as_str(), "trailer" | "semitrailer") => bus_top(v, u, front, i, n, &mut out),
-            _ if v.category == "rail" => rail_top(v, u, front, i, &mut out),
-            _ if is_car_like(v, u) => car_top(v, u, front, &mut out),
-            _ => truck_top(v, u, front, i, &mut out),
-        }
+    for (i, d) in unit_fronts(v).into_iter().enumerate() {
+        unit_top(v, i, -d, &mut out);
     }
+    out
+}
+
+/// Plan view of one unit with its own front at X = 0 (for swept paths,
+/// where the units turn apart).
+pub fn top_unit(v: &Vehicle, i: usize) -> Vec<Shape> {
+    let mut out = Vec::new();
+    unit_top(v, i, 0.0, &mut out);
     out
 }
 

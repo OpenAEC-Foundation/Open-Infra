@@ -66,9 +66,22 @@ fn entities(shapes: &[Shape], scale: f64) -> Vec<EntityType> {
 
 /// Make sure the block exists in the active drawing; returns its name.
 pub fn ensure_block(v: &Vehicle, view: View) -> Result<String, String> {
+    define(v, v.block_name(view), || draw::shapes(v, view))
+}
+
+/// The plan block of one unit (its own front at the base point), for the
+/// positions along a swept path where the units turn apart.
+pub fn ensure_unit_block(v: &Vehicle, i: usize) -> Result<String, String> {
+    if v.units.len() == 1 {
+        return ensure_block(v, View::Top);
+    }
+    let name = format!("{}_U{}", v.block_name(View::Top).trim_end_matches("_TOP"), i + 1) + "_TOP";
+    define(v, name, || draw::top_unit(v, i))
+}
+
+fn define(v: &Vehicle, name: String, shapes: impl FnOnce() -> Vec<Shape>) -> Result<String, String> {
     static MADE: Mutex<Option<HashSet<(u64, String)>>> = Mutex::new(None);
     let t = bridge::target().ok_or_else(|| tr("geen tekening actief", "no drawing active").to_string())?;
-    let name = v.block_name(view);
     let key = (t.tab_id, name.clone());
     if MADE.lock().unwrap().get_or_insert_with(HashSet::new).contains(&key) {
         return Ok(name);
@@ -77,7 +90,7 @@ pub fn ensure_block(v: &Vehicle, view: View) -> Result<String, String> {
     let description = format!("{} — {} ({})", v.name_en, v.dimensions(), if v.standard.is_empty() { "Open Infra" } else { &v.standard });
     let exists = table(TableOperation::BlockModify { name: name.clone(), description: Some(description.clone()), explodable: Some(true), scale_uniformly: None }).is_ok();
     if !exists {
-        let geometry = entities(&draw::shapes(v, view), t.unit_factor);
+        let geometry = entities(&shapes(), t.unit_factor);
         let handles = bridge::add_entities_handles(&format!("Open Infra: {name}"), geometry)?;
         table(TableOperation::BlockCreate { name: name.clone(), entities: handles, base_point: [0.0, 0.0, 0.0], erase_originals: true, description: Some(description) })?;
     }
@@ -302,4 +315,133 @@ impl InteractiveCommand for CatalogueCmd {
         });
         CommandStep::Done
     }
+}
+
+// ── Swept paths ─────────────────────────────────────────────────────────
+
+pub fn swept_layers() -> (&'static str, &'static str, &'static str) {
+    (tr("OI-VEEGPAD", "OI-SWEPT-PATH"), tr("OI-VEEGPAD-WIELEN", "OI-SWEPT-PATH-WHEELS"), tr("OI-VEEGPAD-VOERTUIG", "OI-SWEPT-PATH-VEHICLE"))
+}
+
+/// Drive `v` along `path` (drawing units) and draw the body and wheel traces
+/// and the vehicle every `every` metres.
+pub fn swept_path(v: &Vehicle, path: &[[f64; 2]], every: f64) -> Result<String, String> {
+    let t = bridge::target().ok_or_else(|| tr("geen tekening actief", "no drawing active").to_string())?;
+    let u = t.unit_factor;
+    let metres: Vec<[f64; 2]> = path.iter().map(|p| [p[0] / u, p[1] / u]).collect();
+    let s = super::swept::drive(v, &metres, 0.05, every)?;
+    let (body_l, wheel_l, ghost_l) = swept_layers();
+    bridge::ensure_layer(body_l, Color::from_index(1));
+    bridge::ensure_layer(wheel_l, Color::from_index(3));
+    bridge::ensure_layer(ghost_l, Color::from_index(8));
+    let poly = |pts: &[[f64; 2]], layer: &str| {
+        let mut lw = LwPolyline::new();
+        // Every 0.05 m is more than a drawing needs: keep about every 0.25 m.
+        for (k, p) in pts.iter().enumerate() {
+            if k % 5 == 0 || k + 1 == pts.len() {
+                lw.add_point_with_bulge(Vector2::new(p[0] * u, p[1] * u), 0.0);
+            }
+        }
+        let mut e = EntityType::LwPolyline(lw);
+        e.common_mut().layer = layer.into();
+        e
+    };
+    let mut out: Vec<EntityType> = Vec::new();
+    out.extend(s.body.iter().map(|t| poly(t, body_l)));
+    out.extend(s.wheels.iter().map(|t| poly(t, wheel_l)));
+    for poses in &s.ghosts {
+        for (i, p) in poses.iter().enumerate() {
+            let block = ensure_unit_block(v, i)?;
+            let mut e = insert_entity(v, View::Top, &block, [p.front[0] * u, p.front[1] * u], p.angle(), false);
+            e.common_mut().layer = ghost_l.into();
+            out.push(e);
+        }
+    }
+    let data = bridge::object_data([
+        ("vehicle", v.id.clone()),
+        ("length_m", format!("{:.2}", s.length)),
+        ("max_steer_deg", format!("{:.1}", s.max_steer_deg)),
+        ("min_outer_radius_m", s.min_outer_radius.map(|r| format!("{r:.2}")).unwrap_or_default()),
+    ]);
+    if let Some(first) = out.first_mut() {
+        first.common_mut().extended_data.add_record(data.clone());
+    }
+    let handles = bridge::add_entities_handles(&format!("{} {}", tr("Veegpad", "Swept path"), v.name_en), out)?;
+    if let Some(h) = handles.first() {
+        bridge::register_object_data(*h, data);
+    }
+    let mut msg = format!(
+        "{} {} — {:.1} m, {} {:.1}°",
+        tr("Veegpad van", "Swept path of"),
+        v.name(),
+        s.length,
+        tr("grootste stuurhoek", "largest steering angle"),
+        s.max_steer_deg
+    );
+    if let Some(r) = s.min_outer_radius {
+        msg.push_str(&format!(", {} {:.1} m", tr("kleinste buitenstraal", "smallest outer radius"), r));
+    }
+    if let Some(design) = v.turning_radius_outer {
+        if s.min_outer_radius.is_some_and(|r| r < design - 0.05) {
+            msg.push_str(&format!(" — {} {:.1} m: {}", tr("krapper dan de ontwerpdraaicirkel van", "tighter than the design turning radius of"), design, tr("niet haalbaar", "not drivable")));
+        }
+    }
+    if s.max_steer_deg > 45.0 {
+        msg.push_str(&format!(" — {}", tr("stuurhoek boven 45°: controleer de rijlijn", "steering angle above 45°: check the path")));
+    }
+    Ok(msg + ".")
+}
+
+/// `GIS_VEEGPAD <id> [interval]`: the path is a selected polyline, or picked
+/// points ended with Enter.
+pub struct SweptCmd {
+    pub vehicle: &'static Vehicle,
+    pub every: f64,
+    pub path: Vec<[f64; 2]>,
+    pub unit: f64,
+}
+
+impl SweptCmd {
+    fn run(&self) -> CommandStep {
+        let (v, path, every) = (self.vehicle, self.path.clone(), self.every);
+        std::thread::spawn(move || match swept_path(v, &path, every) {
+            Ok(m) => bridge::info(&m),
+            Err(e) => bridge::error(&format!("{}: {e}", tr("Veegpad", "Swept path"))),
+        });
+        CommandStep::Done
+    }
+}
+
+impl InteractiveCommand for SweptCmd {
+    fn prompt(&self) -> String {
+        match self.path.len() {
+            0 => tr("Veegpad: beginpunt van de rijlijn (vooras)", "Swept path: start of the path (front axle)").into(),
+            1 => tr("Veegpad: volgend punt", "Swept path: next point").into(),
+            _ => tr("Veegpad: volgend punt [Enter = klaar]", "Swept path: next point [Enter = done]").into(),
+        }
+    }
+    fn on_point(&mut self, pt: [f64; 3]) -> CommandStep {
+        self.path.push([pt[0], pt[1]]);
+        CommandStep::NeedPoint
+    }
+    fn on_enter(&mut self) -> CommandStep {
+        if self.path.len() >= 2 {
+            self.run()
+        } else {
+            CommandStep::Cancel
+        }
+    }
+    fn on_cursor_move(&mut self, pt: [f64; 3]) -> Vec<PreviewWire> {
+        if self.path.is_empty() {
+            return Vec::new();
+        }
+        let mut pts: Vec<[f64; 3]> = self.path.iter().map(|p| [p[0], p[1], 0.0]).collect();
+        pts.push(pt);
+        vec![PreviewWire::with_color(pts, [0.95, 0.35, 0.3, 1.0])]
+    }
+}
+
+/// Start a swept path straight away on a known path (a selected polyline).
+pub fn swept_now(cmd: &SweptCmd) {
+    let _ = cmd.run();
 }

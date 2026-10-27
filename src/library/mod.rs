@@ -9,6 +9,7 @@
 
 pub mod draw;
 pub mod place;
+pub mod swept;
 
 use std::sync::OnceLock;
 
