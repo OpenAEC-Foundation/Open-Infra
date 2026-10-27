@@ -70,6 +70,19 @@ An example layer is `B-XX-RI-GWA_RIOOLLEIDING_BETON_600-G`.
 
 Manholes carry their name on the PUTNUMMER object, and every object carries its GWSW attributes as XDATA. Not every municipality publishes its network.
 
+## Updating the BGT (issue #11)
+
+`GIS_BGT_BIJWERKEN | GIS_BGT_UPDATE`, also in the "BGT · BRK · KLIC" menu, brings the BGT in the drawing up to date instead of importing it again. It fetches the current BGT for the collections that are in the drawing and compares object by object on `lokaal_id` from the object data:
+
+| Case | What happens |
+|---|---|
+| New object | drawn |
+| Changed object (other geometry, to the millimetre) | its entities are removed and it is drawn again |
+| Object no longer in the BGT | moved to `OI-BGT-VERVALLEN` / `OI-BGT-REMOVED`, never deleted |
+| Drawing work without Open Infra object data | left alone |
+
+The message gives the counts. Cadastre and KLIC can follow the same way.
+
 ## GEODATA (issue #8, reading)
 
 A drawing from AutoCAD, Civil 3D or BricsCAD with a geographic location (GEOGRAPHICLOCATION, GEOMAP) and no Open Infra site takes its site from the GEODATA object:

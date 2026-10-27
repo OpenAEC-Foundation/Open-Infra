@@ -19,6 +19,7 @@ pub mod gis;
 pub mod import;
 pub mod basisdata;
 pub mod bestand;
+pub mod bijwerken;
 pub mod lang;
 pub mod library;
 pub mod riolering;
@@ -166,6 +167,8 @@ impl CadModule for GisModule {
                             vec![
                                 ("GIS_BGT", "BGT · BRK · KLIC (venster)", I_BGT),
                                 ("GIS_Q_BGT", "BGT importeren", I_BGT),
+                                ("GIS_BGT_BIJWERKEN", "BGT bijwerken", I_BGT),
+                                ("GIS_Q_GWSW", "GWSW-riolering", I_BGT),
                                 ("GIS_Q_BRK", "Kadaster importeren", I_KADASTER),
                                 ("GIS_KLIC", "KLIC-levering", I_KLIC),
                                 ("GIS_TEKENBLAD", "Tekenblad", I_SHEET),
@@ -874,6 +877,14 @@ impl BuiltinPlugin for OpenInfra {
                     file_import(host, arg, None);
                 }
             }
+            "GIS_BGT_BIJWERKEN" | "GIS_BGT_UPDATE" => {
+                let Some(site) = require_site(host) else { return true };
+                host.push_info(&format!("[Open Infra] {} …", lang::tr("BGT bijwerken", "Updating the BGT")));
+                std::thread::spawn(move || match bijwerken::bgt_update(&site, &basisdata::NlcsOptions::default(), &|_| {}) {
+                    Ok(m) => bridge::info(&m),
+                    Err(e) => bridge::error(&format!("BGT: {e}")),
+                });
+            }
             "GIS_Q_GWSW" | "GIS_GWSW" => {
                 let Some(site) = require_site(host) else { return true };
                 host.push_info(&format!("[Open Infra] GWSW {} …", lang::tr("riolering ophalen", "sewers")));
@@ -903,7 +914,7 @@ impl BuiltinPlugin for OpenInfra {
                  GIS_SITE <lon> <lat> [b] [h] [EPSG:code] [RELATIEF] [naam] | GIS_SITE RD <x> <y> [b] [h] [RELATIEF] [naam]; \
                  NLCS: GIS_NLCS_CONTROLE, GIS_NLCS_RAPPORT, GIS_NLCS_HERSTEL, GIS_HOEVEELHEDEN, GIS_HOEVEELHEDEN_CSV, GIS_HOEVEELHEDEN_TABEL; \
                  AHN: GIS_AHN (venster), GIS_HOOGTEPUNTEN, GIS_HOOGTELIJNEN, GIS_PROFIEL, GIS_PUNTENWOLK; \
-                 NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_Q_GWSW, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp]; \
+                 NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_BGT_BIJWERKEN | GIS_BGT_UPDATE, GIS_Q_BRK, GIS_Q_GWSW, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp]; \
                  Bibliotheek / library: GIS_VOERTUIGEN | GIS_VEHICLES (venster), GIS_VOERTUIG | GIS_VEHICLE <id> [ZIJ|SIDE], \
                  GIS_VOERTUIGOVERZICHT | GIS_VEHICLE_CATALOG [categorie] [ZIJ|SIDE], \
                  GIS_VEEGPAD | GIS_SWEPT_PATH <id> [interval m] (geselecteerde lijn of punten); \

@@ -520,6 +520,23 @@ pub fn restyle_layer(spec: &crate::nlcs::LayerSpec) -> Result<(), String> {
     request(PluginRequest::ModifyLayer(config)).map(|_| ())
 }
 
+/// Remove elements, as one undo step.
+pub fn remove_entities(label: &str, handles: &[Handle]) -> Result<usize, String> {
+    if handles.is_empty() {
+        return Ok(0);
+    }
+    request(PluginRequest::PushUndo { label: label.into() })?;
+    let mut n = 0;
+    for h in handles {
+        if request(PluginRequest::RemoveEntity { handle: *h }).is_ok() {
+            n += 1;
+        }
+    }
+    let _ = request(PluginRequest::SetDirty);
+    let _ = request(PluginRequest::BumpGeometry);
+    Ok(n)
+}
+
 /// Replace elements in one undo step (an atomic transaction in the host).
 pub fn update_entities(label: &str, entities: Vec<EntityType>) -> Result<usize, String> {
     let n = entities.len();

@@ -47,7 +47,7 @@ def vehicles():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ocs", default=os.environ.get("OCS_BIN", str(Path.home() / "Documenten/OpenCADStudio-v2026.42/target/release/OpenCADStudio")))
+    ap.add_argument("--ocs", default=os.environ.get("OCS_BIN", ocs_e2e.default_ocs()))
     ap.add_argument("--port", type=int, default=18760)
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -140,6 +140,28 @@ def main():
         ok &= any("Track" in str(x) for x in xd)
         return ok, ", ".join(report) + f"; shapefile XDATA {xd[:2]}"
 
+    def bgt_update():
+        ocs.run("GIS_SITE RD 104885 425320 200 150 Dordrecht")
+        time.sleep(2)
+        ocs.run("GIS_Q_BGT")
+        ocs.settle(minimum_seconds=2.0, timeout=180, first_change=90)
+        layer = next((l for l in ocs.layers() if "VERHARDING" in l), None)
+        hs = ocs.handles(layer) if layer else []
+        if len(hs) < 3:
+            return False, f"too little BGT to test ({layer}: {len(hs)})"
+        before = ocs.entities()
+        # Two objects deleted by hand, one moved: the update must draw the two
+        # again and redraw the moved one, and leave the rest alone.
+        ocs.call("/entities", {"handles": hs[:2], "document_id": ocs.doc()}, method="DELETE")
+        ocs.call("/entities/transform", {"handles": [hs[2]], "action": "move", "vector": [5.0, 0.0, 0.0], "document_id": ocs.doc()})
+        time.sleep(1)
+        ocs.run("GIS_BGT_UPDATE")
+        ocs.settle(minimum_seconds=2.0, timeout=180, first_change=90)
+        after = ocs.entities()
+        removed = len(ocs.handles("OI-BGT-REMOVED"))
+        return after == before and removed == 0, f"{before} entities before, {after} after the update; {removed} on OI-BGT-REMOVED"
+
+    step("bgt update", bgt_update)
     step("gis files", gis_files)
     step("vehicle", vehicle)
     step("side view", side)
