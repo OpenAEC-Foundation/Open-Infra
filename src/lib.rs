@@ -526,6 +526,42 @@ fn words(cmd: &str) -> Vec<&str> {
         .collect()
 }
 
+/// A drawing without an Open Infra site but with a GEODATA object (set in
+/// AutoCAD, Civil 3D or BricsCAD) gets its site from that object, once.
+fn adopt_geodata(host: &mut dyn HostApi) {
+    use ocs_plugin_api::host::codec::objects::ObjectType;
+    if bridge::site().is_some() {
+        return;
+    }
+    let tab = host.tab_id();
+    static TRIED: std::sync::Mutex<Vec<u64>> = std::sync::Mutex::new(Vec::new());
+    if TRIED.lock().unwrap().contains(&tab) {
+        return;
+    }
+    TRIED.lock().unwrap().push(tab);
+    let found = host.document().objects.values().find_map(|o| match o {
+        ObjectType::GeoData(g) => Some(gis::geodata::GeoLocation {
+            coordinate_type: g.coordinate_type,
+            design_point: [g.design_point.x, g.design_point.y],
+            reference_point: [g.reference_point.x, g.reference_point.y],
+            definition: if g.coordinate_system_definition.is_empty() { g.coordinate_system_wkt.clone() } else { g.coordinate_system_definition.clone() },
+            unit_scale: g.horizontal_unit_scale,
+            north: [g.north_direction.x, g.north_direction.y],
+        }),
+        _ => None,
+    });
+    let Some(g) = found else { return };
+    let unit = bridge::target().map(|t| t.unit_factor).unwrap_or(1.0);
+    // Network (epsg.io) may be needed for the CRS: a worker.
+    std::thread::spawn(move || match gis::geodata::site_from(&g, unit).and_then(|site| bridge::save_site(&site).map(|_| site)) {
+        Ok(site) => {
+            bridge::info(&format!("{} {} ({}).", lang::tr("Projectlocatie overgenomen uit het GEODATA-object van de tekening:", "Project location taken from the drawing's GEODATA object:"), site.crs, if site.absolute { lang::tr("absoluut", "absolute") } else { lang::tr("relatief", "relative") }));
+            ui::send(ui::UiMsg::SiteChanged);
+        }
+        Err(e) => bridge::info(&e),
+    });
+}
+
 /// `GIS_BESTAND_IMPORT <pad> [EPSG:code]`: a GIS file straight into the drawing.
 fn file_import(host: &mut dyn HostApi, path: &str, crs: Option<String>) {
     let Some(site) = require_site(host) else { return };
@@ -592,6 +628,7 @@ impl BuiltinPlugin for OpenInfra {
             return false;
         }
         bridge::attach(host);
+        adopt_geodata(host);
         match verb.as_str() {
             "GIS_LOCATIE" | "GIS_WERKBANK" => open(host, ui::Tab::Location),
             "GIS_KAART" | "GIS_WMS" => open(host, ui::Tab::Raster),
