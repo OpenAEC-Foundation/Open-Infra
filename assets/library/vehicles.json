@@ -1,9 +1,3350 @@
 [
- {"id":"seed_car","name_en":"Passenger car (seed)","name_nl":"Personenauto (start)","category":"car","standard":"generic","region":"GLOBAL","source_url":"","height":1.5,"units":[{"kind":"car","length":4.7,"width":1.8,"front_overhang":0.9,"axles":[{"x":0.9,"track":1.55,"steer":true},{"x":3.65,"track":1.55}]}],"estimated":["all"]},
- {"id":"seed_van","name_en":"Large van (seed)","name_nl":"Grote bestelbus (start)","category":"van","standard":"generic","region":"GLOBAL","source_url":"","height":2.7,"units":[{"kind":"car","length":6.0,"width":2.0,"axles":[{"x":0.95,"track":1.72,"steer":true},{"x":4.6,"track":1.72}]}],"estimated":["all"]},
- {"id":"seed_truck3","name_en":"3-axle rigid truck (seed)","name_nl":"Drieassige vrachtauto (start)","category":"truck","standard":"generic","region":"EU","source_url":"","height":3.8,"units":[{"kind":"cab_over","length":10.0,"width":2.55,"axles":[{"x":1.4,"track":2.05,"steer":true},{"x":6.2,"track":1.85,"dual":true},{"x":7.55,"track":1.85,"dual":true}]}],"estimated":["all"]},
- {"id":"seed_semi","name_en":"Tractor-semitrailer 16.5 m (seed)","name_nl":"Trekker-oplegger 16,5 m (start)","category":"tractor_semitrailer","standard":"generic","region":"EU","source_url":"","height":4.0,"units":[{"kind":"tractor","length":6.0,"width":2.55,"axles":[{"x":1.45,"track":2.05,"steer":true},{"x":5.05,"track":1.85,"dual":true}],"hitch_x":4.6},{"kind":"semitrailer","length":13.6,"width":2.55,"kingpin_x":1.6,"axles":[{"x":9.9,"track":2.05},{"x":11.21,"track":2.05},{"x":12.52,"track":2.05}]}],"estimated":["all"]},
- {"id":"seed_artbus","name_en":"Articulated bus 18 m (seed)","name_nl":"Gelede bus 18 m (start)","category":"articulated_bus","standard":"generic","region":"EU","source_url":"","height":3.0,"units":[{"kind":"bus","length":10.6,"width":2.55,"axles":[{"x":2.7,"track":2.1,"steer":true},{"x":8.6,"track":1.85,"dual":true}],"hitch_x":10.6},{"kind":"bus_rear","length":7.4,"width":2.55,"kingpin_x":0.0,"axles":[{"x":5.4,"track":1.85,"dual":true}]}],"estimated":["all"]},
- {"id":"seed_bicycle","name_en":"Bicycle (seed)","name_nl":"Fiets (start)","category":"two_wheeler","standard":"generic","region":"GLOBAL","source_url":"","height":1.1,"units":[{"kind":"bike","length":1.8,"width":0.6,"axles":[{"x":0.35,"track":0,"steer":true},{"x":1.45,"track":0}]}],"estimated":["all"]},
- {"id":"seed_tram","name_en":"Tram 30 m (seed)","name_nl":"Tram 30 m (start)","category":"rail","standard":"generic","region":"EU","source_url":"","height":3.6,"units":[{"kind":"rail_car","length":30.0,"width":2.4,"axles":[{"x":3.0,"track":1.435},{"x":4.8,"track":1.435},{"x":14.1,"track":1.435},{"x":15.9,"track":1.435},{"x":25.2,"track":1.435},{"x":27.0,"track":1.435}]}],"estimated":["all"]}
+ {
+  "id": "aashto_p",
+  "name_en": "Passenger car P (AASHTO)",
+  "name_nl": "Personenauto P (AASHTO)",
+  "category": "car",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 1.31,
+  "turning_radius_outer": 7.25,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.79,
+    "width": 2.13,
+    "front_overhang": 0.91,
+    "axles": [
+     {
+      "x": 0.91,
+      "track": 1.88,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.27,
+      "track": 1.88,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7."
+ },
+ {
+  "id": "aashto_su30",
+  "name_en": "Single-unit truck SU-30 (AASHTO)",
+  "name_nl": "Vrachtwagen 2-assig SU-30 (AASHTO)",
+  "category": "truck",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 12.74,
+  "units": [
+   {
+    "kind": "body",
+    "length": 9.14,
+    "width": 2.44,
+    "front_overhang": 1.22,
+    "axles": [
+     {
+      "x": 1.22,
+      "track": 2.19,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 7.32,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Height given as 11.0-13.5 ft; upper value used."
+ },
+ {
+  "id": "aashto_su40",
+  "name_en": "Single-unit truck, three-axle SU-40 (AASHTO)",
+  "name_nl": "Vrachtwagen 3-assig SU-40 (AASHTO)",
+  "category": "truck",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 15.61,
+  "units": [
+   {
+    "kind": "body",
+    "length": 12.04,
+    "width": 2.44,
+    "front_overhang": 1.22,
+    "axles": [
+     {
+      "x": 1.22,
+      "track": 2.19,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 8.23,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 9.45,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "tandem_spacing",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Height given as 11.0-13.5 ft; upper value used. WB is to the centre of the rear tandem."
+ },
+ {
+  "id": "aashto_bus40",
+  "name_en": "Intercity bus (motor coach) BUS-40 (AASHTO)",
+  "name_nl": "Touringcar BUS-40 (AASHTO)",
+  "category": "coach",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.66,
+  "turning_radius_outer": 12.71,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 12.34,
+    "width": 2.59,
+    "front_overhang": 1.92,
+    "axles": [
+     {
+      "x": 1.92,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 9.63,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Rear overhang listed as 9.0 ft from back axle; FO+WB+9.0 = 40.6 ft vs 40.5 ft length (AASHTO rounding), modelled as two axle groups."
+ },
+ {
+  "id": "aashto_bus45",
+  "name_en": "Intercity bus (motor coach) BUS-45 (AASHTO)",
+  "name_nl": "Touringcar BUS-45 (AASHTO)",
+  "category": "coach",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.66,
+  "turning_radius_outer": 13.41,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 13.87,
+    "width": 2.59,
+    "front_overhang": 1.89,
+    "axles": [
+     {
+      "x": 1.89,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 10.03,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 11.13,
+      "track": 2.34,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. WB1 28.5 ft is to the effective rear axle (34.7 ft); rear overhang 9.0 ft is from the back (tag) axle, so the drive and tag axles are placed at 32.9 and 36.5 ft (derived)."
+ },
+ {
+  "id": "aashto_city_bus",
+  "name_en": "City transit bus CITY-BUS (AASHTO)",
+  "name_nl": "Stadsbus CITY-BUS (AASHTO)",
+  "category": "bus",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.2,
+  "turning_radius_outer": 12.68,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 12.19,
+    "width": 2.59,
+    "front_overhang": 2.13,
+    "axles": [
+     {
+      "x": 2.13,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 9.75,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. AASHTO SI table lists 12.80 m design turning radius; US value 41.6 ft converted is used."
+ },
+ {
+  "id": "aashto_sbus36",
+  "name_en": "Conventional school bus, 65 pass. S-BUS-36 (AASHTO)",
+  "name_nl": "Schoolbus conventioneel S-BUS-36 (AASHTO)",
+  "category": "bus",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.2,
+  "turning_radius_outer": 11.77,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 10.91,
+    "width": 2.44,
+    "front_overhang": 0.76,
+    "axles": [
+     {
+      "x": 0.76,
+      "track": 2.19,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 7.25,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7."
+ },
+ {
+  "id": "aashto_sbus40",
+  "name_en": "Large school bus, 84 pass. S-BUS-40 (AASHTO)",
+  "name_nl": "Grote schoolbus S-BUS-40 (AASHTO)",
+  "category": "bus",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.2,
+  "turning_radius_outer": 11.92,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 12.19,
+    "width": 2.44,
+    "front_overhang": 2.13,
+    "axles": [
+     {
+      "x": 2.13,
+      "track": 2.19,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 8.23,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7."
+ },
+ {
+  "id": "aashto_abus",
+  "name_en": "Articulated bus A-BUS (AASHTO)",
+  "name_nl": "Gelede bus A-BUS (AASHTO)",
+  "category": "articulated_bus",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.35,
+  "turning_radius_outer": 12.01,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 11.22,
+    "width": 2.59,
+    "front_overhang": 2.62,
+    "axles": [
+     {
+      "x": 2.62,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 9.33,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 11.22,
+    "kingpin_x": null
+   },
+   {
+    "kind": "bus_rear",
+    "length": 7.07,
+    "width": 2.59,
+    "front_overhang": 4.02,
+    "axles": [
+     {
+      "x": 4.02,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.0
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Units split at the articulation point (S = 6.2 ft behind middle axle, T = 13.2 ft to rear axle); the 4.0 ft wide articulating section is not drawn separately."
+ },
+ {
+  "id": "aashto_wb40",
+  "name_en": "Intermediate semitrailer WB-40 (AASHTO)",
+  "name_nl": "Trekker met oplegger WB-40 (AASHTO)",
+  "category": "tractor_semitrailer",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 12.16,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 5.33,
+    "width": 2.44,
+    "front_overhang": 0.91,
+    "axles": [
+     {
+      "x": 0.91,
+      "track": 2.19,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.72,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 4.72,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 10.06,
+    "width": 2.44,
+    "front_overhang": 8.08,
+    "axles": [
+     {
+      "x": 8.08,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 9.3,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.91
+   }
+  ],
+  "estimated": [
+   "dual",
+   "kingpin_x",
+   "tandem_spacing",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Kingpin assumed over the effective tractor drive axle (AASHTO convention: WB2 = kingpin to trailer axle group). Tractor tail length, tandem spread (1.22 m) and twin tyres are estimates. Semitrailer front overhang ahead of kingpin (3.0 ft) estimated; overall 45.5 ft."
+ },
+ {
+  "id": "aashto_wb62",
+  "name_en": "Interstate semitrailer WB-62 (AASHTO)",
+  "name_nl": "Trekker met oplegger WB-62 (AASHTO)",
+  "category": "tractor_semitrailer",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 13.66,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 8.08,
+    "width": 2.59,
+    "front_overhang": 1.22,
+    "axles": [
+     {
+      "x": 1.22,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 6.55,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 7.77,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 7.16,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 14.63,
+    "width": 2.59,
+    "front_overhang": 12.65,
+    "axles": [
+     {
+      "x": 12.65,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 13.87,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.76
+   }
+  ],
+  "estimated": [
+   "dual",
+   "tandem_spacing",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Kingpin assumed over the effective tractor drive axle (AASHTO convention: WB2 = kingpin to trailer axle group). Tractor tail length, tandem spread (1.22 m) and twin tyres are estimates. 48.0 ft trailer (1982 STAA); kingpin_x 2.5 ft derived from overall length 69.0 ft."
+ },
+ {
+  "id": "aashto_wb67",
+  "name_en": "Interstate semitrailer WB-67 (AASHTO)",
+  "name_nl": "Trekker met oplegger WB-67 (AASHTO)",
+  "category": "tractor_semitrailer",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 13.66,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 8.08,
+    "width": 2.59,
+    "front_overhang": 1.22,
+    "axles": [
+     {
+      "x": 1.22,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 6.55,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 7.77,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 7.16,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 16.15,
+    "width": 2.59,
+    "front_overhang": 14.17,
+    "axles": [
+     {
+      "x": 14.17,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 15.39,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.91
+   }
+  ],
+  "estimated": [
+   "dual",
+   "tandem_spacing",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Kingpin assumed over the effective tractor drive axle (AASHTO convention: WB2 = kingpin to trailer axle group). Tractor tail length, tandem spread (1.22 m) and twin tyres are estimates. 53.0 ft trailer (STAA grandfathered); kingpin_x 3.0 ft derived from overall length 73.5 ft. AASHTO advises WB-62 for turning where 41 ft kingpin-to-axle is common."
+ },
+ {
+  "id": "aashto_wb67d",
+  "name_en": "Double-bottom semitrailer/trailer WB-67D (AASHTO)",
+  "name_nl": "Trekker met twee opleggers (double bottom) WB-67D (AASHTO)",
+  "category": "tractor_semitrailer",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 13.66,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 4.66,
+    "width": 2.59,
+    "front_overhang": 0.7,
+    "axles": [
+     {
+      "x": 0.7,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.05,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 4.05,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 8.84,
+    "width": 2.59,
+    "front_overhang": 7.92,
+    "axles": [
+     {
+      "x": 7.92,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 8.84,
+    "kingpin_x": 0.91
+   },
+   {
+    "kind": "dolly",
+    "length": 2.59,
+    "width": 2.59,
+    "front_overhang": 2.13,
+    "axles": [
+     {
+      "x": 2.13,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 2.13,
+    "kingpin_x": 0.0
+   },
+   {
+    "kind": "semitrailer",
+    "length": 8.69,
+    "width": 2.59,
+    "front_overhang": 7.77,
+    "axles": [
+     {
+      "x": 7.77,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.91
+   }
+  ],
+  "estimated": [
+   "dolly_length",
+   "dual",
+   "kingpin_x",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Kingpin assumed over the effective tractor drive axle (AASHTO convention: WB2 = kingpin to trailer axle group). Tractor tail length, tandem spread (1.22 m) and twin tyres are estimates. Trailer front overhang ahead of kingpin and dolly length estimated; trailer rear ends at the pintle hitch (S behind axle). Assembled units are ~0.5-1.0 ft shorter than the AASHTO overall length due to rounding in the AASHTO table. WB1 11.0, WB2 23.0, S 3.0, T 7.0, WB3 22.5 ft; overall 72.3 ft."
+ },
+ {
+  "id": "aashto_wb92d",
+  "name_en": "Rocky Mountain double-semitrailer/trailer WB-92D (AASHTO)",
+  "name_nl": "Rocky Mountain double WB-92D (AASHTO)",
+  "category": "tractor_semitrailer",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 24.99,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 6.95,
+    "width": 2.59,
+    "front_overhang": 0.7,
+    "axles": [
+     {
+      "x": 0.7,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 5.43,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 6.65,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 6.04,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 14.48,
+    "width": 2.59,
+    "front_overhang": 12.5,
+    "axles": [
+     {
+      "x": 12.5,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 13.72,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 14.48,
+    "kingpin_x": 0.91
+   },
+   {
+    "kind": "dolly",
+    "length": 2.59,
+    "width": 2.59,
+    "front_overhang": 2.13,
+    "axles": [
+     {
+      "x": 2.13,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 2.13,
+    "kingpin_x": 0.0
+   },
+   {
+    "kind": "semitrailer",
+    "length": 8.69,
+    "width": 2.59,
+    "front_overhang": 7.77,
+    "axles": [
+     {
+      "x": 7.77,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.91
+   }
+  ],
+  "estimated": [
+   "dolly_length",
+   "dual",
+   "kingpin_x",
+   "tandem_spacing",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Kingpin assumed over the effective tractor drive axle (AASHTO convention: WB2 = kingpin to trailer axle group). Tractor tail length, tandem spread (1.22 m) and twin tyres are estimates. Trailer front overhang ahead of kingpin and dolly length estimated; trailer rear ends at the pintle hitch (S behind axle). Assembled units are ~0.5-1.0 ft shorter than the AASHTO overall length due to rounding in the AASHTO table. WB1 17.5, WB2 40.0, S 4.5, T 7.0, WB3 22.5 ft; overall 97.3 ft."
+ },
+ {
+  "id": "aashto_wb100t",
+  "name_en": "Triple semitrailer/trailers WB-100T (AASHTO)",
+  "name_nl": "Trekker met drie opleggers WB-100T (AASHTO)",
+  "category": "tractor_semitrailer",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 13.66,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 4.66,
+    "width": 2.59,
+    "front_overhang": 0.7,
+    "axles": [
+     {
+      "x": 0.7,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.05,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 4.05,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 8.69,
+    "width": 2.59,
+    "front_overhang": 7.77,
+    "axles": [
+     {
+      "x": 7.77,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 8.69,
+    "kingpin_x": 0.91
+   },
+   {
+    "kind": "dolly",
+    "length": 2.59,
+    "width": 2.59,
+    "front_overhang": 2.13,
+    "axles": [
+     {
+      "x": 2.13,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 2.13,
+    "kingpin_x": 0.0
+   },
+   {
+    "kind": "semitrailer",
+    "length": 8.69,
+    "width": 2.59,
+    "front_overhang": 7.77,
+    "axles": [
+     {
+      "x": 7.77,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 8.69,
+    "kingpin_x": 0.91
+   },
+   {
+    "kind": "dolly",
+    "length": 2.59,
+    "width": 2.59,
+    "front_overhang": 2.13,
+    "axles": [
+     {
+      "x": 2.13,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 2.13,
+    "kingpin_x": 0.0
+   },
+   {
+    "kind": "semitrailer",
+    "length": 8.69,
+    "width": 2.59,
+    "front_overhang": 7.77,
+    "axles": [
+     {
+      "x": 7.77,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.91
+   }
+  ],
+  "estimated": [
+   "dolly_length",
+   "dual",
+   "kingpin_x",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Kingpin assumed over the effective tractor drive axle (AASHTO convention: WB2 = kingpin to trailer axle group). Tractor tail length, tandem spread (1.22 m) and twin tyres are estimates. Trailer front overhang ahead of kingpin and dolly length estimated; trailer rear ends at the pintle hitch (S behind axle). Assembled units are ~0.5-1.0 ft shorter than the AASHTO overall length due to rounding in the AASHTO table. WB1 11.0, WB2 22.5, S 3.0, T 7.0, WB3 22.5, WB4 22.5 ft (second S/T taken equal to the first); overall 104.8 ft."
+ },
+ {
+  "id": "aashto_wb109d",
+  "name_en": "Turnpike double-semitrailer/trailer WB-109D (AASHTO)",
+  "name_nl": "Turnpike double WB-109D (AASHTO)",
+  "category": "tractor_semitrailer",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 4.11,
+  "turning_radius_outer": 18.26,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 5.33,
+    "width": 2.59,
+    "front_overhang": 0.7,
+    "axles": [
+     {
+      "x": 0.7,
+      "track": 2.34,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.81,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 5.03,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 4.42,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 14.63,
+    "width": 2.59,
+    "front_overhang": 12.65,
+    "axles": [
+     {
+      "x": 12.65,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 13.87,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 14.63,
+    "kingpin_x": 1.07
+   },
+   {
+    "kind": "dolly",
+    "length": 3.51,
+    "width": 2.59,
+    "front_overhang": 3.05,
+    "axles": [
+     {
+      "x": 3.05,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 3.05,
+    "kingpin_x": 0.0
+   },
+   {
+    "kind": "semitrailer",
+    "length": 14.63,
+    "width": 2.59,
+    "front_overhang": 12.65,
+    "axles": [
+     {
+      "x": 12.65,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 13.87,
+      "track": 2.34,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 1.07
+   }
+  ],
+  "estimated": [
+   "dolly_length",
+   "dual",
+   "tandem_spacing",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Kingpin assumed over the effective tractor drive axle (AASHTO convention: WB2 = kingpin to trailer axle group). Tractor tail length, tandem spread (1.22 m) and twin tyres are estimates. Trailer front overhang ahead of kingpin and dolly length estimated; trailer rear ends at the pintle hitch (S behind axle). Assembled units are ~0.5-1.0 ft shorter than the AASHTO overall length due to rounding in the AASHTO table. Two 48.0 ft trailers (STAA); kingpin_x 3.5 ft derived from trailer length, WB 40.0 and RO 4.5 ft. WB1 12.2, S 4.5, T 10.0 ft; overall 114.0 ft."
+ },
+ {
+  "id": "aashto_mh",
+  "name_en": "Motor home MH (AASHTO)",
+  "name_nl": "Camper MH (AASHTO)",
+  "category": "special",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.66,
+  "turning_radius_outer": 12.1,
+  "units": [
+   {
+    "kind": "body",
+    "length": 9.14,
+    "width": 2.44,
+    "front_overhang": 1.22,
+    "axles": [
+     {
+      "x": 1.22,
+      "track": 2.19,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 7.32,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7."
+ },
+ {
+  "id": "aashto_pt",
+  "name_en": "Car and camper trailer P/T (AASHTO)",
+  "name_nl": "Auto met caravan P/T (AASHTO)",
+  "category": "special",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.05,
+  "turning_radius_outer": 10.03,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.79,
+    "width": 2.13,
+    "front_overhang": 0.91,
+    "axles": [
+     {
+      "x": 0.91,
+      "track": 1.88,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.27,
+      "track": 1.88,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": 5.79,
+    "kingpin_x": null
+   },
+   {
+    "kind": "trailer",
+    "length": 9.05,
+    "width": 2.44,
+    "front_overhang": 5.39,
+    "axles": [
+     {
+      "x": 5.39,
+      "track": 2.19,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.0
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Trailer unit is measured from the coupling point (kingpin_x = 0) and includes the drawbar/tongue: hitch-to-axle T and rear overhang from the table. S 5.0 ft, T 17.7 ft, overall 48.7 ft."
+ },
+ {
+  "id": "aashto_pb",
+  "name_en": "Car and boat trailer P/B (AASHTO)",
+  "name_nl": "Auto met boottrailer P/B (AASHTO)",
+  "category": "special",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": null,
+  "turning_radius_outer": 7.25,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.79,
+    "width": 2.13,
+    "front_overhang": 0.91,
+    "axles": [
+     {
+      "x": 0.91,
+      "track": 1.88,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.27,
+      "track": 1.88,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": 5.79,
+    "kingpin_x": null
+   },
+   {
+    "kind": "trailer",
+    "length": 7.01,
+    "width": 2.44,
+    "front_overhang": 4.57,
+    "axles": [
+     {
+      "x": 4.57,
+      "track": 2.19,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.0
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Trailer unit is measured from the coupling point (kingpin_x = 0) and includes the drawbar/tongue: hitch-to-axle T and rear overhang from the table. AASHTO gives no height for P/B. S 5.0, T 15.0 ft, overall 42.0 ft."
+ },
+ {
+  "id": "aashto_mhb",
+  "name_en": "Motor home and boat trailer MH/B (AASHTO)",
+  "name_nl": "Camper met boottrailer MH/B (AASHTO)",
+  "category": "special",
+  "standard": "AASHTO 2018 Green Book",
+  "region": "US",
+  "source_url": "https://www.cedengineering.com/userfiles/C08-024%20-%20Practical%20Geometric%20Design%20of%20Roadways%20-%20US.pdf",
+  "height": 3.66,
+  "turning_radius_outer": 15.18,
+  "units": [
+   {
+    "kind": "body",
+    "length": 9.14,
+    "width": 2.44,
+    "front_overhang": 1.22,
+    "axles": [
+     {
+      "x": 1.22,
+      "track": 2.19,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 7.32,
+      "track": 2.19,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 9.14,
+    "kingpin_x": null
+   },
+   {
+    "kind": "trailer",
+    "length": 7.01,
+    "width": 2.44,
+    "front_overhang": 4.57,
+    "axles": [
+     {
+      "x": 4.57,
+      "track": 2.19,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.0
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Dimensions from AASHTO Green Book 2018 Table 2-4a, turning radius = 'minimum design turning radius' (path of outer front wheel) from Table 2-5a, both in US units converted (1 ft = 0.3048 m), as reproduced in CED course C08-024 Tables 1.5/1.7. Trailer unit is measured from the coupling point (kingpin_x = 0) and includes the drawbar/tongue: hitch-to-axle T and rear overhang from the table. S 6.0, T 15.0 ft, overall 53.0 ft."
+ },
+ {
+  "id": "fgsv_pkw_2001",
+  "name_en": "Design car Pkw (FGSV 2001)",
+  "name_nl": "Ontwerpauto Pkw (FGSV 2001)",
+  "category": "car",
+  "standard": "FGSV RASt 06 / Bemessungsfahrzeuge",
+  "region": "DE",
+  "source_url": "https://www.whz.de/fileadmin/fakultaeten/kft/docs/organisation/iev/forschung/projekte/FoBemPkw.pdf",
+  "height": 1.51,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.74,
+    "width": 1.76,
+    "front_overhang": 0.94,
+    "axles": [
+     {
+      "x": 0.94,
+      "track": 1.51,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.64,
+      "track": 1.51,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "85th-percentile design car of FGSV 'Bemessungsfahrzeuge und Schleppkurven' (2001): L 4.74, WB 2.70, H 1.51, W 1.76 (without mirrors), as cited in WHZ/TU Braunschweig report 'Bemessungs-Pkw' (Table 3). Front overhang 0.94 derived from RASt 06 Tabelle 21 'Deichselmass' D = WB + front overhang = 3.64 m (https://www.fgsv-verlag.de/pub/media/pdf/200.k.pdf). Turning radius not given in the opened sources."
+ },
+ {
+  "id": "fgsv_pkw_2010_proposal",
+  "name_en": "Design car Pkw 2010 proposal (WHZ/TU Braunschweig)",
+  "name_nl": "Ontwerpauto Pkw 2010-voorstel (WHZ/TU Braunschweig)",
+  "category": "car",
+  "standard": "generic",
+  "region": "DE",
+  "source_url": "https://www.whz.de/fileadmin/fakultaeten/kft/docs/organisation/iev/forschung/projekte/FoBemPkw.pdf",
+  "height": 1.76,
+  "turning_radius_outer": 6.07,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.93,
+    "width": 1.91,
+    "front_overhang": 0.99,
+    "axles": [
+     {
+      "x": 0.99,
+      "track": 1.66,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.84,
+      "track": 1.66,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "Updated 85th-percentile design car (unweighted by sales), Abbildung 4 of the report: 0.99 + 2.85 + 1.09 = 4.93 m, width 1.91 m; height 1.76 m = 85th percentile 2010 (Tabelle 3). Turning radius = half of the 85th-percentile outer turning-circle diameter 12.14 m (fleet statistic, not of this exact vehicle). Research proposal feeding into RBSV 2020, not the official FGSV vehicle."
+ },
+ {
+  "id": "rbsv_pkw_2020",
+  "name_en": "Design car Pkw (RBSV 2020)",
+  "name_nl": "Ontwerpauto Pkw (RBSV 2020)",
+  "category": "car",
+  "standard": "FGSV RASt 06 / Bemessungsfahrzeuge",
+  "region": "DE",
+  "source_url": "https://www.herne.de/PDF/Bauleitplanung/bp257_4/Anlage-3.7_BP-257_Erl%C3%A4uterungsbericht-Befahrbarkeit.pdf",
+  "height": null,
+  "turning_radius_outer": 5.85,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.88,
+    "width": 1.9,
+    "front_overhang": 0.92,
+    "axles": [
+     {
+      "x": 0.92,
+      "track": 1.65,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.78,
+      "track": 1.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "track",
+   "width"
+  ],
+  "notes": "FGSV RBSV 2020 design car as shown in the vehicle data block of a Befahrbarkeitsuntersuchung (Herne B-Plan 257): 0.92 + 2.86 + 1.10 = 4.88 m, R_aussen = 5.85 m. Width not stated there: 1.90 m taken from the WHZ 85th-percentile 2010 car (estimate). Height unknown."
+ },
+ {
+  "id": "fgsv_sattelzug_2001",
+  "name_en": "Tractor-semitrailer Sattelzug (FGSV 2001)",
+  "name_nl": "Trekker met oplegger Sattelzug (FGSV 2001)",
+  "category": "tractor_semitrailer",
+  "standard": "FGSV RASt 06 / Bemessungsfahrzeuge",
+  "region": "DE",
+  "source_url": "https://www.medebach.de/fileadmin/user_upload/Stadt/Ausschreibungen/2020-12-08-Befahrbarkeitsuntersuchung.pdf",
+  "height": 4.0,
+  "turning_radius_outer": 7.9,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 6.08,
+    "width": 2.55,
+    "front_overhang": 1.43,
+    "axles": [
+     {
+      "x": 1.43,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 5.23,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 4.5,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 13.61,
+    "width": 2.55,
+    "front_overhang": 8.05,
+    "axles": [
+     {
+      "x": 8.05,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 9.36,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 10.67,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 1.61
+   }
+  ],
+  "estimated": [
+   "dual",
+   "height",
+   "tandem_spacing",
+   "track",
+   "width"
+  ],
+  "notes": "Vehicle data block 'Bemessungsfahrzeug nach FGSV 2001 - Sattelzug' in a Befahrbarkeitsuntersuchung (Medebach 2020): tractor 1.43 + 3.80 + 0.85 (= 6.08 m), kingpin 1.58 m ahead of tractor rear end, semitrailer 1.61 + 7.75 + 4.25 (= 13.61 m), overall 16.50 m, R_aussen = 7.90 m. Tri-axle spacing (1.31 m) estimated; width 2.55 and height 4.00 are the legal maxima (StVZO / 96/53/EC), not read from the block."
+ },
+ {
+  "id": "de_stadtbahnwagen_b",
+  "name_en": "Light rail vehicle Stadtbahnwagen B (DUEWAG, 28 m)",
+  "name_nl": "Lightrailvoertuig Stadtbahnwagen B (DUEWAG, 28 m)",
+  "category": "rail",
+  "standard": "manufacturer",
+  "region": "DE",
+  "source_url": "https://de.wikipedia.org/wiki/Stadtbahnwagen_Typ_B",
+  "height": 3.36,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "rail_car",
+    "length": 14.0,
+    "width": 2.65,
+    "front_overhang": 4.0,
+    "axles": [
+     {
+      "x": 4.0,
+      "track": 1.44,
+      "dual": false,
+      "steer": true
+     }
+    ],
+    "hitch_x": 14.0,
+    "kingpin_x": null
+   },
+   {
+    "kind": "rail_car",
+    "length": 14.0,
+    "width": 2.65,
+    "front_overhang": 0.0,
+    "axles": [
+     {
+      "x": 0.0,
+      "track": 1.44,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 10.0,
+      "track": 1.44,
+      "dual": false,
+      "steer": true
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.0
+   }
+  ],
+  "estimated": [
+   "axles",
+   "hitch_x"
+  ],
+  "notes": "Two-section articulated LRV (B'2'B'), length over couplers 28.000 m, width 2.650 m, height 3.360 m, bogie pivot distance 10.000 m, bogie wheelbase 2.100 m, standard gauge 1435 mm (track = gauge). Axles here are bogie centres; sections assumed equal (14.0 m each) with the Jakobs bogie at the articulation (x = 0 of section 2), so bogie positions are derived/estimated. Used in Koeln, Bonn, Duesseldorf, Essen, etc."
+ },
+ {
+  "id": "eu_tractor_semitrailer_16_5",
+  "name_en": "Articulated vehicle 16.50 m (EU max.)",
+  "name_nl": "Trekker met oplegger 16,50 m (EU-max.)",
+  "category": "tractor_semitrailer",
+  "standard": "EU 96/53/EC (max)",
+  "region": "EU",
+  "source_url": "https://www.legislation.gov.uk/eudr/1996/53/annex/I",
+  "height": 4.0,
+  "turning_radius_outer": 12.5,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 6.05,
+    "width": 2.55,
+    "front_overhang": 1.25,
+    "axles": [
+     {
+      "x": 1.25,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 5.2,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 4.41,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 14.16,
+    "width": 2.55,
+    "front_overhang": 8.42,
+    "axles": [
+     {
+      "x": 8.42,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 9.73,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 11.04,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 2.07
+   }
+  ],
+  "estimated": [
+   "dual",
+   "tandem_spacing",
+   "track",
+   "tractor_length"
+  ],
+  "notes": "Max. dimensions per Directive 96/53/EC Annex I as amended (2015/719, 2019/1242): width 2.55 m (2.60 m conditioned bodies), height 4.00 m, swept circle outer radius 12.50 m / inner 5.30 m (turning_radius_outer = 12.50). Axle layout from Kanton Zuerich Tiefbauamt 'Grundlagen Schleppkurvennachweise' (https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/planen-bauen/tiefbau/dokumente-tiefbau/kreisel/grundlagen_schleppkurvennachweise.pdf), which models vehicles at these limits. Zuerich template: tractor front overhang 1.25, WB 3.95, fifth wheel 0.79 ahead of drive axle; semitrailer 14.16 m, kingpin to tri-axle centre 7.66, rear overhang 4.43 (kingpin_x 2.07 derived). Tractor rear end (0.85 m behind drive axle) and tri-axle spacing 1.31 m estimated."
+ },
+ {
+  "id": "eu_truck_trailer_18_75",
+  "name_en": "Road train (truck + drawbar trailer) 18.75 m (EU max.)",
+  "name_nl": "Vrachtwagen met aanhanger 18,75 m (EU-max.)",
+  "category": "truck_trailer",
+  "standard": "EU 96/53/EC (max)",
+  "region": "EU",
+  "source_url": "https://www.legislation.gov.uk/eudr/1996/53/annex/I",
+  "height": 4.0,
+  "turning_radius_outer": 12.5,
+  "units": [
+   {
+    "kind": "body",
+    "length": 9.9,
+    "width": 2.55,
+    "front_overhang": 1.8,
+    "axles": [
+     {
+      "x": 1.8,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 7.33,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 8.68,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 9.6,
+    "kingpin_x": null
+   },
+   {
+    "kind": "trailer",
+    "length": 7.55,
+    "width": 2.55,
+    "front_overhang": 1.2,
+    "axles": [
+     {
+      "x": 1.2,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 6.35,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": -1.6
+   }
+  ],
+  "estimated": [
+   "dual",
+   "tandem_spacing",
+   "track"
+  ],
+  "notes": "Max. dimensions per Directive 96/53/EC Annex I as amended (2015/719, 2019/1242): width 2.55 m (2.60 m conditioned bodies), height 4.00 m, swept circle outer radius 12.50 m / inner 5.30 m (turning_radius_outer = 12.50). Axle layout from Kanton Zuerich Tiefbauamt 'Grundlagen Schleppkurvennachweise' (https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/planen-bauen/tiefbau/dokumente-tiefbau/kreisel/grundlagen_schleppkurvennachweise.pdf), which models vehicles at these limits. Zuerich template (theoretical composition): 3-axle rigid 9.90 m (front overhang 1.80, front axle to tandem centre 6.20, coupling 1.60 behind tandem centre), gap 1.30 m, 2-axle drawbar trailer 7.55 m (1.20 + 5.15 + 1.20) with drawbar 2.80 m from coupling to trailer front axle. kingpin_x is negative: drawbar eye lies 1.60 m ahead of the trailer body. Tandem spacing 1.35 m estimated."
+ },
+ {
+  "id": "eu_articulated_bus_18_75",
+  "name_en": "Articulated bus 18.75 m (EU max.)",
+  "name_nl": "Gelede bus 18,75 m (EU-max.)",
+  "category": "articulated_bus",
+  "standard": "EU 96/53/EC (max)",
+  "region": "EU",
+  "source_url": "https://www.legislation.gov.uk/eudr/1996/53/annex/I",
+  "height": null,
+  "turning_radius_outer": 12.5,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 10.6,
+    "width": 2.55,
+    "front_overhang": 2.77,
+    "axles": [
+     {
+      "x": 2.77,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 8.7,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 10.6,
+    "kingpin_x": null
+   },
+   {
+    "kind": "bus_rear",
+    "length": 8.15,
+    "width": 2.55,
+    "front_overhang": 4.94,
+    "axles": [
+     {
+      "x": 4.94,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.0
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Max. dimensions per Directive 96/53/EC Annex I as amended (2015/719, 2019/1242): width 2.55 m (2.60 m conditioned bodies), height 4.00 m, swept circle outer radius 12.50 m / inner 5.30 m (turning_radius_outer = 12.50). Axle layout from Kanton Zuerich Tiefbauamt 'Grundlagen Schleppkurvennachweise' (https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/planen-bauen/tiefbau/dokumente-tiefbau/kreisel/grundlagen_schleppkurvennachweise.pdf), which models vehicles at these limits. Zuerich 'Gelenkbus' (rigid trailing axle, pusher): 2.77 + 5.93 + 1.90 (middle axle to joint) + 4.94 (joint to rear axle) + 3.21 = 18.75 m. Units split at the joint. Height not given."
+ },
+ {
+  "id": "eu_bus_3axle_15",
+  "name_en": "Three-axle bus 15 m (EU max.)",
+  "name_nl": "Driedubbelassige bus 15 m (EU-max.)",
+  "category": "bus",
+  "standard": "EU 96/53/EC (max)",
+  "region": "EU",
+  "source_url": "https://www.legislation.gov.uk/eudr/1996/53/annex/I",
+  "height": null,
+  "turning_radius_outer": 12.5,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 14.95,
+    "width": 2.55,
+    "front_overhang": 3.1,
+    "axles": [
+     {
+      "x": 3.1,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 10.05,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     },
+     {
+      "x": 11.55,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "tag_axle_x",
+   "track"
+  ],
+  "notes": "Max. dimensions per Directive 96/53/EC Annex I as amended (2015/719, 2019/1242): width 2.55 m (2.60 m conditioned bodies), height 4.00 m, swept circle outer radius 12.50 m / inner 5.30 m (turning_radius_outer = 12.50). Axle layout from Kanton Zuerich Tiefbauamt 'Grundlagen Schleppkurvennachweise' (https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/planen-bauen/tiefbau/dokumente-tiefbau/kreisel/grundlagen_schleppkurvennachweise.pdf), which models vehicles at these limits. Zuerich 'Dreiachsbus (15 m)': front overhang 3.10, WB 6.95 to drive axle, 4.90 from drive axle to rear (drawn length 14.95 m, table 15.00 m). Tag axle is force-steered; its position (1.50 m behind the drive axle) is estimated. Height not given."
+ },
+ {
+  "id": "eu_bus_2axle_12",
+  "name_en": "Standard city bus 12 m (EU/CH template)",
+  "name_nl": "Standaard stadsbus 12 m (EU/CH-sjabloon)",
+  "category": "bus",
+  "standard": "EU 96/53/EC (max)",
+  "region": "EU",
+  "source_url": "https://www.legislation.gov.uk/eudr/1996/53/annex/I",
+  "height": null,
+  "turning_radius_outer": 12.5,
+  "units": [
+   {
+    "kind": "bus",
+    "length": 12.14,
+    "width": 2.55,
+    "front_overhang": 2.81,
+    "axles": [
+     {
+      "x": 2.81,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 8.71,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "dual",
+   "track"
+  ],
+  "notes": "Max. dimensions per Directive 96/53/EC Annex I as amended (2015/719, 2019/1242): width 2.55 m (2.60 m conditioned bodies), height 4.00 m, swept circle outer radius 12.50 m / inner 5.30 m (turning_radius_outer = 12.50). Axle layout from Kanton Zuerich Tiefbauamt 'Grundlagen Schleppkurvennachweise' (https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/planen-bauen/tiefbau/dokumente-tiefbau/kreisel/grundlagen_schleppkurvennachweise.pdf), which models vehicles at these limits. Zuerich 'Normalbus (12 m)': 2.81 + 5.90 + 3.43 = 12.14 m (EU limit for 2-axle buses is 13.50 m). Height not given."
+ },
+ {
+  "id": "austroads_car_b99",
+  "name_en": "Passenger vehicle 5.2 m (Austroads B99)",
+  "name_nl": "Personenauto 5,2 m (Austroads B99)",
+  "category": "car",
+  "standard": "Austroads",
+  "region": "AU",
+  "source_url": "http://web.archive.org/web/20221025003447/https://austroads.com.au/__data/assets/file/0027/395352/AP-G94-13_Design_Vehicles.zip",
+  "height": null,
+  "turning_radius_outer": 6.3,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.2,
+    "width": 1.94,
+    "front_overhang": 0.95,
+    "axles": [
+     {
+      "x": 0.95,
+      "track": 1.69,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.0,
+      "track": 1.69,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang",
+   "track"
+  ],
+  "notes": "Austroads AP-G34-13 'Design Vehicles and Turning Path Templates' (2013), drawing 'Passenger vehicle (5.2 m)': overall 5200, overhangs 950 / 1200, WB 3050, width 1940 mm. The 950 mm overhang is taken as the front one (rounded nose in the drawing) - orientation inferred. Turning radius = smallest Austroads template radius for this vehicle (6.3 m). Height not given."
+ },
+ {
+  "id": "uk_longer_semitrailer_18_55",
+  "name_en": "Longer semi-trailer combination 18.55 m (UK LST)",
+  "name_nl": "Trekker met verlengde oplegger 18,55 m (VK LST)",
+  "category": "tractor_semitrailer",
+  "standard": "UK",
+  "region": "UK",
+  "source_url": "https://www.gov.uk/government/publications/longer-semi-trailer-lst-implementation-guide-for-operators/longer-semi-trailers-full-implementation-guide-for-operators",
+  "height": 4.0,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "tractor",
+    "length": 6.05,
+    "width": 2.55,
+    "front_overhang": 1.25,
+    "axles": [
+     {
+      "x": 1.25,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 5.2,
+      "track": 2.3,
+      "dual": true,
+      "steer": false
+     }
+    ],
+    "hitch_x": 4.41,
+    "kingpin_x": null
+   },
+   {
+    "kind": "semitrailer",
+    "length": 15.65,
+    "width": 2.55,
+    "front_overhang": 11.3,
+    "axles": [
+     {
+      "x": 11.3,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 12.61,
+      "track": 2.3,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 13.92,
+      "track": 2.3,
+      "dual": false,
+      "steer": true
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 1.6
+   }
+  ],
+  "estimated": [
+   "axles",
+   "dual",
+   "height",
+   "track",
+   "tractor_length",
+   "width"
+  ],
+  "notes": "UK longer semi-trailer (LST): semi-trailer up to 15.65 m, combination max 18.55 m, kingpin to rear <= 14.05 m (kingpin_x 1.60 derived at that limit), at least 3 axles of which one steers, must pass the 13.6 m trailer turning-circle test. Tractor taken from the EU 16.50 m template; trailer axle positions (tri-axle, rear axle steered) estimated; assembled length 18.46 m. Width/height = general limits."
+ },
+ {
+  "id": "uk_taxi_levc_tx",
+  "name_en": "London taxi LEVC TX",
+  "name_nl": "Londense taxi LEVC TX",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "UK",
+  "source_url": "https://en.wikipedia.org/wiki/LEVC_TX",
+  "height": 1.89,
+  "turning_radius_outer": 4.23,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.86,
+    "width": 1.87,
+    "front_overhang": 0.94,
+    "axles": [
+     {
+      "x": 0.94,
+      "track": 1.62,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.93,
+      "track": 1.62,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang",
+   "track"
+  ],
+  "notes": "L 4857, W 1874, H 1888, WB 2986 mm; turning circle 8.45 m (radius 4.23 m) per London taxi conditions of fitness (front wheels steer up to 63 deg). Overhang split estimated (equal)."
+ },
+ {
+  "id": "uk_bicycle",
+  "name_en": "Solo upright cycle (LTN 1/20)",
+  "name_nl": "Fiets (LTN 1/20)",
+  "category": "two_wheeler",
+  "standard": "UK",
+  "region": "UK",
+  "source_url": "https://assets.publishing.service.gov.uk/media/5ffa1f96d3bf7f65d9e35825/cycle-infrastructure-design-ltn-1-20.pdf",
+  "height": null,
+  "turning_radius_outer": 1.65,
+  "units": [
+   {
+    "kind": "bike",
+    "length": 1.8,
+    "width": 0.65,
+    "front_overhang": 0.35,
+    "axles": [
+     {
+      "x": 0.35,
+      "track": 0.0,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 1.45,
+      "track": 0.0,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "axles"
+  ],
+  "notes": "DfT LTN 1/20 Cycle Infrastructure Design, Table 5-1 (typical length/width, minimum turning circle outer radius). Wheel positions are not in the source and are estimated. Width is handlebar width. Inner turning radius 0.85 m."
+ },
+ {
+  "id": "uk_tandem_cycle",
+  "name_en": "Tandem cycle (LTN 1/20)",
+  "name_nl": "Tandem (LTN 1/20)",
+  "category": "two_wheeler",
+  "standard": "UK",
+  "region": "UK",
+  "source_url": "https://assets.publishing.service.gov.uk/media/5ffa1f96d3bf7f65d9e35825/cycle-infrastructure-design-ltn-1-20.pdf",
+  "height": null,
+  "turning_radius_outer": 3.15,
+  "units": [
+   {
+    "kind": "bike",
+    "length": 2.4,
+    "width": 0.65,
+    "front_overhang": 0.35,
+    "axles": [
+     {
+      "x": 0.35,
+      "track": 0.0,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 2.05,
+      "track": 0.0,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "axles"
+  ],
+  "notes": "DfT LTN 1/20 Cycle Infrastructure Design, Table 5-1 (typical length/width, minimum turning circle outer radius). Wheel positions are not in the source and are estimated. Inner turning radius 2.25 m."
+ },
+ {
+  "id": "uk_cycle_with_trailer",
+  "name_en": "Cycle with 850 mm trailer (LTN 1/20)",
+  "name_nl": "Fiets met aanhanger 850 mm (LTN 1/20)",
+  "category": "two_wheeler",
+  "standard": "UK",
+  "region": "UK",
+  "source_url": "https://assets.publishing.service.gov.uk/media/5ffa1f96d3bf7f65d9e35825/cycle-infrastructure-design-ltn-1-20.pdf",
+  "height": null,
+  "turning_radius_outer": 2.65,
+  "units": [
+   {
+    "kind": "bike",
+    "length": 1.8,
+    "width": 0.65,
+    "front_overhang": 0.35,
+    "axles": [
+     {
+      "x": 0.35,
+      "track": 0.0,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 1.45,
+      "track": 0.0,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": 1.6,
+    "kingpin_x": null
+   },
+   {
+    "kind": "trailer",
+    "length": 1.1,
+    "width": 0.85,
+    "front_overhang": 0.75,
+    "axles": [
+     {
+      "x": 0.75,
+      "track": 0.6,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": 0.0
+   }
+  ],
+  "estimated": [
+   "axles",
+   "hitch_x",
+   "track"
+  ],
+  "notes": "DfT LTN 1/20 Cycle Infrastructure Design, Table 5-1 (typical length/width, minimum turning circle outer radius). Wheel positions are not in the source and are estimated. Combination 2.7 m long, 0.85 m wide; trailer unit measured from the coupling."
+ },
+ {
+  "id": "uk_cycle_design_vehicle",
+  "name_en": "Cycle design vehicle / cargo bike envelope (LTN 1/20)",
+  "name_nl": "Ontwerpfiets / bakfiets-omhullende (LTN 1/20)",
+  "category": "two_wheeler",
+  "standard": "UK",
+  "region": "UK",
+  "source_url": "https://assets.publishing.service.gov.uk/media/5ffa1f96d3bf7f65d9e35825/cycle-infrastructure-design-ltn-1-20.pdf",
+  "height": null,
+  "turning_radius_outer": 3.4,
+  "units": [
+   {
+    "kind": "bike",
+    "length": 2.8,
+    "width": 1.2,
+    "front_overhang": 0.35,
+    "axles": [
+     {
+      "x": 0.35,
+      "track": 0.0,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 2.45,
+      "track": 0.9,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "axles",
+   "track"
+  ],
+  "notes": "DfT LTN 1/20 Cycle Infrastructure Design, Table 5-1 (typical length/width, minimum turning circle outer radius). Wheel positions are not in the source and are estimated. Composite 'cycle design vehicle' (max 2.8 m x 1.2 m) covering cargo bikes, tricycles and adapted cycles; use as bakfiets envelope. Inner radius 0.1 m (pivoting cycles) or 2.5 m (3/4-wheel cycles)."
+ },
+ {
+  "id": "uk_wheelchair_manual",
+  "name_en": "Manual wheelchair with user, 95th percentile (Inclusive Mobility)",
+  "name_nl": "Handbewogen rolstoel met gebruiker, 95e percentiel (Inclusive Mobility)",
+  "category": "special",
+  "standard": "UK",
+  "region": "UK",
+  "source_url": "https://assets.publishing.service.gov.uk/media/61d32bb7d3bf7f1f72b5ffd2/inclusive-mobility-a-guide-to-best-practice-on-access-to-pedestrian-and-transport-infrastructure.pdf",
+  "height": 1.37,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "body",
+    "length": 1.18,
+    "width": 0.7,
+    "front_overhang": 0.15,
+    "axles": [
+     {
+      "x": 0.15,
+      "track": 0.55,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 0.85,
+      "track": 0.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "axles",
+   "track"
+  ],
+  "notes": "DfT Inclusive Mobility (2021), TRL 1999 occupied-wheelchair survey: manual wheelchair 95th percentile length 1183 mm, width 702 mm (excl. elbows/hands); height = 95th percentile of all wheelchair users (1374 mm). Castor/drive-wheel positions estimated. Manual propulsion needs 50-100 mm clearance each side."
+ },
+ {
+  "id": "uk_mobility_scooter",
+  "name_en": "Mobility scooter with user, 95th percentile (Inclusive Mobility)",
+  "name_nl": "Scootmobiel met gebruiker, 95e percentiel (Inclusive Mobility)",
+  "category": "special",
+  "standard": "UK",
+  "region": "UK",
+  "source_url": "https://assets.publishing.service.gov.uk/media/61d32bb7d3bf7f1f72b5ffd2/inclusive-mobility-a-guide-to-best-practice-on-access-to-pedestrian-and-transport-infrastructure.pdf",
+  "height": 1.44,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "body",
+    "length": 1.4,
+    "width": 0.69,
+    "front_overhang": 0.25,
+    "axles": [
+     {
+      "x": 0.25,
+      "track": 0.45,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 1.15,
+      "track": 0.55,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "axles",
+   "track"
+  ],
+  "notes": "DfT Inclusive Mobility (2021): mobility scooter 95th percentile length 1402 mm, width 685 mm, height 1438 mm (95th percentile of scooter users). Wheel positions estimated."
+ },
+ {
+  "id": "car_fiat_500e",
+  "name_en": "City car Fiat 500e (332)",
+  "name_nl": "Stadsauto Fiat 500e (332)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/fiat-500-332-3-1-e-42-kwh-118hp-42061",
+  "height": 1.53,
+  "turning_radius_outer": 4.85,
+  "units": [
+   {
+    "kind": "car",
+    "length": 3.63,
+    "width": 1.68,
+    "front_overhang": 0.66,
+    "axles": [
+     {
+      "x": 0.66,
+      "track": 1.43,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 2.98,
+      "track": 1.43,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang",
+   "track"
+  ],
+  "notes": "Mini segment (A). Width without mirrors (1900 mm with mirrors). Turning radius = half the published turning circle diameter (9.70 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_vw_polo",
+  "name_en": "Small car VW Polo VI",
+  "name_nl": "Kleine auto VW Polo VI",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/volkswagen-polo-vi-facelift-2021-1.0-tsi-116hp-dsg-51660",
+  "height": 1.45,
+  "turning_radius_outer": 5.35,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.07,
+    "width": 1.75,
+    "front_overhang": 0.76,
+    "axles": [
+     {
+      "x": 0.76,
+      "track": 1.5,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.31,
+      "track": 1.48,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Small car (B segment), 2021 facelift. Width without mirrors (1964 mm with). Turning radius = half the published turning circle diameter (10.70 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_renault_clio",
+  "name_en": "Small car Renault Clio VI",
+  "name_nl": "Kleine auto Renault Clio VI",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/renault-clio-vi-phase-i-1.8-158hp-e-tech-full-hybrid-multimode-55302",
+  "height": 1.45,
+  "turning_radius_outer": 5.2,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.12,
+    "width": 1.77,
+    "front_overhang": 0.86,
+    "axles": [
+     {
+      "x": 0.86,
+      "track": 1.5,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.45,
+      "track": 1.5,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "B segment. Published rear overhang 0.667 m (sum 4.117 m). Turning radius = half the published turning circle diameter (10.40 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "car_vw_golf",
+  "name_en": "Compact car VW Golf 8",
+  "name_nl": "Middenklasse VW Golf 8",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/volkswagen-golf-viii-facelift-2024-1.5-etsi-150hp-mild-hybrid-dsg-51252",
+  "height": 1.48,
+  "turning_radius_outer": 5.45,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.28,
+    "width": 1.79,
+    "front_overhang": 0.83,
+    "axles": [
+     {
+      "x": 0.83,
+      "track": 1.53,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.45,
+      "track": 1.5,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "C segment hatchback, 2024 facelift. Width without mirrors (2073 mm with). Turning radius = half the published turning circle diameter (10.90 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_toyota_corolla",
+  "name_en": "Compact sedan Toyota Corolla (E210)",
+  "name_nl": "Middenklasse sedan Toyota Corolla (E210)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://www.auto-data.net/en/toyota-corolla-xii-e210-facelift-2022-1.8-140hp-hybrid-e-cvt-48728",
+  "height": 1.44,
+  "turning_radius_outer": 5.2,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.63,
+    "width": 1.78,
+    "front_overhang": 0.94,
+    "axles": [
+     {
+      "x": 0.94,
+      "track": 1.53,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.64,
+      "track": 1.54,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "World's best-selling car line; rear overhang 0.995 m. Turning radius = half the published turning circle diameter (10.40 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "car_toyota_camry",
+  "name_en": "Mid-size sedan Toyota Camry (XV70)",
+  "name_nl": "Middenklasse sedan Toyota Camry (XV70)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "US",
+  "source_url": "https://www.auto-data.net/en/toyota-camry-viii-xv70-facelift-2020-xse-2.5-205hp-awd-ect-i-50523",
+  "height": 1.45,
+  "turning_radius_outer": 6.0,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.9,
+    "width": 1.84,
+    "front_overhang": 1.04,
+    "axles": [
+     {
+      "x": 1.04,
+      "track": 1.58,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.86,
+      "track": 1.6,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Typical US mid-size sedan. Turning radius = half the published turning circle diameter (12.00 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_mercedes_e_class",
+  "name_en": "Large sedan Mercedes-Benz E-Class (W214)",
+  "name_nl": "Grote sedan Mercedes-Benz E-Klasse (W214)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/mercedes-benz-e-class-w214-e-200-204hp-mild-hybrid-9g-tronic-48455",
+  "height": 1.47,
+  "turning_radius_outer": 5.8,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.95,
+    "width": 1.88,
+    "front_overhang": 0.99,
+    "axles": [
+     {
+      "x": 0.99,
+      "track": 1.63,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.96,
+      "track": 1.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Executive (E) segment; common taxi in DE. Turning radius = half the published turning circle diameter (11.60 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_mercedes_s_class",
+  "name_en": "Luxury sedan Mercedes-Benz S-Class (W223)",
+  "name_nl": "Luxe sedan Mercedes-Benz S-Klasse (W223)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/mercedes-benz-s-class-w223-facelift-2026-s-580e-585hp-eq-hybrid-4matic-9g-tronic-56284",
+  "height": 1.5,
+  "turning_radius_outer": 5.8,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.19,
+    "width": 1.92,
+    "front_overhang": 1.04,
+    "axles": [
+     {
+      "x": 1.04,
+      "track": 1.66,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.15,
+      "track": 1.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "F segment, normal wheelbase. Turning radius = half the published turning circle diameter (11.60 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_taxi_toyota_prius",
+  "name_en": "Taxi Toyota Prius (XW60)",
+  "name_nl": "Taxi Toyota Prius (XW60)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://www.auto-data.net/en/toyota-prius-v-xw60-1.8-140hp-hybrid-e-cvt-48348",
+  "height": 1.42,
+  "turning_radius_outer": 5.3,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.6,
+    "width": 1.78,
+    "front_overhang": 0.93,
+    "axles": [
+     {
+      "x": 0.93,
+      "track": 1.56,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.68,
+      "track": 1.57,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Hybrid widely used as taxi (EU/US/JP). Turning radius = half the published turning circle diameter (10.60 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_suv_toyota_rav4",
+  "name_en": "SUV Toyota RAV4 (XA50)",
+  "name_nl": "SUV Toyota RAV4 (XA50)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://www.auto-data.net/en/toyota-rav4-v-facelift-2021-2.0-173hp-cvt-54078",
+  "height": 1.69,
+  "turning_radius_outer": 5.7,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.6,
+    "width": 1.86,
+    "front_overhang": 0.91,
+    "axles": [
+     {
+      "x": 0.91,
+      "track": 1.6,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.6,
+      "track": 1.63,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "Compact SUV, best-selling SUV worldwide; rear overhang 1.000 m. Turning radius = half the published turning circle diameter (11.40 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "car_suv_tesla_model_y",
+  "name_en": "SUV Tesla Model Y (2025)",
+  "name_nl": "SUV Tesla Model Y (2025)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://www.auto-data.net/en/tesla-model-y-juniper-facelift-2025-performance-84.7-kwh-460hp-dual-motor-awd-56053",
+  "height": 1.61,
+  "turning_radius_outer": 6.07,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.8,
+    "width": 1.92,
+    "front_overhang": 0.9,
+    "axles": [
+     {
+      "x": 0.9,
+      "track": 1.64,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.79,
+      "track": 1.62,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "Mid-size electric SUV; rear overhang 1.011 m. Turning radius = half the published turning circle diameter (12.13 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "car_suv_volvo_xc90",
+  "name_en": "Large SUV Volvo XC90 II",
+  "name_nl": "Grote SUV Volvo XC90 II",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/volvo-xc90-ii-facelift-2024-2.0-t8-461hp-plug-in-hybrid-awd-geartronic-57843",
+  "height": 1.77,
+  "turning_radius_outer": 6.05,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.95,
+    "width": 1.93,
+    "front_overhang": 0.89,
+    "axles": [
+     {
+      "x": 0.89,
+      "track": 1.67,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.87,
+      "track": 1.67,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "Rear overhang 1.079 m; turning circle 11.9-12.1 m, upper used. Turning radius = half the published turning circle diameter (12.10 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "car_suv_chevrolet_suburban",
+  "name_en": "Full-size SUV Chevrolet Suburban (GMT T1XX)",
+  "name_nl": "Fullsize SUV Chevrolet Suburban (GMT T1XX)",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "US",
+  "source_url": "https://www.auto-data.net/en/chevrolet-suburban-gmtt1xx-6.2-v8-420hp-awd-automatic-38989",
+  "height": 1.92,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.73,
+    "width": 2.06,
+    "front_overhang": 1.16,
+    "axles": [
+     {
+      "x": 1.16,
+      "track": 1.74,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.57,
+      "track": 1.73,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Large US SUV (also basis of many US police/fleet vehicles). Turning circle not published. Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_mpv_vw_touran",
+  "name_en": "MPV VW Touran II",
+  "name_nl": "MPV VW Touran II",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/volkswagen-touran-ii-2.0-tdi-scr-122hp-41682",
+  "height": 1.67,
+  "turning_radius_outer": 5.75,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.53,
+    "width": 1.83,
+    "front_overhang": 0.87,
+    "axles": [
+     {
+      "x": 0.87,
+      "track": 1.56,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.66,
+      "track": 1.53,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Compact MPV. Width without mirrors (2087 mm with). Turning radius = half the published turning circle diameter (11.50 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "car_mpv_nissan_e_nv200",
+  "name_en": "MPV / taxi van Nissan e-NV200",
+  "name_nl": "MPV / taxibus Nissan e-NV200",
+  "category": "car",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://www.auto-data.net/en/nissan-e-nv200-40-kwh-109hp-32727",
+  "height": 1.86,
+  "turning_radius_outer": 5.57,
+  "units": [
+   {
+    "kind": "car",
+    "length": 4.56,
+    "width": 1.76,
+    "front_overhang": 0.99,
+    "axles": [
+     {
+      "x": 0.99,
+      "track": 1.53,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.71,
+      "track": 1.53,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "NV200 family is the NYC 'Taxi of Tomorrow' base; rear overhang 0.850 m. Turning radius = half the published turning circle diameter (11.13 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "emergency_police_ford_explorer",
+  "name_en": "Police SUV Ford Explorer VI (Police Interceptor Utility base)",
+  "name_nl": "Politie-SUV Ford Explorer VI (basis Police Interceptor Utility)",
+  "category": "emergency",
+  "standard": "manufacturer",
+  "region": "US",
+  "source_url": "https://www.auto-data.net/en/ford-explorer-vi-facelift-2024-2.3-ecoboost-300hp-automatic-51997",
+  "height": 1.77,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.05,
+    "width": 2.0,
+    "front_overhang": 0.85,
+    "axles": [
+     {
+      "x": 0.85,
+      "track": 1.7,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.88,
+      "track": 1.7,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "Civilian Explorer VI (2024) dimensions; the Ford Police Interceptor Utility is derived from it (light bar adds height). Rear overhang 1.169 m. Turning circle not published."
+ },
+ {
+  "id": "pickup_toyota_hilux",
+  "name_en": "Pick-up Toyota Hilux Double Cab",
+  "name_nl": "Pick-up Toyota Hilux dubbele cabine",
+  "category": "pickup",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://www.auto-data.net/en/toyota-hilux-double-cab-viii-facelift-2020-2.4-d-4d-150hp-4x4-41944",
+  "height": 1.82,
+  "turning_radius_outer": 6.7,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.33,
+    "width": 1.86,
+    "front_overhang": 1.12,
+    "axles": [
+     {
+      "x": 1.12,
+      "track": 1.54,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.21,
+      "track": 1.55,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Global mid-size pick-up. Width 1855-1900 mm depending on version. Turning radius = half the published turning circle diameter (13.40 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "pickup_ford_f150",
+  "name_en": "Full-size pick-up Ford F-150 SuperCrew",
+  "name_nl": "Fullsize pick-up Ford F-150 SuperCrew",
+  "category": "pickup",
+  "standard": "manufacturer",
+  "region": "US",
+  "source_url": "https://www.auto-data.net/en/ford-f-series-f-150-xiv-supercrew-facelift-2023-tremor-5.0-v8-400hp-4x4-selectshift-53990",
+  "height": 2.01,
+  "turning_radius_outer": 7.3,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.89,
+    "width": 2.03,
+    "front_overhang": 0.96,
+    "axles": [
+     {
+      "x": 0.96,
+      "track": 1.74,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.65,
+      "track": 1.76,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "Best-selling US vehicle; SuperCrew 5.5 ft box (Tremor trim). Rear overhang 1.232 m; width without mirrors (2431 mm with). Turning radius = half the published turning circle diameter (14.60 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "pickup_ram_1500_crew_cab",
+  "name_en": "Full-size pick-up RAM 1500 Crew Cab (DT)",
+  "name_nl": "Fullsize pick-up RAM 1500 Crew Cab (DT)",
+  "category": "pickup",
+  "standard": "manufacturer",
+  "region": "US",
+  "source_url": "https://www.auto-data.net/en/ram-1500-crew-cab-dt-facelift-2024-5.7-hemi-v8-etorque-395hp-torqueflite-55280",
+  "height": 1.97,
+  "turning_radius_outer": 7.04,
+  "units": [
+   {
+    "kind": "car",
+    "length": 5.9,
+    "width": 2.06,
+    "front_overhang": 1.12,
+    "axles": [
+     {
+      "x": 1.12,
+      "track": 1.74,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.79,
+      "track": 1.73,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Crew Cab, 5'7\" box, 2024 facelift. Turning radius = half the published turning circle diameter (14.08 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "van_vw_transporter_t6_swb",
+  "name_en": "Small van VW Transporter T6 SWB",
+  "name_nl": "Kleine bestelbus VW Transporter T6 kort",
+  "category": "van",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "http://blog.le-parnass.com/catalogue_pdf/vw_new_transporter201512_e.pdf",
+  "height": 1.99,
+  "turning_radius_outer": 5.95,
+  "units": [
+   {
+    "kind": "body",
+    "length": 4.89,
+    "width": 1.9,
+    "front_overhang": 0.9,
+    "axles": [
+     {
+      "x": 0.9,
+      "track": 1.65,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 3.9,
+      "track": 1.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "VW Commercial Vehicles brochure 12/2015, panel van dimensions: 896 + 3000 + 996 = 4892 mm, width 1904 (2283 incl. mirrors), height 1990 (low roof; 2176 medium). Turning radius = half the published turning circle diameter (11.90 m, wall to wall)."
+ },
+ {
+  "id": "van_vw_transporter_t61_lwb",
+  "name_en": "Van VW Transporter T6.1 LWB",
+  "name_nl": "Bestelbus VW Transporter T6.1 lang",
+  "category": "van",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/volkswagen-transporter-t6.1-facelift-2019-panel-van-2.0-tdi-150hp-l2h1-49763",
+  "height": 1.99,
+  "turning_radius_outer": 6.6,
+  "units": [
+   {
+    "kind": "body",
+    "length": 5.3,
+    "width": 1.9,
+    "front_overhang": 0.91,
+    "axles": [
+     {
+      "x": 0.91,
+      "track": 1.65,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.31,
+      "track": 1.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "L2H1 panel van; rear overhang 0.998 m. Turning radius = half the published turning circle diameter (13.20 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "van_mercedes_vito_long",
+  "name_en": "Van Mercedes-Benz Vito long (W447)",
+  "name_nl": "Bestelbus Mercedes-Benz Vito lang (W447)",
+  "category": "van",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/mercedes-benz-vito-w447-facelift-2023-crew-van-long-124-cdi-237hp-9g-tronic-55940",
+  "height": 1.91,
+  "turning_radius_outer": 5.9,
+  "units": [
+   {
+    "kind": "body",
+    "length": 5.14,
+    "width": 1.93,
+    "front_overhang": 0.9,
+    "axles": [
+     {
+      "x": 0.9,
+      "track": 1.67,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.1,
+      "track": 1.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "Rear overhang 1.045 m. Turning radius = half the published turning circle diameter (11.80 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "van_toyota_hiace_super_long",
+  "name_en": "Van Toyota HiAce Super Long (H200)",
+  "name_nl": "Bestelbus Toyota HiAce Super Long (H200)",
+  "category": "van",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://www.auto-data.net/en/toyota-hiace-v-h200-facelift-2026-van-super-long-2.8l-151hp-super-ect-56596",
+  "height": 2.29,
+  "turning_radius_outer": 6.1,
+  "units": [
+   {
+    "kind": "body",
+    "length": 5.38,
+    "width": 1.88,
+    "front_overhang": 1.14,
+    "axles": [
+     {
+      "x": 1.14,
+      "track": 1.66,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.25,
+      "track": 1.65,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Common van/minibus in Asia, Africa, Australia. Turning radius = half the published turning circle diameter (12.20 m; curb/wall basis not stated). Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "van_mercedes_esprinter_standard",
+  "name_en": "Large van Mercedes-Benz eSprinter standard (W907)",
+  "name_nl": "Grote bestelbus Mercedes-Benz eSprinter standaard (W907)",
+  "category": "van",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/mercedes-benz-esprinter-panel-van-w907-w910-55-kwh-116hp-43664",
+  "height": 2.69,
+  "turning_radius_outer": 7.85,
+  "units": [
+   {
+    "kind": "body",
+    "length": 6.09,
+    "width": 2.02,
+    "front_overhang": 1.02,
+    "axles": [
+     {
+      "x": 1.02,
+      "track": 1.76,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 4.95,
+      "track": 1.77,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "track"
+  ],
+  "notes": "Sprinter 3rd gen standard length (L2, WB 3924): 1021 + 3924 + 1152 mm (published sum 6097 vs length 6088). Track taken from the Sprinter Compact on the same platform (1759/1770 mm). Turning radius = half of the 15.7 m turning circle."
+ },
+ {
+  "id": "van_renault_master_l3h2",
+  "name_en": "Large van Renault Master L3H2",
+  "name_nl": "Grote bestelbus Renault Master L3H2",
+  "category": "van",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/renault-master-iii-phase-iii-2019-panel-van-33-kwh-76hp-l3h2-direct-drive-40117",
+  "height": 2.5,
+  "turning_radius_outer": 8.1,
+  "units": [
+   {
+    "kind": "body",
+    "length": 6.23,
+    "width": 2.07,
+    "front_overhang": 0.87,
+    "axles": [
+     {
+      "x": 0.87,
+      "track": 1.75,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 5.2,
+      "track": 1.73,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "L3H2 panel van (front-wheel drive); rear overhang 1.024 m. Turning radius = half the published turning circle diameter (16.20 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "van_iveco_daily_l4h3",
+  "name_en": "Large van Iveco Daily L4H3",
+  "name_nl": "Grote bestelbus Iveco Daily L4H3",
+  "category": "van",
+  "standard": "manufacturer",
+  "region": "EU",
+  "source_url": "https://www.auto-data.net/en/iveco-daily-iii-facelift-2021-panel-van-2.3-156hp-l4h3-single-wheel-57452",
+  "height": 2.85,
+  "turning_radius_outer": 6.9,
+  "units": [
+   {
+    "kind": "body",
+    "length": 7.28,
+    "width": 2.05,
+    "front_overhang": 1.06,
+    "axles": [
+     {
+      "x": 1.06,
+      "track": 1.74,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 5.16,
+      "track": 1.7,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [],
+  "notes": "Largest common panel van (single rear wheels); also a typical ambulance/minibus base. Rear overhang 2.126 m. Turning radius = half the published turning circle diameter (13.80 m; curb/wall basis not stated)."
+ },
+ {
+  "id": "mc_bmw_r1250gs",
+  "name_en": "Motorcycle BMW R 1250 GS",
+  "name_nl": "Motorfiets BMW R 1250 GS",
+  "category": "two_wheeler",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://en.wikipedia.org/wiki/BMW_R1250GS",
+  "height": 1.45,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "bike",
+    "length": 2.21,
+    "width": 0.9,
+    "front_overhang": 0.35,
+    "axles": [
+     {
+      "x": 0.35,
+      "track": 0.0,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 1.85,
+      "track": 0.0,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Large adventure motorcycle: L 2207, W 895 (handlebar), H 1450, WB 1500 mm. Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "mc_yamaha_mt07",
+  "name_en": "Motorcycle Yamaha MT-07",
+  "name_nl": "Motorfiets Yamaha MT-07",
+  "category": "two_wheeler",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://en.wikipedia.org/wiki/Yamaha_MT-07",
+  "height": null,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "bike",
+    "length": 2.09,
+    "width": 0.75,
+    "front_overhang": 0.34,
+    "axles": [
+     {
+      "x": 0.34,
+      "track": 0.0,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 1.74,
+      "track": 0.0,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Mid-size naked motorcycle: L 2085, W 745, WB 1400 mm, seat height 805 mm (overall height not given). Overhang split estimated (equal)."
+ },
+ {
+  "id": "scooter_honda_pcx125",
+  "name_en": "Scooter Honda PCX125",
+  "name_nl": "Scooter Honda PCX125",
+  "category": "two_wheeler",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "https://en.wikipedia.org/wiki/Honda_PCX",
+  "height": 1.09,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "bike",
+    "length": 1.92,
+    "width": 0.74,
+    "front_overhang": 0.31,
+    "axles": [
+     {
+      "x": 0.31,
+      "track": 0.0,
+      "dual": false,
+      "steer": true
+     },
+     {
+      "x": 1.61,
+      "track": 0.0,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "Best-selling 125 cc scooter: L 1915, W 740, H 1090, WB 1305 mm. Overhang split not published: front/rear taken equal."
+ },
+ {
+  "id": "construction_excavator_cat_320",
+  "name_en": "Hydraulic excavator Caterpillar 320 (22 t)",
+  "name_nl": "Rupsgraafmachine Caterpillar 320 (22 t)",
+  "category": "construction",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "http://web.archive.org/web/20240915102458/https://www.cat.com/en_US/products/new/equipment/excavators/medium-excavators/1000032602.html",
+  "height": 2.96,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "body",
+    "length": 9.53,
+    "width": 2.98,
+    "front_overhang": 4.88,
+    "axles": [
+     {
+      "x": 4.88,
+      "track": 2.38,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 8.53,
+      "track": 2.38,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "axles"
+  ],
+  "notes": "Shipping length 9530 (boom/stick folded forward), shipping height to top of cab 2960, transport width 2980, track gauge 2380, track length 4450, length to centre of rollers 3650, tail swing radius 2830 mm. 'Axles' are the idler/sprocket centres (3.65 m apart); the slew centre is assumed at mid-track, 2.83 m ahead of the counterweight, so positions are derived. Tracked: turns on the spot; tail swing radius 2.83 m."
+ },
+ {
+  "id": "construction_wheel_loader_cat_950",
+  "name_en": "Wheel loader Caterpillar 950",
+  "name_nl": "Wiellader Caterpillar 950",
+  "category": "construction",
+  "standard": "manufacturer",
+  "region": "GLOBAL",
+  "source_url": "http://web.archive.org/web/20250322050642/https://www.cat.com/en_US/products/new/equipment/wheel-loaders/medium-wheel-loaders/124880.html",
+  "height": 3.46,
+  "turning_radius_outer": null,
+  "units": [
+   {
+    "kind": "body",
+    "length": 7.02,
+    "width": 2.82,
+    "front_overhang": 1.62,
+    "axles": [
+     {
+      "x": 1.62,
+      "track": 2.14,
+      "dual": false,
+      "steer": false
+     },
+     {
+      "x": 4.97,
+      "track": 2.14,
+      "dual": false,
+      "steer": false
+     }
+    ],
+    "hitch_x": null,
+    "kingpin_x": null
+   }
+  ],
+  "estimated": [
+   "front_overhang"
+  ],
+  "notes": "CAT 950 standard lift: overall length without bucket 7024, wheelbase 3350, width over tyres 2824, tread 2140, height to top of ROPS 3456 mm. Articulated steering (hitch at mid-wheelbase), so neither axle steers. Rear axle to counterweight 2055 mm taken from the CAT 950 GC page (estimate) to place the axles."
+ }
 ]
