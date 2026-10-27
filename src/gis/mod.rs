@@ -8,6 +8,7 @@ pub mod caps;
 pub mod crs;
 pub mod files;
 pub mod geocode;
+pub mod gwsw;
 pub mod http;
 pub mod klic;
 pub mod ogcapi;

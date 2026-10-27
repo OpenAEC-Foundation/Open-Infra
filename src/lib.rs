@@ -14,6 +14,7 @@ pub mod basisdata;
 pub mod bestand;
 pub mod lang;
 pub mod library;
+pub mod riolering;
 pub mod nlcs;
 pub mod tekenblad;
 mod ui;
@@ -651,6 +652,17 @@ impl BuiltinPlugin for OpenInfra {
                     file_import(host, arg, None);
                 }
             }
+            "GIS_Q_GWSW" | "GIS_GWSW" => {
+                let Some(site) = require_site(host) else { return true };
+                host.push_info(&format!("[Open Infra] GWSW {} …", lang::tr("riolering ophalen", "sewers")));
+                std::thread::spawn(move || {
+                    let cols: Vec<&str> = gis::gwsw::COLLECTIONS.iter().map(|(c, _)| *c).collect();
+                    match riolering::import(&site, &cols, &basisdata::NlcsOptions::default(), &|_| {}) {
+                        Ok(m) => bridge::info(&m),
+                        Err(e) => bridge::error(&format!("GWSW: {e}")),
+                    }
+                });
+            }
             "GIS_BESTAND_IMPORT" | "GIS_FILE_IMPORT" => {
                 let rest = cmd.split_once(char::is_whitespace).map(|(_, a)| a.trim()).unwrap_or("");
                 let (path, crs) = match rest.rsplit_once(char::is_whitespace) {
@@ -667,7 +679,7 @@ impl BuiltinPlugin for OpenInfra {
                  GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM; \
                  GIS_SITE <lon> <lat> [b] [h] [EPSG:code] [RELATIEF] [naam] | GIS_SITE RD <x> <y> [b] [h] [RELATIEF] [naam]; \
                  AHN: GIS_AHN (venster), GIS_HOOGTEPUNTEN, GIS_HOOGTELIJNEN, GIS_PROFIEL, GIS_PUNTENWOLK; \
-                 NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp]; \
+                 NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_Q_GWSW, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp]; \
                  Bibliotheek / library: GIS_VOERTUIGEN | GIS_VEHICLES (venster), GIS_VOERTUIG | GIS_VEHICLE <id> [ZIJ|SIDE], \
                  GIS_VOERTUIGOVERZICHT | GIS_VEHICLE_CATALOG [categorie] [ZIJ|SIDE]; \
                  GIS-bestand / GIS file: GIS_BESTAND | GIS_FILE [pad] (venster), GIS_BESTAND_IMPORT | GIS_FILE_IMPORT <pad> [EPSG:code].",
