@@ -15,7 +15,9 @@ use crate::gis::ahn::{self, Model, Station};
 use crate::gis::crs::{self, XY};
 use crate::gis::pointcloud;
 use crate::gis::site::Site;
+use crate::gis::terrain::Source;
 use crate::gis::vector;
+use crate::lang::{self, tr};
 use crate::nlcs::{self, Element, LayerSpec};
 
 #[derive(Clone, Debug)]
@@ -135,18 +137,33 @@ impl Out {
 
 /// RD → drawing.
 fn rd_to_drawing(site: &Site, f: f64) -> Result<impl Fn(XY) -> Option<XY>, String> {
-    let t = vector::data_to_site(site, "EPSG:28992", &[])?;
+    grid_to_drawing(site, "EPSG:28992", f)
+}
+
+/// A height source's CRS → drawing.
+fn grid_to_drawing(site: &Site, grid_crs: &str, f: f64) -> Result<impl Fn(XY) -> Option<XY>, String> {
+    let t = vector::data_to_site(site, grid_crs, &[])?;
     let s = site.clone();
     Ok(move |p: XY| t(p).map(|q| s.to_drawing(q, f)))
 }
 
-/// Drawing → RD.
-fn drawing_to_rd(site: &Site, f: f64, p: XY) -> Result<XY, String> {
+/// Drawing → a height source's CRS.
+fn drawing_to_grid(site: &Site, grid_crs: &str, f: f64, p: XY) -> Result<XY, String> {
     let q = site.from_drawing(p, f);
-    if site.crs == "EPSG:28992" {
+    if site.crs == grid_crs {
         Ok(q)
     } else {
-        crs::transform(&site.crs, "EPSG:28992", q)
+        crs::transform(&site.crs, grid_crs, q)
+    }
+}
+
+/// A height label: NAP the Dutch way for AHN, otherwise in the interface's
+/// number style.
+fn height_text(z: f64, decimals: usize, src: &Source) -> String {
+    if src.is_ahn() || lang::current() == lang::Lang::Nl {
+        nap(z, decimals)
+    } else {
+        format!("{:+.*}", decimals, z)
     }
 }
 
@@ -158,9 +175,10 @@ fn target_factor() -> Result<f64, String> {
 
 pub fn spot_heights(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) -> Result<String, String> {
     let f = target_factor()?;
-    let b = rd_bbox(site)?;
-    let grid = ahn::fetch(b, opt.model, ahn::NATIVE_CELL, progress)?;
-    let to = rd_to_drawing(site, f)?;
+    let src = Source::for_site(site, opt.model);
+    let b = src.bbox(site)?;
+    let grid = src.fetch(b, src.native_cell(), progress)?;
+    let to = grid_to_drawing(site, &src.crs, f)?;
     let o = &opt.nlcs;
     let k = o.scale / 1000.0 * f;
     let (s_spec, t_spec) = (layer("OG", "HOOGTEPUNT", o, Element::S)?, layer("OG", "HOOGTEPUNT", o, Element::T)?);
@@ -174,7 +192,11 @@ pub fn spot_heights(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) ->
         while x <= b[2] {
             if let (Some(z), Some(p)) = (grid.sample(x, y), to([x, y])) {
                 if vector::inside(p, rect) {
-                    let d = record(&[("bron", format!("AHN4 {}", opt.model.coverage())), ("hoogte_nap", format!("{z:.3}")), ("x_rd", format!("{x:.2}")), ("y_rd", format!("{y:.2}"))]);
+                    let d = if src.is_ahn() {
+                        record(&[("bron", src.label()), ("hoogte_nap", format!("{z:.3}")), ("x_rd", format!("{x:.2}")), ("y_rd", format!("{y:.2}"))])
+                    } else {
+                        record(&[("source", src.label()), ("height_m", format!("{z:.3}")), ("x", format!("{x:.2}")), ("y", format!("{y:.2}")), ("crs", src.crs.clone())])
+                    };
                     let zz = z * f;
                     let arm = 0.8 * k;
                     let mut cross = Vec::new();
@@ -187,7 +209,7 @@ pub fn spot_heights(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) ->
                     }
                     out.put(&s_spec, cross);
                     if o.labels {
-                        let mut t = emit::text([p[0] + 1.2 * k, p[1] + 1.2 * k], &nap(z, 2), 1.8 * k, 0.0, &t_spec.name, Some(&d));
+                        let mut t = emit::text([p[0] + 1.2 * k, p[1] + 1.2 * k], &height_text(z, 2, &src), 1.8 * k, 0.0, &t_spec.name, Some(&d));
                         if let EntityType::Text(tx) = &mut t {
                             tx.horizontal_alignment = ocs_plugin_api::host::codec::entities::TextHorizontalAlignment::Left;
                         }
@@ -201,29 +223,32 @@ pub fn spot_heights(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) ->
         y += step;
     }
     if n == 0 {
-        return Err("AHN heeft geen hoogtes in het importgebied (buiten Nederland?)".into());
+        return Err(format!("{} {}", src.label(), tr("heeft geen hoogtes in het importgebied", "has no heights in the import area")));
     }
-    let written = out.write("AHN-hoogtepunten")?;
-    bridge::note_source("AHN4 (PDOK, CC0)");
-    Ok(format!("{n} hoogtepunten ({} m raster, {}) — {written} elementen op {}.", step, opt.model.coverage(), s_spec.name))
+    let written = out.write(tr("Hoogtepunten", "Spot heights"))?;
+    bridge::note_source(src.attribution());
+    Ok(format!("{n} {} ({} m {}, {}) — {written} {} {}.", tr("hoogtepunten", "spot heights"), step, tr("raster", "grid"), src.label(), tr("elementen op", "entities on"), s_spec.name))
 }
 
 // ── Contours ────────────────────────────────────────────────────────────────
 
 pub fn contour_lines(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) -> Result<String, String> {
     let f = target_factor()?;
-    let b = rd_bbox(site)?;
-    let mut grid = ahn::fetch(b, Model::Dtm, opt.contour_cell, progress)?;
+    let src = Source::for_site(site, Model::Dtm);
+    let b = src.bbox(site)?;
+    let mut grid = src.fetch(b, opt.contour_cell, progress)?;
     if opt.smooth {
         grid = grid.smoothed();
     }
-    let range = grid.range().ok_or("AHN heeft geen hoogtes in het importgebied (buiten Nederland?)")?;
-    progress("Hoogtelijnen berekenen…".into());
-    let interval = opt.interval.max(0.05);
+    let range = grid.range().ok_or_else(|| format!("{} {}", src.label(), tr("heeft geen hoogtes in het importgebied", "has no heights in the import area")))?;
+    progress(tr("Hoogtelijnen berekenen…", "Tracing contour lines…").into());
+    // Outside AHN the heights are 30 m-ish models: a finer interval only
+    // draws their noise.
+    let interval = if src.is_ahn() { opt.interval.max(0.05) } else { opt.interval.max(1.0) };
     let levels = ahn::levels(range, interval);
-    let min_length = (8.0 * opt.contour_cell).max(10.0);
+    let min_length = (8.0 * grid.cell).max(10.0);
     let lines = ahn::contours(&grid, &levels, min_length);
-    let to = rd_to_drawing(site, f)?;
+    let to = grid_to_drawing(site, &src.crs, f)?;
     let o = &opt.nlcs;
     let k = o.scale / 1000.0 * f;
     let minor = layer("OG", "HOOGTELIJN_MINOR", o, Element::G)?;
@@ -237,7 +262,11 @@ pub fn contour_lines(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) -
     for (level, polys) in &lines {
         let big = is_major(*level);
         let spec = if big { &major } else { &minor };
-        let d = record(&[("bron", "AHN4 dtm_05m".into()), ("hoogte_nap", format!("{level:.3}")), ("interval", format!("{interval}"))]);
+        let d = if src.is_ahn() {
+            record(&[("bron", "AHN4 dtm_05m".into()), ("hoogte_nap", format!("{level:.3}")), ("interval", format!("{interval}"))])
+        } else {
+            record(&[("source", src.label()), ("height_m", format!("{level:.3}")), ("interval", format!("{interval}"))])
+        };
         for (pts, closed) in polys {
             let dpts: Vec<XY> = pts.iter().filter_map(|p| to(*p)).collect();
             // Clip to the import area like the other imports.
@@ -264,7 +293,7 @@ pub fn contour_lines(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) -
                 let len: f64 = piece.windows(2).map(|w| (w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1])).sum();
                 if big && o.labels && len > 40.0 * k {
                     if let Some((at, angle)) = emit::label_spot(&piece) {
-                        let t = emit::text(at, &nap(*level, 2), 1.8 * k, emit::readable(angle), &major_t.name, Some(&d));
+                        let t = emit::text(at, &height_text(*level, 2, &src), 1.8 * k, emit::readable(angle), &major_t.name, Some(&d));
                         out.put(&major_t, vec![at_z(t, level * f)]);
                     }
                 }
@@ -272,17 +301,23 @@ pub fn contour_lines(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) -
         }
     }
     if count == 0 {
-        return Err(format!("geen hoogtelijnen met interval {interval} m (hoogteverschil {:.2} m)", range.1 - range.0));
+        return Err(format!("{} {interval} m ({} {:.2} m)", tr("geen hoogtelijnen met interval", "no contour lines at an interval of"), tr("hoogteverschil", "height range"), range.1 - range.0));
     }
-    let written = out.write("AHN-hoogtelijnen")?;
-    bridge::note_source("AHN4 (PDOK, CC0)");
+    let written = out.write(tr("Hoogtelijnen", "Contour lines"))?;
+    bridge::note_source(src.attribution());
     Ok(format!(
-        "{count} hoogtelijnen, {} – {} m NAP om de {} m ({} m raster{}) — {written} elementen.",
-        nap(range.0, 2),
-        nap(range.1, 2),
-        nap(interval, 2).trim_start_matches('+'),
-        opt.contour_cell,
-        if opt.smooth { ", gladgestreken" } else { "" }
+        "{count} {}, {} – {} m {} {} {} m ({} m {}, {}{}) — {written} {}.",
+        tr("hoogtelijnen", "contour lines"),
+        height_text(range.0, 2, &src),
+        height_text(range.1, 2, &src),
+        src.datum(),
+        tr("om de", "every"),
+        height_text(interval, 2, &src).trim_start_matches('+'),
+        grid.cell,
+        tr("raster", "grid"),
+        src.label(),
+        if opt.smooth { tr(", gladgestreken", ", smoothed") } else { "" },
+        tr("elementen", "entities")
     ))
 }
 
@@ -308,9 +343,12 @@ fn letter(n: usize) -> String {
 /// the section line A–A' in plan.
 pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &dyn Fn(String)) -> Result<String, String> {
     let f = target_factor()?;
-    let rd: Vec<XY> = route.iter().map(|p| drawing_to_rd(site, f, *p)).collect::<Result<_, _>>()?;
-    let stations = ahn::profile(&rd, opt.step, opt.surface, ahn::NATIVE_CELL, progress)?;
-    progress("Profiel tekenen…".into());
+    let src = Source::for_site(site, Model::Dtm);
+    let pts: Vec<XY> = route.iter().map(|p| drawing_to_grid(site, &src.crs, f, *p)).collect::<Result<_, _>>()?;
+    // Only AHN has a separate surface model.
+    let with_surface = opt.surface && src.is_ahn();
+    let stations = src.profile(&pts, opt.step, with_surface, progress)?;
+    progress(tr("Profiel tekenen…", "Drawing the profile…").into());
     let o = &opt.nlcs;
     let k = o.scale / 1000.0 * f;
     let v = opt.exaggeration.max(1.0);
@@ -321,7 +359,7 @@ pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &d
     let base = (zmin / hstep).floor() * hstep - hstep;
     let top = (zmax / hstep).ceil() * hstep + hstep;
     let length = stations.last().map(|s| s.chainage).unwrap_or(0.0);
-    let band_rows = if opt.surface { 3 } else { 2 };
+    let band_rows = if with_surface { 3 } else { 2 };
     // Rows tall enough for values written upright (rotated a quarter turn).
     let row = 14.0 * k;
     let band = band_rows as f64 * row;
@@ -357,9 +395,10 @@ pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &d
         out.put(&frame, pl(vec![[x0, y], [x1, y]], false, &frame));
     }
     out.put(&frame, pl(vec![[at[0], y0], [at[0], y1]], false, &frame));
-    let mut rows = vec!["Afstand (m)", "Maaiveld AHN4 (m NAP)"];
-    if opt.surface {
-        rows.push("Oppervlak AHN4 (m NAP)");
+    let ground_row = if src.is_ahn() { "Maaiveld AHN4 (m NAP)".to_string() } else { format!("{} (m {})", tr("Maaiveld", "Ground level"), src.datum()) };
+    let mut rows = vec![tr("Afstand (m)", "Distance (m)").to_string(), ground_row];
+    if with_surface {
+        rows.push("Oppervlak AHN4 (m NAP)".into());
     }
     for (r, title) in rows.iter().enumerate() {
         let y = y0 + band - (r as f64 + 0.5) * row;
@@ -375,7 +414,7 @@ pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &d
         }
         // Just above its grid line, clear of the frame; none at the top.
         if z < top - 1e-9 {
-            let t = txt([at[0] - 2.0 * k, y + 1.4 * k], &nap(z, 2), 1.8, 0.0, &frame_t, false);
+            let t = txt([at[0] - 2.0 * k, y + 1.4 * k], &height_text(z, 2, &src), 1.8, 0.0, &frame_t, false);
             let t = if let EntityType::Text(mut tx) = t {
                 tx.horizontal_alignment = ocs_plugin_api::host::codec::entities::TextHorizontalAlignment::Right;
                 EntityType::Text(tx)
@@ -388,7 +427,7 @@ pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &d
     }
     if base < 0.0 && top > 0.0 {
         out.put(&nap_l, pl(vec![[at[0], gy(0.0)], [x1, gy(0.0)]], false, &nap_l));
-        let t = txt([x1 - 2.0 * k, gy(0.0) + 1.5 * k], "NAP", 1.8, 0.0, &frame_t, false);
+        let t = txt([x1 - 2.0 * k, gy(0.0) + 1.5 * k], src.datum(), 1.8, 0.0, &frame_t, false);
         out.put(&frame_t, vec![t]);
     }
     // Distances and heights in the band at every label station.
@@ -411,14 +450,15 @@ pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &d
         }
         let rot = std::f64::consts::FRAC_PI_2;
         let whole = (ch - ch.round()).abs() < 1e-6;
-        let distance = if whole { format!("{ch:.0}") } else { format!("{ch:.1}").replace('.', ",") };
+        let comma = src.is_ahn() || lang::current() == lang::Lang::Nl;
+        let distance = if whole { format!("{ch:.0}") } else if comma { format!("{ch:.1}").replace('.', ",") } else { format!("{ch:.1}") };
         let mut values = vec![(distance, 0)];
         if let Some(z) = height_at(*ch, |s| s.ground) {
-            values.push((nap(z, 2), 1));
+            values.push((height_text(z, 2, &src), 1));
         }
-        if opt.surface {
+        if with_surface {
             if let Some(z) = height_at(*ch, |s| s.surface) {
-                values.push((nap(z, 2), 2));
+                values.push((height_text(z, 2, &src), 2));
             }
         }
         for (s, r) in values {
@@ -444,24 +484,40 @@ pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &d
         flush(&mut run, &mut out);
     };
     add_line(|s| s.ground, &ground);
-    if opt.surface {
+    if with_surface {
         add_line(|s| s.surface, &surface);
     }
     // Title.
-    let title = format!("Lengteprofiel {name} – {name}'");
+    let title = format!("{} {name} – {name}'", tr("Lengteprofiel", "Longitudinal profile"));
     out.put(&frame_t, vec![txt([x0, y1 + 9.0 * k], &title, 3.5, 0.0, &frame_t, true)]);
-    let sub = format!(
-        "AHN4 maaiveld (DTM 0,5 m){} · horizontaal 1:{} · verticaal 1:{} (overhoging {}×) · lengte {:.1} m",
-        if opt.surface { " en oppervlak (DSM)" } else { "" },
-        o.scale,
-        (o.scale / v).round(),
-        v,
-        length
-    );
-    out.put(&frame_t, vec![txt([x0, y1 + 4.0 * k], &sub.replace('.', ","), 1.8, 0.0, &frame_t, true)]);
+    let sub = if src.is_ahn() {
+        format!(
+            "AHN4 maaiveld (DTM 0,5 m){} · horizontaal 1:{} · verticaal 1:{} (overhoging {}×) · lengte {:.1} m",
+            if with_surface { " en oppervlak (DSM)" } else { "" },
+            o.scale,
+            (o.scale / v).round(),
+            v,
+            length
+        )
+        .replace('.', ",")
+    } else {
+        format!(
+            "{} · {} 1:{} · {} 1:{} ({} {}×) · {} {:.1} m",
+            src.label(),
+            tr("horizontaal", "horizontal"),
+            o.scale,
+            tr("verticaal", "vertical"),
+            (o.scale / v).round(),
+            tr("overhoging", "exaggeration"),
+            v,
+            tr("lengte", "length"),
+            length
+        )
+    };
+    out.put(&frame_t, vec![txt([x0, y1 + 4.0 * k], &sub, 1.8, 0.0, &frame_t, true)]);
 
     // Section line in plan, with its letters.
-    let d = record(&[("bron", "AHN4".into()), ("profiel", format!("{name}-{name}'")), ("lengte_m", format!("{length:.2}"))]);
+    let d = record(&[("bron", src.label()), ("profiel", format!("{name}-{name}'")), ("lengte_m", format!("{length:.2}"))]);
     out.put(&section, emit::polylines(&[(route.to_vec(), false)], &section.name, k, Some(&d)));
     let ends = [(route[0], route[1], name.clone()), (route[route.len() - 1], route[route.len() - 2], format!("{name}'"))];
     for (p, q, label) in ends {
@@ -471,12 +527,21 @@ pub fn profile(site: &Site, route: &[XY], at: XY, opt: &AhnOptions, progress: &d
         let t = txt(at, &label, 3.5, 0.0, &section_t, false);
         out.put(&section_t, vec![t]);
     }
-    let n = out.write(&format!("Lengteprofiel {name}"))?;
-    bridge::note_source("AHN4 (PDOK, CC0)");
+    let n = out.write(&format!("{} {name}", tr("Lengteprofiel", "Longitudinal profile")))?;
+    bridge::note_source(src.attribution());
     let missing = stations.iter().filter(|s| s.ground.is_none()).count();
-    let mut msg = format!("Lengteprofiel {name}–{name}': {:.1} m, {} stations, {} – {} m NAP ({n} elementen).", length, stations.len(), nap(zmin, 2), nap(zmax, 2));
+    let mut msg = format!(
+        "{} {name}–{name}': {:.1} m, {} stations, {} – {} m {} ({n} {}).",
+        tr("Lengteprofiel", "Longitudinal profile"),
+        length,
+        stations.len(),
+        height_text(zmin, 2, &src),
+        height_text(zmax, 2, &src),
+        src.datum(),
+        tr("elementen", "entities")
+    );
     if missing > 0 {
-        msg.push_str(&format!(" {missing} stations zonder maaiveldhoogte (gebouwen, water)."));
+        msg.push_str(&format!(" {missing} {}", tr("stations zonder maaiveldhoogte (gebouwen, water).", "stations without a ground height (buildings, water).")));
     }
     Ok(msg)
 }
@@ -492,6 +557,9 @@ fn nice_step(v: f64) -> f64 {
 
 pub fn point_cloud(site: &Site, opt: &AhnOptions, progress: &dyn Fn(String)) -> Result<String, String> {
     let f = target_factor()?;
+    if !crs::in_netherlands(site.lon, site.lat) {
+        return Err(tr("de AHN-puntenwolk is alleen beschikbaar in Nederland", "the AHN point cloud is only available in the Netherlands").into());
+    }
     let b = rd_bbox(site)?;
     let c = &opt.cloud;
     let cloud = pointcloud::fetch(b, c, progress)?;

@@ -15,5 +15,6 @@ pub mod pointcloud;
 pub mod raster;
 pub mod servers;
 pub mod site;
+pub mod terrain;
 pub mod vector;
 pub mod wfs;
