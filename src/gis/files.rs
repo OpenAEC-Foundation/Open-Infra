@@ -51,8 +51,9 @@ pub fn read(path: &Path, layer: Option<&str>) -> Result<FileData, String> {
         "kml" => kml(&std::fs::read_to_string(path).map_err(|e| io(path, e))?),
         "kmz" => kmz(path),
         "gpx" => gpx(&std::fs::read_to_string(path).map_err(|e| io(path, e))?),
+        "gml" | "xml" => gml(&std::fs::read_to_string(path).map_err(|e| io(path, e))?),
         "csv" | "txt" | "tsv" => csv(&std::fs::read_to_string(path).map_err(|e| io(path, e))?),
-        other => Err(format!("unsupported file type .{other} (GeoJSON, Shapefile, GeoPackage, KML/KMZ, GPX, CSV)")),
+        other => Err(format!("unsupported file type .{other} (GeoJSON, Shapefile, GeoPackage, KML/KMZ, GPX, GML, CSV)")),
     }
 }
 
@@ -60,8 +61,28 @@ fn io(path: &Path, e: std::io::Error) -> String {
     format!("{}: {e}", path.display())
 }
 
-/// File extensions the importer reads (for file dialogs).
-pub const EXTENSIONS: &[&str] = &["geojson", "json", "shp", "gpkg", "kml", "kmz", "gpx", "csv", "txt"];
+/// Vector file extensions this module reads (for file dialogs).
+pub const EXTENSIONS: &[&str] = &["geojson", "json", "shp", "gpkg", "kml", "kmz", "gpx", "gml", "csv", "txt"];
+
+/// What kind of geodata a file is, by its extension: the one file dialog
+/// routes vector files here and rasters / point clouds to their own readers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kind {
+    Vector,
+    Raster,
+    PointCloud,
+    Unknown,
+}
+
+pub fn kind(path: &Path) -> Kind {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+    match ext.as_str() {
+        e if EXTENSIONS.contains(&e) || e == "dbf" || e == "shx" || e == "xml" => Kind::Vector,
+        "tif" | "tiff" | "asc" | "jpg" | "jpeg" | "png" | "jp2" => Kind::Raster,
+        "las" | "laz" | "e57" | "ply" => Kind::PointCloud,
+        _ => Kind::Unknown,
+    }
+}
 
 // ── CRS from declarations ───────────────────────────────────────────────────
 
@@ -431,6 +452,96 @@ pub fn gpx(text: &str) -> Result<FileData, String> {
     Ok(FileData { format: "GPX", features, crs: Some("EPSG:4326".into()), layers: Vec::new() })
 }
 
+// ── GML (simple features, GML 2 and 3) ─────────────────────────────────────
+
+fn gml_coords(node: roxmltree::Node, dim: usize) -> Vec<XY> {
+    // GML 3: posList / pos (space separated); GML 2: coordinates ("x,y x,y").
+    if let Some(t) = node.descendants().find(|d| d.has_tag_name("posList")).and_then(|n| n.text()) {
+        let d = node.descendants().find(|d| d.has_tag_name("posList")).and_then(|n| n.attribute("srsDimension")).and_then(|v| v.parse().ok()).unwrap_or(dim);
+        let v: Vec<f64> = t.split_whitespace().filter_map(|x| x.parse().ok()).collect();
+        return v.chunks(d.max(2)).filter(|c| c.len() >= 2).map(|c| [c[0], c[1]]).collect();
+    }
+    let pos: Vec<XY> = node
+        .descendants()
+        .filter(|d| d.has_tag_name("pos"))
+        .filter_map(|p| {
+            let v: Vec<f64> = p.text()?.split_whitespace().filter_map(|x| x.parse().ok()).collect();
+            (v.len() >= 2).then(|| [v[0], v[1]])
+        })
+        .collect();
+    if !pos.is_empty() {
+        return pos;
+    }
+    node.descendants().find(|d| d.has_tag_name("coordinates")).and_then(|c| c.text()).map(kml_coords).unwrap_or_default()
+}
+
+/// The geometry elements directly under a property, read into `f`.
+fn gml_geometry(node: roxmltree::Node, f: &mut Feature) -> bool {
+    let name = node.tag_name().name();
+    match name {
+        "Point" => f.points.extend(gml_coords(node, 2).into_iter().take(1)),
+        "LineString" | "Curve" | "LineStringSegment" => f.lines.push((gml_coords(node, 2), false)),
+        "LinearRing" | "Ring" => f.lines.push((gml_coords(node, 2), true)),
+        "Polygon" | "Surface" | "PolygonPatch" => {
+            for r in node.descendants().filter(|d| d.has_tag_name("LinearRing") || d.has_tag_name("Ring")) {
+                f.lines.push((gml_coords(r, 2), true));
+            }
+        }
+        "MultiPoint" | "MultiCurve" | "MultiLineString" | "MultiSurface" | "MultiPolygon" | "MultiGeometry" | "CompositeCurve" | "CompositeSurface" => {
+            for m in node.children().filter(|c| c.is_element()) {
+                // pointMember / surfaceMembers: the geometries one level down.
+                for g in m.children().filter(|c| c.is_element()) {
+                    gml_geometry(g, f);
+                }
+            }
+        }
+        _ => return false,
+    }
+    true
+}
+
+/// Features from a GML file: every member of a feature collection (or of a
+/// WFS response) with its geometry and its simple properties. The CRS comes
+/// from the first `srsName`.
+pub fn gml(text: &str) -> Result<FileData, String> {
+    let doc = roxmltree::Document::parse(text).map_err(|e| format!("GML: {e}"))?;
+    let root = doc.root_element();
+    let crs = doc.descendants().find_map(|n| n.attribute("srsName")).and_then(epsg_from_name);
+    let members: Vec<roxmltree::Node> = root
+        .children()
+        .filter(|c| c.is_element())
+        .flat_map(|m| {
+            let n = m.tag_name().name();
+            if n == "featureMember" || n == "member" {
+                m.children().filter(|c| c.is_element()).collect::<Vec<_>>()
+            } else if n == "featureMembers" {
+                m.children().filter(|c| c.is_element()).collect()
+            } else {
+                Vec::new()
+            }
+        })
+        .collect();
+    let mut features = Vec::new();
+    for fnode in members {
+        let mut f = Feature::default();
+        for prop in fnode.children().filter(|c| c.is_element()) {
+            let geom = prop.children().filter(|c| c.is_element()).any(|g| gml_geometry(g, &mut f));
+            if !geom {
+                if let Some(t) = prop.text().map(str::trim).filter(|t| !t.is_empty()) {
+                    if prop.children().all(|c| !c.is_element()) {
+                        f.props.insert(prop.tag_name().name().to_string(), number(t).and_then(serde_json::Number::from_f64).map(Value::Number).unwrap_or_else(|| Value::String(t.to_string())));
+                    }
+                }
+            }
+        }
+        if let Some(id) = fnode.attributes().find(|a| a.name() == "id").map(|a| a.value().to_string()) {
+            f.props.entry("gml_id").or_insert(Value::String(id));
+        }
+        features.push(f);
+    }
+    Ok(FileData { format: "GML", features, crs, layers: Vec::new() })
+}
+
 // ── CSV ─────────────────────────────────────────────────────────────────────
 
 fn split_line(line: &str, sep: char) -> Vec<String> {
@@ -561,6 +672,18 @@ mod tests {
             let d = read(&dir.join(name), None).unwrap();
             assert!(!d.features.is_empty(), "{name}");
         }
+    }
+
+    #[test]
+    fn gml_features() {
+        let g = gml(r#"<wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:x="urn:x"><wfs:member><x:pipe gml:id="p1"><x:name>A</x:name><x:diameter>300</x:diameter><x:geom><gml:LineString srsName="urn:ogc:def:crs:EPSG::28992"><gml:posList>1 2 3 4</gml:posList></gml:LineString></x:geom></x:pipe></wfs:member><wfs:member><x:pit gml:id="q1"><x:geom><gml:Point><gml:pos>5 6</gml:pos></gml:Point></x:geom></x:pit></wfs:member></wfs:FeatureCollection>"#).unwrap();
+        assert_eq!(g.crs.as_deref(), Some("EPSG:28992"));
+        assert_eq!(g.features.len(), 2);
+        assert_eq!(g.features[0].lines[0].0, vec![[1.0, 2.0], [3.0, 4.0]]);
+        assert_eq!(g.features[0].props["name"], "A");
+        assert_eq!(g.features[1].points[0], [5.0, 6.0]);
+        assert_eq!(kind(Path::new("a.tif")), Kind::Raster);
+        assert_eq!(kind(Path::new("a.GML")), Kind::Vector);
     }
 
     #[test]

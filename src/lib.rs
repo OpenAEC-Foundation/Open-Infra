@@ -705,7 +705,12 @@ impl BuiltinPlugin for OpenInfra {
             "GIS_BESTAND" | "GIS_FILE" => {
                 // From the ribbon's file dialog: "GIS_BESTAND <path>" (original case).
                 let arg = cmd.split_once(char::is_whitespace).map(|(_, a)| a.trim().trim_matches('"')).unwrap_or("");
-                if arg.is_empty() {
+                // One file dialog for all geodata: vector files go to the GIS
+                // file page, rasters and point clouds to their own readers.
+                let kind = gis::files::kind(std::path::Path::new(arg));
+                if !arg.is_empty() && kind != gis::files::Kind::Vector {
+                    host.push_error(&format!("[Open Infra] {} {arg}", lang::tr("Dit bestandstype kan Open Infra nog niet openen:", "Open Infra cannot open this file type yet:")));
+                } else if arg.is_empty() {
                     open(host, ui::Tab::Files);
                 } else if ui::open(ui::Tab::Files).is_ok() {
                     ui::send(ui::UiMsg::File(arg.into()));
