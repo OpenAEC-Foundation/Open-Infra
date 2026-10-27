@@ -216,8 +216,11 @@ fn coordinate_crosses(s: &mut Sheet, site: &Site, scale: f64, f: f64, ma: &Area)
 
 fn north_arrow(s: &mut Sheet, x: f64, y: f64) {
     // Grid north (RD): straight up.
-    s.poly("ORIENTATIE", &[(x, y + 10.0), (x + 4.0, y - 6.0), (x, y - 3.0), (x - 4.0, y - 6.0)], true);
+    // NLCS knows ORIENTATIE only as a symbol (S), outline included.
     let spec = s.spec("ORIENTATIE", Element::S);
+    let outline: Vec<XY> = [(x, y + 10.0), (x + 4.0, y - 6.0), (x, y - 3.0), (x - 4.0, y - 6.0)].iter().map(|(a, b)| s.at(*a, *b)).collect();
+    let e = emit::polylines(&[(outline, true)], &spec.name, s.k, None);
+    s.put(spec.clone(), e);
     let solid: Vec<XY> = [(x, y + 10.0), (x, y - 3.0), (x + 4.0, y - 6.0)].iter().map(|(a, b)| s.at(*a, *b)).collect();
     let e = emit::polylines(&[(solid, true)], &spec.name, s.k, None);
     s.put(spec, e);

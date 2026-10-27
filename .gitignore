@@ -7,3 +7,5 @@ CLAUDE.md
 *.bak
 .*.ocs.lock
 *.ocs-autosave.sv$
+# Python caches (the tracked e2e cache predates this rule)
+__pycache__/

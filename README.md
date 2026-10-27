@@ -1,8 +1,8 @@
-# Open Infra — GIS and NLCS base data for Open CAD Studio
+# Open Infra — GIS, NLCS and civil design for Open CAD Studio
 
 [![Release](https://img.shields.io/github/v/release/OpenAEC-Foundation/Open-Infra?label=release)](https://github.com/OpenAEC-Foundation/Open-Infra/releases/latest)
-[![Open CAD Studio](https://img.shields.io/badge/Open%20CAD%20Studio-v2026.42-2196dc)](https://github.com/HakanSeven12/OpenCADStudio)
-[![Plugin API](https://img.shields.io/badge/plugin%20API-10-6db7ed)](https://github.com/HakanSeven12/OpenCADStudio/tree/master/crates/ocs_plugin_api)
+[![Open CAD Studio](https://img.shields.io/badge/Open%20CAD%20Studio-v2026.43-2196dc)](https://github.com/HakanSeven12/OpenCADStudio)
+[![Plugin API](https://img.shields.io/badge/plugin%20API-13-6db7ed)](https://github.com/HakanSeven12/OpenCADStudio/tree/master/crates/ocs_plugin_api)
 [![NLCS](https://img.shields.io/badge/NLCS-5.02-98c379)](https://www.nlcs.nl)
 [![Licence](https://img.shields.io/badge/licence-GPL--3.0--only-lightgrey)](LICENSE)
 
@@ -11,6 +11,14 @@ Plugin for [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio) for 
 - **GIS workbench**, modelled on the FreeCAD GIS(2BIM) workbench. Set the project location and coordinate system, then pull aerial photos, WMS/WFS layers and OpenStreetMap straight into the DWG.
 - **Dutch base data conform NLCS**, like InfraCAD Map: BGT, cadastral map and KLIC deliveries on NLCS layers, with object data and a finished drawing sheet.
 - **AHN heights**: spot heights, contour lines and length profiles from AHN4, and the AHN5 point cloud attached in 3D.
+- **Civil design (second ribbon tab "Civiel")**, Civil 3D-like and after Hakan Seven's FreeCAD Road workbench. It covers:
+  - survey points and LandXML;
+  - terrain (TIN, contours, height analysis);
+  - alignments with stationing;
+  - length, design and cross sections;
+  - corridors with daylight and earthwork.
+- **3D city and landscape model**: the AHN terrain coloured by the aerial photo, 3D BAG buildings (LoD 1.2–2.2) and the whole BGT in 3D.
+- **Scriptable and agent-ready**: every command takes arguments and reports back as JSON. An MCP server ([`mcp/`](mcp/README.md)) lets an AI agent build whole models.
 
 ![Example: situatie bestaand around the Grote Kerk in Dordrecht, A1 1:500](examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
 
@@ -56,6 +64,65 @@ The ribbon tab **"Open Infra — GIS"**:
 | | **Profiel** | Length profile along a selected polyline or picked points: ground (DTM) and optionally surface (DSM), height grid, profile band with distances and heights, and section line A–A' in plan. |
 | | **Puntenwolk** | The AHN5 (or AHN4) point cloud of the import area, coloured by class, height or RGB. It is written as `.rcs` next to the drawing and attached; it shows in a 3D visual style. |
 | Hulpmiddelen | **Gebied** · **Punt info** · **Coördinaten** · **Servers** | Pick the import area in the drawing, read a point's coordinates, convert coordinates, and manage presets and your own WMS/WFS/XYZ servers. |
+
+## The Civiel tab (Civil 3D-like)
+
+A second plugin, `openaec.open-infra-civiel`, adds the ribbon tab **"Open Infra — Civiel"**. It shares the engine and the project location with the GIS tab. Everything goes on NLCS layers.
+
+| Group | Tools | What they do |
+|---|---|---|
+| Punten | **Punten importeren** · Punt plaatsen · Punten exporteren · LandXML | Survey points from PNEZD/PENZD/CSV files: separator, decimal comma and north/east order are detected. Points go on `OG-HOOGTEPUNT` with number, height and code. Clicked points get their ground height from the TIN or AHN. LandXML 1.x brings in points, surfaces and alignments (lines, curves, clothoid spirals). |
+| Oppervlak | **TIN maken** · Hoogtelijnen · Hoogteanalyse · Grondverzet | A TIN (Delaunay, longest-edge filter) from points, 3D lines, contour lines or AHN, as 3D faces on `OG-TRIANGULATIE`: status **B** for existing ground, **N** for a design. Then: exact contours on the TIN; elevation bands with a legend; cut and fill between design (N) and existing (B), or against a level. |
+| As | **As maken** · As verschuiven · Station / offset | An axis from a polyline or from points of intersection with curve radii (Civil 3D *by layout*). It gets stationing `0+100` on `AM-KILOMETRERING`, tangent points BB/EB/HP on `AM-TANGENTPUNT` and radius labels. Then: offset lines; station and offset of any point. |
+| Profielen | **Lengteprofiel** · Ontwerpprofiel · Dwarsprofielen | Length profile over the TIN or AHN, with stationing, heights and an alignment band. The design profile comes from PVIs or a line drawn in the profile: parabolic vertical curves (crest and sag, with L and R), and grade labels. Cross sections along the axis in a grid of views. |
+| Corridor | **Corridor** | An assembly swept along the axis and its design profile (or a level). Assemblies: *weg*, *fietspad*, *snelweg*, *dijk*; lane and shoulder widths, cross slopes, fill/cut slopes, crest and superelevation in curves (with runoff) are all adjustable. The corridor builds: daylight to the ground; a design TIN (status N); 3D feature lines (asphalt edge, shoulder, toe and crest of slope); cut and fill per section with average-end-area volumes and a mass balance (CSV); optional section views with the design. |
+| 3D-model | **3D BAG** · Terrein + luchtfoto · BGT naar 3D | See below. |
+
+The window page **Civiel — instellingen** holds all settings, and they also apply to the ribbon buttons. Checked on a real road near Dordrecht: the corridor's average-end-area volumes and the independent TIN-to-TIN grid volume agree within 2 %.
+
+## 3D city and landscape model
+
+| | |
+|---|---|
+| **Terrein + luchtfoto** (`CIV_FOTOTERREIN`) | The AHN ground of the project area as a 3D surface in cells of 1–5 m. Each cell takes the colour of the PDOK aerial photo (8 cm), quantised to a palette, with one mesh per colour. Gaps (water, under buildings) are filled from their lowest neighbour. |
+| **3D BAG** (`CIV_BAG3D`) | Every building from the [3D BAG](https://3dbag.nl) (TU Delft, CC BY 4.0) in LoD 1.2, 1.3 or 2.2: one roof mesh and one wall mesh per building, with BAG id, year of construction and height as object data. |
+| **BGT naar 3D** (`CIV_BGT3D`) | The whole BGT of the project area in 3D, on its NLCS layers. Areas are draped on the ground: the edges every 3 m, a grid inside, and holes respected. Buildings and walls are extruded to the AHN surface, water lies at its level, bridges at deck height, lines are draped, and posts and trees become 3D symbols. Colours are natural by default (asphalt, paving, grass, water…); `KLEUR=nlcs` uses the layer colours. |
+
+![Dordrecht city centre in 3D: AHN terrain with the aerial photo, the BGT in 3D and 3D BAG LoD 2.2, with a ring road and a dike as corridors](docs/images/dordrecht-3d-model.png)
+
+| The Grote Kerk (3D BAG LoD 2.2) and the harbours | Ring road corridor with its cross sections |
+|---|---|
+| ![Grote Kerk](docs/images/dordrecht-3d-grote-kerk.png) | ![Corridor](docs/images/dordrecht-corridor.png) |
+
+Dordrecht city centre (1.2 × 1.0 km), built by an agent through the MCP server (`tests/e2e/mcp_model.py`, 20 steps in about 110 s):
+- 299,000 photo-coloured terrain cells;
+- 18,560 BGT objects (about 480,000 triangles);
+- 2,864 buildings in LoD 2.2 (204,000 triangles);
+- a 1.2 km ring road and a 0.9 km dike as corridors, with 178 cross sections. Their earthwork from the sections and from the design TIN against the existing ground agree within 1 %.
+
+**Large drawings:**
+- Open CAD Studio sends a plugin at most 64 MB per message, and shares a document view of 16 MB by default.
+- Open Infra sends entities in batches under that limit and draws 3D objects as light MESH entities.
+- It keeps an object index in the drawing (`OPENINFRA/INDEX`: terrains, axes, profiles, corridors, survey points), so the civil commands fetch what they need by handle at any drawing size.
+- Whole-drawing tools (NLCS check, quantities) need the shared view. For drawings over 16 MB, start Open CAD Studio with `OCS_V4_SNAPSHOT_SEGMENT_SIZE=268435456` (256 MB; larger values exceed the 1 GiB the plugin side maps).
+
+## Scripting, API and MCP server
+
+Every `CIV_` command and the GIS data commands take arguments:
+- `KEY=value`;
+- points `x,y` in project coordinates;
+- lists separated by `;`.
+
+With `ID=<name>` the outcome is written to `<config>/OpenCADStudio/open-infra/api/<name>.json`, as `{ok, message, data}` with handles, lengths, volumes and so on. This makes Open Infra drivable from scripts and from Open CAD Studio's REST/automation API. `CIV_HELP` and `GIS_HELP` list the arguments.
+
+```
+GIS_SITE RD 104900 425350 1200 1000 Dordrecht binnenstad ID=s1
+CIV_AS PI=104350,424900;104800,424950;105300,424900 R=200 NAAM=Rondweg ID=a1     → data.as = handle
+CIV_ONTWERPPROFIEL AS=<handle> PVI=0:1.5;400:3.0;800:2.0 BOOG=120
+CIV_CORRIDOR AS=<handle> SJABLOON=weg RIJSTROOK=3.5 TALUD=3 DWARSPROFIELEN=ja ID=c1
+```
+
+The [MCP server](mcp/README.md) (`mcp/open_infra_mcp.py`, Python standard library only) offers about 30 tools on top of this, from `oi_site` to `civ_corridor`, `civ_bag3d` and `oi_capture`. It finds every Open CAD Studio window by itself.
 
 ## The workbench window
 
@@ -155,7 +222,9 @@ For the command line, scripts and automation:
 | Vector data | `GIS_Q_BAG`, `GIS_Q_PERCELEN`, `GIS_Q_NWB`, `GIS_Q_HECTO`, `GIS_Q_SPOOR`, `GIS_Q_OSM` |
 | NLCS base data | `GIS_Q_BGT`, `GIS_Q_BRK`, `GIS_KLIC [file]` (opens the page), `GIS_KLIC_IMPORT <file>`, `GIS_TEKENBLAD [subject]` |
 | AHN | `GIS_AHN` (page), `GIS_HOOGTEPUNTEN`, `GIS_HOOGTELIJNEN`, `GIS_PROFIEL`, `GIS_PUNTENWOLK` |
-| Help | `GIS_HELP` |
+| NLCS | `GIS_NLCS_CONTROLE`, `GIS_NLCS_RAPPORT`, `GIS_NLCS_HERSTEL`, `GIS_HOEVEELHEDEN`, `GIS_HOEVEELHEDEN_CSV`, `GIS_HOEVEELHEDEN_TABEL` |
+| Civiel tab | `CIV_PUNTEN_IMPORT`, `CIV_PUNT`, `CIV_PUNTEN_EXPORT`, `CIV_LANDXML`, `CIV_TIN`, `CIV_HOOGTELIJNEN`, `CIV_ANALYSE`, `CIV_VOLUME`, `CIV_AS`, `CIV_AS_OFFSET`, `CIV_STATION`, `CIV_LENGTEPROFIEL`, `CIV_ONTWERPPROFIEL`, `CIV_DWARSPROFIELEN`, `CIV_CORRIDOR`, `CIV_BAG3D`, `CIV_FOTOTERREIN`, `CIV_BGT3D`, `CIV_3DMODEL`, `CIV_INFO`, `CIV_INSTELLINGEN` |
+| Help | `GIS_HELP`, `CIV_HELP` |
 
 ## Coordinate systems and units
 
@@ -192,7 +261,15 @@ src/bridge.rs     host requests from worker/window threads, NLCS layers and line
 src/import.rs     import flows shared by the window and the ribbon quick buttons
 src/ui/           workbench window (egui), runs in the plugin process beside the CAD window
 src/lib.rs        manifest, ribbon, commands (GIS_*), click interaction (Gebied, Punt info)
+src/civiel/       civil engine: landmeten (points), terrein (TIN, contours, analysis, earthwork),
+                  as_profiel (alignments, profiles, sections), corridor, landxml, model3d (3D BAG,
+                  photo terrain, BGT in 3D), api (arguments, JSON results)
+src/gis/bag3d.rs  3D BAG client (CityJSON 2.0), rasterbestand.rs (GeoTIFF, ASC, world files, LAS/LAZ)
+civiel/           the Civiel plugin: its ribbon tab and CIV_ commands, on the shared engine
+mcp/              MCP server for AI agents
 ```
+
+The repository is a Cargo workspace with two plugins. The GIS plugin is the root crate, with its entry points behind the default feature `plugin`. The Civiel plugin links the same crate without that feature. Build them with separate `cargo build -p …` runs; `scripts/install.sh` does both.
 
 Open CAD Studio runs plugins out-of-process and has no dialog API for plugins, so the plugin opens its own window. Network work runs on worker threads, so the CAD window stays responsive and the plugin call timeout is never reached.
 
@@ -205,13 +282,13 @@ Or install by hand:
 2. Put them in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 3. Restart Open CAD Studio.
 
-Release numbers follow Open CAD Studio's calendar numbering. Release 2026.44.2 is built for Open CAD Studio v2026.42 (plugin API 10, opencadcodec `5d4f11a`, rustc 1.99.1). The host only loads a plugin built against its own opencadcodec revision and rustc.
+Release numbers follow Open CAD Studio's calendar numbering. The current code is built for **Open CAD Studio v2026.43** (plugin API 13, opencadcodec `24b037a`, rustc 1.99.1); release 2026.44.2 was for v2026.42. The host only loads a plugin built against its own opencadcodec revision and rustc, so update the plugin together with Open CAD Studio.
 
 ## Building
 
 ```bash
-./scripts/install.sh      # cargo build --release + install into ~/.config/OpenCADStudio/plugins/openaec.open-infra
-cargo test --lib          # engine tests (CRS, clipping, tiling, parsing, NLCS tables)
+./scripts/install.sh      # build both plugins and install them into ~/.config/OpenCADStudio/plugins/
+cargo test --lib -p open-infra   # engine tests (CRS, clipping, NLCS, TIN, alignments, corridor, 3D BAG, …)
 cargo test --test locaties                          # location test set, offline
 cargo test --test locaties -- --ignored --nocapture # fetch real data at 16 locations, report in target/locatietest
 python3 tests/e2e/ocs_e2e.py                        # end-to-end in Open CAD Studio: import, edit, save, reopen
@@ -226,7 +303,7 @@ The test set ([`tests/`](tests/README.md)) covers 16 locations: Dutch cities, a 
 
 It also lists the host issues still open in Open CAD Studio.
 
-`Cargo.toml` pins `ocs_plugin_api` to the Open CAD Studio v2026.42 release. For a newer Open CAD Studio, move the `rev` to the commit of that release, and update the rustc version in `.github/workflows/release.yml` to match.
+`Cargo.toml` and `civiel/Cargo.toml` pin `ocs_plugin_api` to the Open CAD Studio v2026.43 release. For a newer Open CAD Studio, move the `rev` to the commit of that release, and update the rustc version in `.github/workflows/release.yml` to match.
 
 For development against a local Open CAD Studio checkout, add a `.cargo/config.toml` (not committed):
 
@@ -247,5 +324,7 @@ ocs_plugin_api = { path = "../OpenCADStudio/crates/ocs_plugin_api" }
 - NLCS tables and the NLCS-BGT mapping: DigiGO / Stichting NLCS, CC BY 4.0 (see [`assets/nlcs/NOTICE.md`](assets/nlcs/NOTICE.md)).
 - OpenStreetMap: © OpenStreetMap contributors (ODbL), via Overpass, Nominatim and the OSM tile server. Follow their usage policies (light, interactive use).
 - Sentinel-2 cloudless by EOX: CC BY-NC-SA 4.0 (non-commercial).
+- 3D BAG: 3D geoinformation group, TU Delft, CC BY 4.0 (api.3dbag.nl).
+- Aerial photos: Beeldmateriaal.nl via PDOK, CC BY 4.0.
 
 Licence: GPL-3.0-only ([LICENSE](LICENSE)), the same as the Open CAD Studio plugin API.

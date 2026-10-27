@@ -10,7 +10,7 @@ use eframe::egui::{self, Color32, RichText, TextureHandle, Vec2};
 
 use super::jobs::{poll, Job};
 use super::map::{LonLat, MapEvent, MapView, Overlay};
-use super::{Tab, UiMsg};
+use super::{Product, Tab, UiMsg};
 use crate::bridge;
 use crate::gis::caps::{self, WfsCaps, WfsType, WmsCaps, WmsLayer};
 use crate::gis::crs::{self, CrsInfo, Transformer};
@@ -29,6 +29,9 @@ use crate::tekenblad::{self, SheetInfo};
 use crate::gis::ahn::{self, Model};
 use crate::gis::pointcloud::{self, Colouring, Edition};
 use crate::hoogte::{self, AhnOptions};
+use crate::hoeveelheden::{self, Quantities};
+use crate::nlcs_check::{self, Report, Rule, Severity};
+use crate::civiel::{self, landmeten::Format, CivielOptions};
 
 const ACI_CHOICES: &[(i16, &str)] = &[(1, "rood"), (2, "geel"), (3, "groen"), (4, "cyaan"), (5, "blauw"), (6, "magenta"), (7, "wit/zwart"), (8, "grijs"), (30, "oranje")];
 const ACCENT: Color32 = Color32::from_rgb(33, 150, 220);
@@ -66,6 +69,9 @@ fn icon(name: &str) -> egui::Image<'static> {
         "area" => include_str!("../../assets/area.svg"),
         "nlcs" => include_str!("../../assets/bgt.svg"),
         "ahn" => include_str!("../../assets/ahn.svg"),
+        "check" => include_str!("../../assets/nlcs-controle.svg"),
+        "quantities" => include_str!("../../assets/hoeveelheden.svg"),
+        "axis" => include_str!("../../assets/as.svg"),
         _ => include_str!("../../assets/list.svg"),
     };
     let bytes = svg.replace("currentColor", "#dfe5ea").into_bytes();
@@ -192,6 +198,87 @@ fn height_colour(t: f64) -> Color32 {
     let t = t.clamp(0.0, 1.0);
     let (r, g, b) = if t < 0.5 { (40.0 + 60.0 * t * 2.0, 120.0 + 100.0 * t * 2.0, 220.0 - 140.0 * t * 2.0) } else { (100.0 + 130.0 * (t - 0.5) * 2.0, 220.0 - 160.0 * (t - 0.5) * 2.0, 80.0 - 40.0 * (t - 0.5) * 2.0) };
     Color32::from_rgb(r as u8, g as u8, b as u8)
+}
+
+struct ControlePage {
+    scale: f64,
+    text_heights: bool,
+    empty_layers: bool,
+    job: Option<Job<Report>>,
+    report: Option<Report>,
+    open: Option<Rule>,
+    repair: Option<Job<String>>,
+}
+
+impl Default for ControlePage {
+    fn default() -> Self {
+        Self { scale: 500.0, text_heights: true, empty_layers: true, job: None, report: None, open: None, repair: None }
+    }
+}
+
+struct CivielPage {
+    opt: CivielOptions,
+    /// The offsets as typed: "-3,5; 3,5".
+    offsets: String,
+    run: Option<Job<String>>,
+}
+
+impl Default for CivielPage {
+    fn default() -> Self {
+        let opt = civiel::settings();
+        let offsets = offsets_text(&opt.offsets);
+        Self { opt, offsets, run: None }
+    }
+}
+
+fn offsets_text(v: &[f64]) -> String {
+    v.iter().map(|d| format!("{d}").replace('.', ",")).collect::<Vec<_>>().join("; ")
+}
+
+fn parse_offsets(s: &str) -> Vec<f64> {
+    s.split([';', ' ']).filter_map(|t| t.trim().replace(',', ".").parse::<f64>().ok()).filter(|d| d.abs() > 1e-9).collect()
+}
+
+#[derive(Default)]
+struct HoeveelhedenPage {
+    selection: bool,
+    annotation: bool,
+    per_object: bool,
+    filter: String,
+    job: Option<Job<Quantities>>,
+    result: Option<Quantities>,
+}
+
+fn severity_colour(s: Severity) -> Color32 {
+    match s {
+        Severity::Fout => ERR_RED,
+        Severity::Waarschuwing => WARN,
+        Severity::Info => Color32::from_gray(140),
+    }
+}
+
+/// A small coloured label.
+fn badge(ui: &mut egui::Ui, text: &str, colour: Color32) {
+    let galley = ui.painter().layout_no_wrap(text.to_string(), egui::FontId::proportional(10.5), Color32::BLACK);
+    let (rect, _) = ui.allocate_exact_size(Vec2::new((galley.size().x + 12.0).max(84.0), 18.0), egui::Sense::hover());
+    ui.painter().rect_filled(rect, 9.0, colour);
+    ui.painter().galley(rect.center() - galley.size() / 2.0, galley, Color32::BLACK);
+}
+
+fn nl(v: f64, decimals: usize) -> String {
+    let s = format!("{v:.decimals$}");
+    // Thousands with a dot, decimals with a comma.
+    let (int, frac) = s.split_once('.').map(|(a, b)| (a.to_string(), Some(b.to_string()))).unwrap_or((s.clone(), None));
+    let neg = int.starts_with('-');
+    let digits: Vec<char> = int.trim_start_matches('-').chars().collect();
+    let mut grouped = String::new();
+    for (i, c) in digits.iter().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            grouped.push('.');
+        }
+        grouped.push(*c);
+    }
+    format!("{}{}{}", if neg { "-" } else { "" }, grouped, frac.map(|f| format!(",{f}")).unwrap_or_default())
 }
 
 struct NlcsPage {
@@ -352,6 +439,9 @@ pub struct App {
     pdok: PdokPage,
     nlcs: NlcsPage,
     ahn: AhnPage,
+    controle: ControlePage,
+    hoev: HoeveelhedenPage,
+    civ: CivielPage,
     srv: ServersPage,
     coords: CoordsPage,
     servers: Vec<MapServer>,
@@ -385,6 +475,9 @@ impl App {
             pdok: PdokPage { on: PDOK.iter().map(|d| d.default_on).collect(), run: None },
             nlcs: NlcsPage::default(),
             ahn: AhnPage::default(),
+            controle: ControlePage::default(),
+            hoev: HoeveelhedenPage::default(),
+            civ: CivielPage::default(),
             srv: ServersPage { region: "Eigen servers".into(), ..Default::default() },
             coords: CoordsPage { crs: "EPSG:4326".into(), xy: [4.660_612, 51.814_158], picked: None, job: None },
             servers: servers::all(),
@@ -436,6 +529,17 @@ impl App {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
                 }
                 UiMsg::SiteChanged => self.reload_site(),
+                UiMsg::Run(tab) => {
+                    self.tab = tab;
+                    self.reload_site();
+                    match tab {
+                        Tab::Controle => self.start_check(ctx),
+                        Tab::Hoeveelheden => self.start_quantities(ctx),
+                        _ => {}
+                    }
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                }
                 UiMsg::Klic(path) => {
                     self.tab = Tab::Nlcs;
                     self.reload_site();
@@ -1864,6 +1968,405 @@ impl App {
         });
     }
 
+    // ── NLCS-controle ───────────────────────────────────────────────────────
+    fn start_check(&mut self, ctx: &egui::Context) {
+        if self.controle.job.is_some() {
+            return;
+        }
+        let opt = nlcs_check::Options {
+            scale: self.controle.scale,
+            unit_factor: bridge::target().map(|t| t.unit_factor).unwrap_or(1.0),
+            text_heights: self.controle.text_heights,
+            empty_layers: self.controle.empty_layers,
+            layer_props: true,
+        };
+        self.controle.job = Some(Job::spawn(ctx, "Tekening controleren…", move |_| {
+            let doc = bridge::snapshot()?;
+            let opt = nlcs_check::Options { layer_props: !bridge::partial(), ..opt };
+            Ok(nlcs_check::check(&doc, &opt))
+        }));
+    }
+
+    fn controle_page(&mut self, ui: &mut egui::Ui) {
+        if let Some(r) = poll(&mut self.controle.job) {
+            match r {
+                Ok(rep) => {
+                    self.message = Some((true, format!("NLCS-controle: {} conform — {}, {}.", rep.score_label(), nlcs_check::counted(rep.count(Severity::Fout), "fout", "fouten"), nlcs_check::counted(rep.count(Severity::Waarschuwing), "waarschuwing", "waarschuwingen"))));
+                    self.controle.report = Some(rep);
+                }
+                Err(e) => self.err(e),
+            }
+        }
+        if let Some(r) = poll(&mut self.controle.repair) {
+            match r {
+                Ok(m) => {
+                    self.ok(m);
+                    let ctx = ui.ctx().clone();
+                    self.start_check(&ctx);
+                }
+                Err(e) => self.err(e),
+            }
+        }
+        page_header(ui, "check", "NLCS-controle", "Toetst de tekening aan NLCS 5.02: laagnamen, laagkleur, -lijndikte en -lijntype per tekenstatus, elementen op DuLaag, teksthoogtes.");
+        group(ui, "Instellingen", |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Tekenschaal (voor teksthoogtes)");
+                egui::ComboBox::from_id_salt("chk_scale").selected_text(format!("1:{}", self.controle.scale)).show_ui(ui, |ui| {
+                    for sc in [100.0, 200.0, 250.0, 500.0, 1000.0, 2000.0] {
+                        ui.selectable_value(&mut self.controle.scale, sc, format!("1:{sc}"));
+                    }
+                });
+                ui.checkbox(&mut self.controle.text_heights, "Teksthoogtes");
+                ui.checkbox(&mut self.controle.empty_layers, "Lege lagen melden");
+            });
+        });
+        let Some(rep) = self.controle.report.clone() else {
+            group(ui, "Resultaat", |ui| {
+                job_status(ui, &self.controle.job);
+                if self.controle.job.is_none() {
+                    ui.label(RichText::new("Klik op Controleren.").weak());
+                }
+            });
+            return;
+        };
+        group(ui, "Resultaat", |ui| {
+            ui.horizontal(|ui| {
+                let score = rep.score();
+                let colour = if score >= 95.0 { OK_GREEN } else if score >= 70.0 { WARN } else { ERR_RED };
+                ui.label(RichText::new(rep.score_label()).size(30.0).strong().color(colour));
+                ui.vertical(|ui| {
+                    ui.label(RichText::new("conform NLCS").strong());
+                    ui.label(RichText::new(format!("{} van {} elementen · {} lagen, waarvan {} NLCS", rep.conform_entities, rep.entities, rep.layers, rep.nlcs_layers)).small().weak());
+                });
+                ui.add_space(24.0);
+                for s in [Severity::Fout, Severity::Waarschuwing, Severity::Info] {
+                    badge(ui, &format!("{} {}", rep.count(s), s.label()), severity_colour(s));
+                }
+            });
+            let bar = egui::ProgressBar::new((rep.score() / 100.0) as f32).desired_height(6.0);
+            ui.add(bar);
+        });
+        group(ui, "Bevindingen", |ui| {
+            if rep.findings.is_empty() {
+                ui.label(RichText::new("Geen bevindingen: de tekening volgt NLCS.").color(OK_GREEN));
+                return;
+            }
+            for (rule, list) in rep.by_rule() {
+                let open = self.controle.open == Some(rule);
+                ui.horizontal(|ui| {
+                    badge(ui, rule.severity().label(), severity_colour(rule.severity()));
+                    let title = format!("{}  {}  ({}×)", rule.code(), rule.title(), list.len());
+                    if ui.selectable_label(open, RichText::new(title).strong()).clicked() {
+                        self.controle.open = if open { None } else { Some(rule) };
+                    }
+                    let handles: Vec<_> = list.iter().flat_map(|f| f.handles.iter().copied()).collect();
+                    if !handles.is_empty() && ui.small_button(format!("Selecteer {}", handles.len())).on_hover_text("Selecteer deze elementen in de tekening").clicked() {
+                        match bridge::select(&handles) {
+                            Ok(()) => self.message = Some((true, format!("{} element(en) geselecteerd in de tekening.", handles.len()))),
+                            Err(e) => self.message = Some((false, e)),
+                        }
+                    }
+                });
+                if open {
+                    list_frame(ui, 220.0, &format!("rule{}", rule.code()), |ui| {
+                        egui::Grid::new(format!("findings{}", rule.code())).num_columns(3).striped(true).spacing([12.0, 4.0]).show(ui, |ui| {
+                            for f in &list {
+                                ui.label(RichText::new(&f.layer).monospace().small());
+                                ui.label(RichText::new(&f.message).small());
+                                if !f.handles.is_empty() && ui.small_button("Selecteer").clicked() {
+                                    let _ = bridge::select(&f.handles);
+                                }
+                                ui.end_row();
+                            }
+                        });
+                    });
+                }
+            }
+        });
+    }
+
+    fn controle_actions(&mut self, ui: &mut egui::Ui) {
+        let ctx = ui.ctx().clone();
+        let busy = self.controle.job.is_some() || self.controle.repair.is_some();
+        let repairs = self.controle.report.as_ref().map(|r| r.repairs().len()).unwrap_or(0);
+        button_bar(ui, |ui| {
+            if ui.add_enabled(!busy, primary_button("Controleren")).clicked() {
+                self.start_check(&ctx);
+            }
+            let label = if repairs > 0 { format!("Herstellen ({repairs})") } else { "Herstellen".into() };
+            if ui.add_enabled(!busy && repairs > 0, egui::Button::new(label)).on_hover_text("Laagkleur, -lijndikte en -lijntype volgens NLCS; elementen op DuLaag. Laagnamen en teksthoogtes blijven zoals ze zijn.").clicked() {
+                if let Some(rep) = self.controle.report.clone() {
+                    self.controle.repair = Some(Job::spawn(&ctx, "Herstellen…", move |_| {
+                        let doc = bridge::snapshot()?;
+                        nlcs_check::repair(&doc, &rep.repairs())
+                    }));
+                }
+            }
+            if ui.add_enabled(self.controle.report.is_some(), egui::Button::new("Rapport opslaan")).clicked() {
+                if let Some(rep) = &self.controle.report {
+                    let opt = nlcs_check::Options { scale: self.controle.scale, ..Default::default() };
+                    let path = bridge::beside_drawing("nlcs-controle.md");
+                    match std::fs::write(&path, nlcs_check::markdown(rep, &bridge::drawing_name(), &opt)) {
+                        Ok(()) => self.ok(format!("Rapport opgeslagen: {}", path.display())),
+                        Err(e) => self.err(format!("{}: {e}", path.display())),
+                    }
+                }
+            }
+            job_status(ui, &self.controle.job);
+            job_status(ui, &self.controle.repair);
+        });
+    }
+
+    // ── Hoeveelheden ────────────────────────────────────────────────────────
+    fn start_quantities(&mut self, ctx: &egui::Context) {
+        if self.hoev.job.is_some() {
+            return;
+        }
+        let only_selection = self.hoev.selection;
+        let unit = bridge::target().map(|t| t.unit_factor).unwrap_or(1.0);
+        self.hoev.job = Some(Job::spawn(ctx, "Hoeveelheden berekenen…", move |_| {
+            let doc = bridge::snapshot()?;
+            let sel: std::collections::HashSet<_> = if only_selection { bridge::selection()?.into_iter().collect() } else { Default::default() };
+            if only_selection && sel.is_empty() {
+                return Err("niets geselecteerd in de tekening".into());
+            }
+            Ok(hoeveelheden::compute(&doc, unit, if only_selection { Some(&sel) } else { None }))
+        }));
+    }
+
+    fn hoeveelheden_page(&mut self, ui: &mut egui::Ui) {
+        if let Some(r) = poll(&mut self.hoev.job) {
+            match r {
+                Ok(q) => {
+                    self.message = Some((true, format!("Hoeveelheden van {} elementen op {} lagen.", q.entities, q.rows.len())));
+                    self.hoev.result = Some(q);
+                }
+                Err(e) => self.err(e),
+            }
+        }
+        page_header(ui, "quantities", "Hoeveelheden", "Aantal, lengte en oppervlakte per NLCS-laag of per object, uit de geometrie van de tekening.");
+        group(ui, "Instellingen", |ui| {
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut self.hoev.selection, "Alleen de selectie in de tekening");
+                ui.checkbox(&mut self.hoev.per_object, "Per object (G, S en A samen; zonder teksten)");
+                ui.add_enabled(!self.hoev.per_object, egui::Checkbox::new(&mut self.hoev.annotation, "Ook tekenblad en annotatie (AL, ZZ)"));
+                ui.add(egui::TextEdit::singleline(&mut self.hoev.filter).hint_text("filter, bijv. VH of asfalt").desired_width(200.0));
+            });
+        });
+        let Some(q) = self.hoev.result.clone() else {
+            group(ui, "Resultaat", |ui| {
+                job_status(ui, &self.hoev.job);
+                if self.hoev.job.is_none() {
+                    ui.label(RichText::new("Klik op Berekenen.").weak());
+                }
+            });
+            return;
+        };
+        let rows = if self.hoev.per_object { hoeveelheden::per_object(&q) } else { q.rows.clone() };
+        let filter = self.hoev.filter.trim().to_lowercase();
+        let annotation = self.hoev.annotation;
+        let rows: Vec<_> = rows.into_iter().filter(|r| annotation || !r.annotation()).filter(|r| filter.is_empty() || r.layer.to_lowercase().contains(&filter) || r.object_label().to_lowercase().contains(&filter)).collect();
+        group(ui, &format!("Resultaat — {} regels{}", rows.len(), if q.from_selection { " (selectie)" } else { "" }), |ui| {
+            list_frame(ui, 520.0, "quantities", |ui| {
+                egui::Grid::new("q").num_columns(7).striped(true).spacing([14.0, 5.0]).show(ui, |ui| {
+                    for h in ["Object", "Status", "Laag", "Aantal", "Lengte (m)", "Opp. (m²)", "Hoofdmaat"] {
+                        ui.label(RichText::new(h).small().strong().color(ACCENT));
+                    }
+                    ui.end_row();
+                    let (mut tl, mut ta) = (0.0, 0.0);
+                    for r in &rows {
+                        ui.label(r.object_label());
+                        ui.label(RichText::new(hoeveelheden::status_label(&r.status)).small());
+                        ui.label(RichText::new(&r.layer).monospace().small().weak());
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| ui.label(r.count.to_string()));
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| ui.label(if r.length > 0.0 { nl(r.length, 2) } else { "–".into() }));
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| ui.label(if r.area > 0.0 { nl(r.area, 2) } else { "–".into() }));
+                        let (v, u) = r.main();
+                        ui.label(RichText::new(format!("{} {u}", nl(v, if u == "st" { 0 } else { 1 }))).strong());
+                        ui.end_row();
+                        tl += r.length;
+                        ta += r.area;
+                    }
+                    ui.label(RichText::new("Totaal").strong());
+                    ui.label("");
+                    ui.label("");
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| ui.label(RichText::new(rows.iter().map(|r| r.count).sum::<usize>().to_string()).strong()));
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| ui.label(RichText::new(nl(tl, 2)).strong()));
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| ui.label(RichText::new(nl(ta, 2)).strong()));
+                    ui.end_row();
+                });
+            });
+            ui.label(RichText::new("Oppervlakte: gesloten polylijnen (met bogen), cirkels, ellipsen en arceringen (met eilanden). Lengte: lijnen, bogen, polylijnen, splines. Een hoeveelhedenstaat in de tekening: lintknop Hoeveelhedenstaat of GIS_HOEVEELHEDEN_TABEL.").small().weak());
+        });
+    }
+
+    fn hoeveelheden_actions(&mut self, ui: &mut egui::Ui) {
+        let ctx = ui.ctx().clone();
+        button_bar(ui, |ui| {
+            if ui.add_enabled(self.hoev.job.is_none(), primary_button("Berekenen")).clicked() {
+                self.start_quantities(&ctx);
+            }
+            if ui.add_enabled(self.hoev.result.is_some(), egui::Button::new("CSV opslaan")).on_hover_text("Puntkomma's en decimale komma's, voor Excel en LibreOffice").clicked() {
+                if let Some(q) = &self.hoev.result {
+                    let path = bridge::beside_drawing("hoeveelheden.csv");
+                    match std::fs::write(&path, hoeveelheden::csv(q)) {
+                        Ok(()) => self.ok(format!("Hoeveelheden opgeslagen: {}", path.display())),
+                        Err(e) => self.err(format!("{}: {e}", path.display())),
+                    }
+                }
+            }
+            job_status(ui, &self.hoev.job);
+        });
+    }
+
+    // ── Civiel ──────────────────────────────────────────────────────────────
+    fn civiel_page(&mut self, ui: &mut egui::Ui) {
+        if let Some(r) = poll(&mut self.civ.run) {
+            match r {
+                Ok(m) => self.ok(m),
+                Err(e) => self.err(e),
+            }
+        }
+        page_header(ui, "axis", "Civiel — instellingen", "Civil 3D-achtige tools op het tabblad Civiel: meetpunten, terrein (TIN), assen, profielen en grondverzet. De instellingen gelden ook voor de knoppen in het lint.");
+        let o = &mut self.civ.opt;
+        let num = |ui: &mut egui::Ui, v: &mut f64, lo: f64, hi: f64, speed: f64, suffix: &str| {
+            ui.add(egui::DragValue::new(v).range(lo..=hi).speed(speed).suffix(suffix));
+        };
+        group(ui, "Tekenen", |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Schaal");
+                egui::ComboBox::from_id_salt("civ_scale").selected_text(format!("1:{}", o.nlcs.scale)).show_ui(ui, |ui| {
+                    for sc in [100.0, 200.0, 250.0, 500.0, 1000.0, 2000.0] {
+                        ui.selectable_value(&mut o.nlcs.scale, sc, format!("1:{sc}"));
+                    }
+                });
+                ui.label("Tekenstatus");
+                egui::ComboBox::from_id_salt("civ_status").selected_text(o.nlcs.status.label()).show_ui(ui, |ui| {
+                    for st in nlcs::Status::ALL {
+                        ui.selectable_value(&mut o.nlcs.status, st, st.label());
+                    }
+                });
+                ui.checkbox(&mut o.nlcs.labels, "Teksten");
+            });
+            ui.label(RichText::new("Alles op NLCS-lagen: OG-HOOGTEPUNT, OG-TRIANGULATIE, OG-HOOGTELIJN, AM-AS, AM-KILOMETRERING, AM-TANGENTPUNT, AL-PROFIELBALK, GW-MAAIVELD.").small().weak());
+        });
+        ui.columns(2, |cols| {
+            group(&mut cols[0], "Punten", |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Bestandsformaat");
+                    egui::ComboBox::from_id_salt("civ_format").selected_text(o.format.label()).show_ui(ui, |ui| {
+                        for f in Format::ALL {
+                            ui.selectable_value(&mut o.format, f, f.label());
+                        }
+                    });
+                });
+                ui.checkbox(&mut o.point_labels, "Puntnummer, hoogte en code bij elk punt");
+                ui.label(RichText::new("Scheidingsteken (; , tab spatie) en decimale komma worden herkend. Automatisch: noord/oost uit de getallen.").small().weak());
+            });
+            group(&mut cols[0], "Oppervlak", |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Langste driehoekszijde");
+                    num(ui, &mut o.max_edge, 1.0, 10_000.0, 1.0, " m");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("TIN uit AHN: puntafstand");
+                    num(ui, &mut o.ahn_spacing, 0.5, 100.0, 0.5, " m");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Hoogtelijnen om de");
+                    egui::ComboBox::from_id_salt("civ_interval").selected_text(format!("{} m", o.interval)).show_ui(ui, |ui| {
+                        for v in [0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 5.0] {
+                            ui.selectable_value(&mut o.interval, v, format!("{v} m"));
+                        }
+                    });
+                    ui.label("hoofdlijn elke");
+                    ui.add(egui::DragValue::new(&mut o.major_every).range(1..=20));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Hoogteanalyse");
+                    ui.add(egui::DragValue::new(&mut o.bands).range(2..=9).suffix(" banden"));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Grondverzet: raster");
+                    num(ui, &mut o.volume_cell, 0.1, 50.0, 0.1, " m");
+                    ui.label("peil");
+                    num(ui, &mut o.level, -100.0, 1000.0, 0.05, " m");
+                });
+                ui.label(RichText::new("TIN: selecteer punten, 3D-lijnen of hoogtelijnen; zonder selectie uit AHN in het importgebied. Grondverzet: selecteer de 3D-vlakken van het ontwerp; zonder selectie t.o.v. het peil.").small().weak());
+            });
+            group(&mut cols[1], "As", |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Streepjes om de");
+                    num(ui, &mut o.tick, 1.0, 1000.0, 1.0, " m");
+                    ui.label("stationering om de");
+                    num(ui, &mut o.label_every, 1.0, 5000.0, 10.0, " m");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Verschuivingen (m, links < 0)");
+                    if ui.add(egui::TextEdit::singleline(&mut self.civ.offsets).desired_width(140.0)).changed() {
+                        o.offsets = parse_offsets(&self.civ.offsets);
+                    }
+                });
+            });
+            group(&mut cols[1], "Profielen", |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Lengteprofiel: stap");
+                    num(ui, &mut o.step, 0.1, 50.0, 0.1, " m");
+                    ui.label("overhoging");
+                    num(ui, &mut o.exaggeration, 1.0, 50.0, 0.5, "×");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Ontwerpprofiel: boog");
+                    num(ui, &mut o.vertical_curve, 0.0, 2000.0, 5.0, " m");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Dwarsprofielen om de");
+                    num(ui, &mut o.section_every, 1.0, 1000.0, 1.0, " m");
+                    ui.label("links");
+                    num(ui, &mut o.left, 1.0, 500.0, 1.0, " m");
+                    ui.label("rechts");
+                    num(ui, &mut o.right, 1.0, 500.0, 1.0, " m");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("overhoging");
+                    num(ui, &mut o.section_exaggeration, 1.0, 20.0, 0.5, "×");
+                    ui.label("per rij");
+                    ui.add(egui::DragValue::new(&mut o.per_row).range(1..=20));
+                });
+                ui.label(RichText::new("Selecteer de as in de tekening en kies Lengteprofiel of Dwarsprofielen in het lint; klik dan waar ze komen. Ontwerpprofiel: teken een polylijn in het lengteprofiel en selecteer die.").small().weak());
+            });
+        });
+        civiel::set_settings(self.civ.opt.clone());
+    }
+
+    fn civiel_actions(&mut self, ui: &mut egui::Ui) {
+        let ctx = ui.ctx().clone();
+        let busy = self.civ.run.is_some();
+        let mut start: Option<(&'static str, fn(&dyn Fn(String)) -> Result<String, String>)> = None;
+        button_bar(ui, |ui| {
+            use civiel::{as_profiel, landmeten, settings, terrein};
+            for (label, f) in [
+                ("TIN maken", (|p| terrein::create(&settings(), terrein::TinSource::Auto, p)) as fn(&dyn Fn(String)) -> Result<String, String>),
+                ("Hoogtelijnen", |p| terrein::contours(&settings(), terrein::Surface::Auto, p)),
+                ("Hoogteanalyse", |_| terrein::analysis(&settings(), terrein::Surface::Auto)),
+                ("Grondverzet", |p| terrein::volume(&settings(), terrein::Design::Auto, p)),
+                ("As maken", |_| as_profiel::create(&settings(), as_profiel::AxisInput::Line(None), None, None)),
+                ("As verschuiven", |_| as_profiel::offsets(&settings(), None)),
+                ("Ontwerpprofiel", |_| as_profiel::design_profile(&settings(), None, None, None)),
+                ("Punten exporteren", |_| landmeten::export(&settings(), None)),
+            ] {
+                if ui.add_enabled(!busy, egui::Button::new(label)).clicked() {
+                    start = Some((label, f));
+                }
+            }
+            job_status(ui, &self.civ.run);
+        });
+        if let Some((label, f)) = start {
+            civiel::set_settings(self.civ.opt.clone());
+            self.civ.run = Some(Job::spawn(&ctx, &format!("{label}…"), move |p| f(p)));
+        }
+    }
+
     // ── Servers ─────────────────────────────────────────────────────────────
     fn servers_page(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
@@ -2103,9 +2606,10 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::Panel::left("nav").exact_size(196.0).resizable(false).show(ui, |ui| {
             ui.add_space(8.0);
+            let civil = super::product() == Product::Civiel;
             ui.horizontal(|ui| {
-                ui.add(icon("location").fit_to_exact_size(Vec2::splat(22.0)));
-                ui.label(RichText::new("Open Infra · GIS").size(15.0).strong());
+                ui.add(icon(if civil { "axis" } else { "location" }).fit_to_exact_size(Vec2::splat(22.0)));
+                ui.label(RichText::new(if civil { "Open Infra · Civiel" } else { "Open Infra · GIS" }).size(15.0).strong());
             });
             ui.add_space(10.0);
             let mut nav = |ui: &mut egui::Ui, tab: Tab, ic: &str, label: &str| {
@@ -2115,6 +2619,16 @@ impl eframe::App for App {
                     self.tab = tab;
                 }
             };
+            if civil {
+                ui.label(RichText::new("CIVIEL").small().weak());
+                nav(ui, Tab::Civiel, "axis", "Instellingen en acties");
+                ui.add_space(8.0);
+                ui.label(RichText::new("ALGEMEEN").small().weak());
+                nav(ui, Tab::Location, "location", "Projectlocatie");
+                nav(ui, Tab::Controle, "check", "NLCS-controle");
+                nav(ui, Tab::Hoeveelheden, "quantities", "Hoeveelheden");
+                nav(ui, Tab::Coords, "point", "Coördinaten");
+            } else {
             ui.label(RichText::new("WEBSERVICES").small().weak());
             nav(ui, Tab::Location, "location", "Geografische locatie");
             nav(ui, Tab::Raster, "map", "WMS / TMS (raster)");
@@ -2126,9 +2640,14 @@ impl eframe::App for App {
             nav(ui, Tab::Nlcs, "nlcs", "BGT · Kadaster · KLIC");
             nav(ui, Tab::Ahn, "ahn", "AHN-hoogtes");
             ui.add_space(8.0);
+            ui.label(RichText::new("NLCS").small().weak());
+            nav(ui, Tab::Controle, "check", "NLCS-controle");
+            nav(ui, Tab::Hoeveelheden, "quantities", "Hoeveelheden");
+            ui.add_space(8.0);
             ui.label(RichText::new("HULPMIDDELEN").small().weak());
             nav(ui, Tab::Coords, "point", "Coördinaten");
             nav(ui, Tab::Servers, "server", "Servers");
+            }
             ui.add_space(14.0);
 
             egui::Frame::group(ui.style()).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
@@ -2158,7 +2677,7 @@ impl eframe::App for App {
         });
         egui::CentralPanel::default().show(ui, |ui| {
             // OK / Test / Annuleren stay visible at the bottom, as in the FreeCAD dialogs.
-            let has_actions = matches!(self.tab, Tab::Location | Tab::Raster | Tab::Wfs | Tab::Osm | Tab::Pdok | Tab::Nlcs | Tab::Ahn);
+            let has_actions = matches!(self.tab, Tab::Location | Tab::Raster | Tab::Wfs | Tab::Osm | Tab::Pdok | Tab::Nlcs | Tab::Ahn | Tab::Controle | Tab::Hoeveelheden | Tab::Civiel);
             if has_actions {
                 egui::Panel::bottom("actions").frame(egui::Frame::new().inner_margin(egui::Margin::symmetric(4, 8))).show(ui, |ui| match self.tab {
                     Tab::Location => self.location_actions(ui),
@@ -2168,6 +2687,9 @@ impl eframe::App for App {
                     Tab::Pdok => self.pdok_actions(ui),
                     Tab::Nlcs => self.nlcs_actions(ui),
                     Tab::Ahn => self.ahn_actions(ui),
+                    Tab::Controle => self.controle_actions(ui),
+                    Tab::Hoeveelheden => self.hoeveelheden_actions(ui),
+                    Tab::Civiel => self.civiel_actions(ui),
                     _ => {}
                 });
             }
@@ -2181,8 +2703,11 @@ impl eframe::App for App {
                     Tab::Pdok => self.pdok(ui),
                     Tab::Nlcs => self.nlcs_page(ui),
                     Tab::Ahn => self.ahn_page(ui),
+                    Tab::Controle => self.controle_page(ui),
+                    Tab::Hoeveelheden => self.hoeveelheden_page(ui),
                     Tab::Servers => self.servers_page(ui),
                     Tab::Coords => self.coords(ui),
+                    Tab::Civiel => self.civiel_page(ui),
                 }
             });
         });

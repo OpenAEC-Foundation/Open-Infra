@@ -20,8 +20,8 @@ checksum = "366ffbaa4442f4684d91e2cd7c5ea7c4ed8add41959a31447066e279e432b618"
 
 [[package]]
 name = "acadrust"
-version = "0.6.4"
-source = "git+https://github.com/HakanSeven12/opencadcodec.git?rev=5d4f11a#5d4f11ae38758caec540bc9819ff2c4120eeadb4"
+version = "0.6.6"
+source = "git+https://github.com/HakanSeven12/opencadcodec.git?rev=24b037a#24b037af9d1490b83464e5d43b14a7f4d12744e8"
 dependencies = [
  "anyhow",
  "bitflags 2.13.2",
@@ -597,6 +597,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 
 [[package]]
+name = "delaunator"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e1ee323c1275374f7e612d3724d12707079fb6a2117349fe144def656f5a880"
+dependencies = [
+ "robust",
+]
+
+[[package]]
 name = "derive_arbitrary"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -671,6 +680,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
 
 [[package]]
+name = "earcutr"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79127ed59a85d7687c409e9978547cffb7dc79675355ed22da6b66fd5f6ead01"
+dependencies = [
+ "itertools 0.11.0",
+ "num-traits",
+]
+
+[[package]]
 name = "ecolor"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -726,7 +745,7 @@ dependencies = [
  "bitflags 2.13.2",
  "emath",
  "epaint",
- "itertools",
+ "itertools 0.15.0",
  "log",
  "nohash-hasher",
  "profiling",
@@ -786,7 +805,7 @@ dependencies = [
  "ahash 0.8.12",
  "egui",
  "enum-map",
- "itertools",
+ "itertools 0.15.0",
  "log",
  "profiling",
  "resvg",
@@ -1474,6 +1493,15 @@ dependencies = [
  "recvmsg",
  "widestring",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "itertools"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+dependencies = [
+ "either",
 ]
 
 [[package]]
@@ -2195,7 +2223,7 @@ dependencies = [
 [[package]]
 name = "ocs_plugin_api"
 version = "0.2.1"
-source = "git+https://github.com/HakanSeven12/OpenCADStudio?rev=b6fbac39ffc74398ba5d283ce2bc1dc07a8fd8f0#b6fbac39ffc74398ba5d283ce2bc1dc07a8fd8f0"
+source = "git+https://github.com/HakanSeven12/OpenCADStudio?rev=ece627c662b98316f33d22cc09695ad16a1a6816#dbd50b20091cf6ce9cf61967ae0563df04014f5a"
 dependencies = [
  "acadrust",
  "bincode",
@@ -2231,12 +2259,17 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 name = "open-infra"
 version = "2026.44.2"
 dependencies = [
+ "bincode",
  "chrono",
  "copc-rs",
+ "delaunator",
+ "earcutr",
  "eframe",
  "egui_extras",
  "image",
  "klic2geo",
+ "las",
+ "las-crs",
  "ocs_plugin_api",
  "proj4rs",
  "roxmltree 0.21.1",
@@ -2245,6 +2278,15 @@ dependencies = [
  "tiff",
  "ureq",
  "winit",
+]
+
+[[package]]
+name = "open-infra-civiel"
+version = "2026.44.2"
+dependencies = [
+ "ocs_plugin_api",
+ "open-infra",
+ "serde_json",
 ]
 
 [[package]]
@@ -2738,6 +2780,12 @@ dependencies = [
  "quote",
  "syn 1.0.109",
 ]
+
+[[package]]
+name = "robust"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e27ee8bb91ca0adcf0ecb116293afa12d393f9c2b9b9cd54d33e8078fe19839"
 
 [[package]]
 name = "roxmltree"
