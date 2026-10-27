@@ -11,6 +11,8 @@ pub mod hoogte;
 pub mod gis;
 pub mod import;
 pub mod basisdata;
+pub mod lang;
+pub mod library;
 pub mod nlcs;
 pub mod tekenblad;
 mod ui;
@@ -52,6 +54,8 @@ const I_AHN: IconKind = IconKind::Svg(include_bytes!("../assets/ahn.svg"));
 const I_CONTOURS: IconKind = IconKind::Svg(include_bytes!("../assets/hoogtelijnen.svg"));
 const I_PROFILE: IconKind = IconKind::Svg(include_bytes!("../assets/profiel.svg"));
 const I_CLOUD: IconKind = IconKind::Svg(include_bytes!("../assets/puntenwolk.svg"));
+const I_VEHICLE: IconKind = IconKind::Svg(include_bytes!("../assets/vehicle.svg"));
+const I_CATALOGUE: IconKind = IconKind::Svg(include_bytes!("../assets/catalogue.svg"));
 
 /// One-click imports from the ribbon (no window): command → what to fetch.
 enum Quick {
@@ -166,6 +170,15 @@ impl CadModule for GisModule {
                         tool("GIS_PUNT", "Punt info", I_POINT),
                         tool("GIS_COORD", "Coördinaten", I_POINT),
                         tool("GIS_SERVERS", "Servers", I_SERVER),
+                    ],
+                },
+                // Block libraries (vehicles), like the vehicle sets of
+                // swept-path software.
+                RibbonGroup {
+                    title: lang::tr("Bibliotheek", "Library"),
+                    tools: vec![
+                        tool("GIS_VOERTUIGEN", lang::tr("Voertuigen", "Vehicles"), I_VEHICLE),
+                        tool("GIS_VOERTUIGOVERZICHT", lang::tr("Overzicht", "Catalogue"), I_CATALOGUE),
                     ],
                 },
             ]
@@ -491,6 +504,46 @@ fn base_data(host: &mut dyn HostApi, verb: &str, arg: &str) {
     });
 }
 
+/// Command words without the point answers a script may append (`10,20`).
+fn words(cmd: &str) -> Vec<&str> {
+    cmd.split_whitespace()
+        .skip(1)
+        .filter(|a| !(a.contains(',') && a.split(',').all(|n| n.trim().parse::<f64>().is_ok())))
+        .collect()
+}
+
+/// `GIS_VOERTUIG <id> [ZIJ|SIDE]`: insert a vehicle block at a picked point.
+fn vehicle_command(host: &mut dyn HostApi, cmd: &str) {
+    let args = words(cmd);
+    let side = args.iter().any(|a| a.eq_ignore_ascii_case("ZIJ") || a.eq_ignore_ascii_case("SIDE"));
+    let id = args.iter().find(|a| !a.eq_ignore_ascii_case("ZIJ") && !a.eq_ignore_ascii_case("SIDE")).copied().unwrap_or("");
+    if id.is_empty() {
+        open(host, ui::Tab::Library);
+        return;
+    }
+    let Some(v) = library::find(id) else {
+        host.push_error(&format!("[Open Infra] {} {id} — {}", lang::tr("onbekend voertuig", "unknown vehicle"), lang::tr("zie GIS_VOERTUIGEN", "see GIS_VEHICLES")));
+        return;
+    };
+    let unit = bridge::target().map(|t| t.unit_factor).unwrap_or(1.0);
+    let view = if side { library::draw::View::Side } else { library::draw::View::Top };
+    host.start_interactive(Box::new(library::place::InsertCmd::new(v, view, unit)));
+}
+
+/// `GIS_VOERTUIGOVERZICHT [categorie] [ZIJ|SIDE]`: lay out the library.
+fn catalogue_command(host: &mut dyn HostApi, cmd: &str) {
+    let args = words(cmd);
+    let side = args.iter().any(|a| a.eq_ignore_ascii_case("ZIJ") || a.eq_ignore_ascii_case("SIDE"));
+    let cat = args.iter().find(|a| !a.eq_ignore_ascii_case("ZIJ") && !a.eq_ignore_ascii_case("SIDE")).map(|a| a.to_ascii_lowercase());
+    let list: Vec<&'static library::Vehicle> = library::vehicles().iter().filter(|v| cat.as_deref().is_none_or(|c| v.category == c)).collect();
+    if list.is_empty() {
+        host.push_error(&format!("[Open Infra] {}", lang::tr("geen voertuigen in die categorie", "no vehicles in that category")));
+        return;
+    }
+    let view = if side { library::draw::View::Side } else { library::draw::View::Top };
+    host.start_interactive(Box::new(library::place::CatalogueCmd { list, view }));
+}
+
 impl BuiltinPlugin for OpenInfra {
     fn manifest(&self) -> &'static PluginManifest {
         &MANIFEST
@@ -558,13 +611,18 @@ impl BuiltinPlugin for OpenInfra {
                     host.start_interactive(Box::new(PointCmd { site, unit_factor }));
                 }
             }
+            "GIS_VOERTUIGEN" | "GIS_VEHICLES" | "GIS_BIBLIOTHEEK" | "GIS_LIBRARY" => open(host, ui::Tab::Library),
+            "GIS_VOERTUIG" | "GIS_VEHICLE" => vehicle_command(host, cmd),
+            "GIS_VOERTUIGOVERZICHT" | "GIS_VEHICLE_CATALOG" | "GIS_VEHICLE_CATALOGUE" => catalogue_command(host, cmd),
             "GIS_HELP" => host.push_info(
                 "[Open Infra] GIS_LOCATIE, GIS_GEBIED, GIS_PUNT, GIS_KAART, GIS_WFS, GIS_OSM, GIS_PDOK, GIS_COORD, GIS_SERVERS; \
                  snel: GIS_Q_LUCHTFOTO, GIS_Q_KADASTER, GIS_Q_AHN, GIS_Q_OSMKAART, GIS_Q_SATELLIET, GIS_Q_BAG, \
                  GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM; \
                  GIS_SITE <lon> <lat> [b] [h] [EPSG:code] [RELATIEF] [naam] | GIS_SITE RD <x> <y> [b] [h] [RELATIEF] [naam]; \
                  AHN: GIS_AHN (venster), GIS_HOOGTEPUNTEN, GIS_HOOGTELIJNEN, GIS_PROFIEL, GIS_PUNTENWOLK; \
-                 NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp].",
+                 NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp]; \
+                 Bibliotheek / library: GIS_VOERTUIGEN | GIS_VEHICLES (venster), GIS_VOERTUIG | GIS_VEHICLE <id> [ZIJ|SIDE], \
+                 GIS_VOERTUIGOVERZICHT | GIS_VEHICLE_CATALOG [categorie] [ZIJ|SIDE].",
             ),
             v => match QUICK.iter().find(|(c, ..)| *c == v) {
                 Some((_, label, q)) => quick(host, q, label),

@@ -7,6 +7,7 @@
 
 mod app;
 mod jobs;
+mod library;
 mod map;
 
 use std::sync::mpsc::{channel, Sender};
@@ -25,6 +26,7 @@ pub enum Tab {
     Ahn,
     Servers,
     Coords,
+    Library,
 }
 
 pub(crate) enum UiMsg {

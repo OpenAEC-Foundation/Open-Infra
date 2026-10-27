@@ -66,6 +66,7 @@ fn icon(name: &str) -> egui::Image<'static> {
         "area" => include_str!("../../assets/area.svg"),
         "nlcs" => include_str!("../../assets/bgt.svg"),
         "ahn" => include_str!("../../assets/ahn.svg"),
+        "vehicle" => include_str!("../../assets/vehicle.svg"),
         _ => include_str!("../../assets/list.svg"),
     };
     let bytes = svg.replace("currentColor", "#dfe5ea").into_bytes();
@@ -355,6 +356,7 @@ pub struct App {
     srv: ServersPage,
     coords: CoordsPage,
     servers: Vec<MapServer>,
+    lib: super::library::LibraryPage,
 }
 
 impl App {
@@ -388,6 +390,7 @@ impl App {
             srv: ServersPage { region: "Eigen servers".into(), ..Default::default() },
             coords: CoordsPage { crs: "EPSG:4326".into(), xy: [4.660_612, 51.814_158], picked: None, job: None },
             servers: servers::all(),
+            lib: Default::default(),
         }
     }
 
@@ -2061,15 +2064,28 @@ fn server_combo(ui: &mut egui::Ui, id: &str, all: &[MapServer], kinds: &[ServerK
     egui::ComboBox::from_id_salt(id)
         .width(ui.available_width().min(520.0))
         .height(480.0)
-        .selected_text(current.map(|s| s.name.clone()).unwrap_or_else(|| "— kies een server —".into()))
+        .selected_text(current.map(|s| s.name.clone()).unwrap_or_else(|| crate::lang::tr("— kies een server —", "— choose a server —").into()))
         .show_ui(ui, |ui| {
+            // Hundreds of presets worldwide: a filter on name, country and URL.
+            let fid = egui::Id::NULL.with((id, "filter"));
+            let mut filter: String = ui.data_mut(|d| d.get_temp(fid).unwrap_or_default());
+            ui.horizontal(|ui| {
+                ui.label(crate::lang::tr("Filter", "Filter"));
+                ui.add(egui::TextEdit::singleline(&mut filter).hint_text(crate::lang::tr("land, regio of naam", "country, region or name")).desired_width(260.0));
+            });
+            ui.data_mut(|d| d.insert_temp(fid, filter.clone()));
+            let words: Vec<String> = filter.to_lowercase().split_whitespace().map(str::to_string).collect();
+            let hit = |s: &MapServer| {
+                let hay = format!("{} {} {} {}", s.name, s.region, s.url, s.id).to_lowercase();
+                words.iter().all(|w| hay.contains(w.as_str()))
+            };
             let mut region = "";
-            for s in all.iter().filter(|s| kinds.contains(&s.kind)) {
+            for s in all.iter().filter(|s| kinds.contains(&s.kind) && hit(s)) {
                 if s.region != region {
                     region = &s.region;
                     ui.label(RichText::new(region.to_uppercase()).small().color(ACCENT));
                 }
-                let label = if s.kind == ServerKind::Xyz { format!("{}   [tegels]", s.name) } else { s.name.clone() };
+                let label = if s.kind == ServerKind::Xyz { format!("{}   [{}]", s.name, crate::lang::tr("tegels", "tiles")) } else { s.name.clone() };
                 if ui.selectable_label(current.is_some_and(|c| c.id == s.id), label).clicked() {
                     picked = Some(s.clone());
                 }
@@ -2129,6 +2145,10 @@ impl eframe::App for App {
             ui.label(RichText::new("HULPMIDDELEN").small().weak());
             nav(ui, Tab::Coords, "point", "Coördinaten");
             nav(ui, Tab::Servers, "server", "Servers");
+            ui.add_space(8.0);
+            ui.label(RichText::new(crate::lang::tr("BIBLIOTHEEK", "LIBRARY")).small().weak());
+            nav(ui, Tab::Library, "vehicle", crate::lang::tr("Voertuigen", "Vehicles"));
+            super::library::language_switch(ui);
             ui.add_space(14.0);
 
             egui::Frame::group(ui.style()).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
@@ -2183,6 +2203,7 @@ impl eframe::App for App {
                     Tab::Ahn => self.ahn_page(ui),
                     Tab::Servers => self.servers_page(ui),
                     Tab::Coords => self.coords(ui),
+                    Tab::Library => self.lib.page(ui),
                 }
             });
         });
