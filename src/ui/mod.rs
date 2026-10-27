@@ -6,6 +6,7 @@
 //! afterwards only hidden/shown; closing it hides it.
 
 mod app;
+mod files;
 mod jobs;
 mod library;
 mod map;
@@ -27,6 +28,7 @@ pub enum Tab {
     Servers,
     Coords,
     Library,
+    Files,
 }
 
 pub(crate) enum UiMsg {
@@ -37,6 +39,8 @@ pub(crate) enum UiMsg {
     SiteChanged,
     /// A KLIC delivery chosen in Open CAD Studio's file dialog.
     Klic(std::path::PathBuf),
+    /// A GIS file chosen in Open CAD Studio's file dialog.
+    File(std::path::PathBuf),
 }
 
 struct Handle {

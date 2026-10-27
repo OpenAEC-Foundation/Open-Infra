@@ -1,0 +1,74 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Block A",
+    "kind": "building",
+    "floors": 5
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       8.5402,
+       47.3779
+      ],
+      [
+       8.541,
+       47.3779
+      ],
+      [
+       8.541,
+       47.378699999999995
+      ],
+      [
+       8.5402,
+       47.378699999999995
+      ],
+      [
+       8.5402,
+       47.3779
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bahnhofstrasse",
+    "kind": "road"
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      8.5394,
+      47.3771
+     ],
+     [
+      8.5418,
+      47.378299999999996
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Tree 1",
+    "kind": "tree"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     8.540600000000001,
+     47.3775
+    ]
+   }
+  }
+ ]
+}

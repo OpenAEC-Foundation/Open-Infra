@@ -11,6 +11,7 @@ pub mod hoogte;
 pub mod gis;
 pub mod import;
 pub mod basisdata;
+pub mod bestand;
 pub mod lang;
 pub mod library;
 pub mod nlcs;
@@ -56,6 +57,7 @@ const I_PROFILE: IconKind = IconKind::Svg(include_bytes!("../assets/profiel.svg"
 const I_CLOUD: IconKind = IconKind::Svg(include_bytes!("../assets/puntenwolk.svg"));
 const I_VEHICLE: IconKind = IconKind::Svg(include_bytes!("../assets/vehicle.svg"));
 const I_CATALOGUE: IconKind = IconKind::Svg(include_bytes!("../assets/catalogue.svg"));
+const I_FILE: IconKind = IconKind::Svg(include_bytes!("../assets/file.svg"));
 
 /// One-click imports from the ribbon (no window): command → what to fetch.
 enum Quick {
@@ -175,8 +177,19 @@ impl CadModule for GisModule {
                 // Block libraries (vehicles), like the vehicle sets of
                 // swept-path software.
                 RibbonGroup {
-                    title: lang::tr("Bibliotheek", "Library"),
+                    title: lang::tr("Bestanden en bibliotheek", "Files and library"),
                     tools: vec![
+                        RibbonItem::LargeTool(ToolDef {
+                            id: "GIS_BESTAND",
+                            label: lang::tr("GIS-bestand", "GIS file"),
+                            icon: I_FILE,
+                            event: ModuleEvent::PluginFileDialog {
+                                command: "GIS_BESTAND".into(),
+                                title: lang::tr("GIS-bestand openen", "Open a GIS file").into(),
+                                filter_name: "GeoJSON, Shapefile, GeoPackage, KML/KMZ, GPX, CSV".into(),
+                                extensions: gis::files::EXTENSIONS.iter().map(|e| e.to_string()).collect(),
+                            },
+                        }),
                         tool("GIS_VOERTUIGEN", lang::tr("Voertuigen", "Vehicles"), I_VEHICLE),
                         tool("GIS_VOERTUIGOVERZICHT", lang::tr("Overzicht", "Catalogue"), I_CATALOGUE),
                     ],
@@ -512,6 +525,21 @@ fn words(cmd: &str) -> Vec<&str> {
         .collect()
 }
 
+/// `GIS_BESTAND_IMPORT <pad> [EPSG:code]`: a GIS file straight into the drawing.
+fn file_import(host: &mut dyn HostApi, path: &str, crs: Option<String>) {
+    let Some(site) = require_site(host) else { return };
+    if path.is_empty() {
+        host.push_error("[Open Infra] GIS_FILE_IMPORT <path> [EPSG:code]");
+        return;
+    }
+    let path = std::path::PathBuf::from(path);
+    host.push_info(&format!("[Open Infra] {} {} …", lang::tr("Importeren", "Importing"), path.display()));
+    std::thread::spawn(move || match bestand::import_path(&site, &path, crs.as_deref(), &|_| {}) {
+        Ok(m) => bridge::info(&m),
+        Err(e) => bridge::error(&format!("{}: {e}", path.display())),
+    });
+}
+
 /// `GIS_VOERTUIG <id> [ZIJ|SIDE]`: insert a vehicle block at a picked point.
 fn vehicle_command(host: &mut dyn HostApi, cmd: &str) {
     let args = words(cmd);
@@ -612,6 +640,25 @@ impl BuiltinPlugin for OpenInfra {
                 }
             }
             "GIS_VOERTUIGEN" | "GIS_VEHICLES" | "GIS_BIBLIOTHEEK" | "GIS_LIBRARY" => open(host, ui::Tab::Library),
+            "GIS_BESTAND" | "GIS_FILE" => {
+                // From the ribbon's file dialog: "GIS_BESTAND <path>" (original case).
+                let arg = cmd.split_once(char::is_whitespace).map(|(_, a)| a.trim().trim_matches('"')).unwrap_or("");
+                if arg.is_empty() {
+                    open(host, ui::Tab::Files);
+                } else if ui::open(ui::Tab::Files).is_ok() {
+                    ui::send(ui::UiMsg::File(arg.into()));
+                } else {
+                    file_import(host, arg, None);
+                }
+            }
+            "GIS_BESTAND_IMPORT" | "GIS_FILE_IMPORT" => {
+                let rest = cmd.split_once(char::is_whitespace).map(|(_, a)| a.trim()).unwrap_or("");
+                let (path, crs) = match rest.rsplit_once(char::is_whitespace) {
+                    Some((p, c)) if c.to_ascii_uppercase().starts_with("EPSG:") => (p.trim(), Some(c.to_string())),
+                    _ => (rest, None),
+                };
+                file_import(host, path.trim_matches('"'), crs);
+            }
             "GIS_VOERTUIG" | "GIS_VEHICLE" => vehicle_command(host, cmd),
             "GIS_VOERTUIGOVERZICHT" | "GIS_VEHICLE_CATALOG" | "GIS_VEHICLE_CATALOGUE" => catalogue_command(host, cmd),
             "GIS_HELP" => host.push_info(
@@ -622,7 +669,8 @@ impl BuiltinPlugin for OpenInfra {
                  AHN: GIS_AHN (venster), GIS_HOOGTEPUNTEN, GIS_HOOGTELIJNEN, GIS_PROFIEL, GIS_PUNTENWOLK; \
                  NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp]; \
                  Bibliotheek / library: GIS_VOERTUIGEN | GIS_VEHICLES (venster), GIS_VOERTUIG | GIS_VEHICLE <id> [ZIJ|SIDE], \
-                 GIS_VOERTUIGOVERZICHT | GIS_VEHICLE_CATALOG [categorie] [ZIJ|SIDE].",
+                 GIS_VOERTUIGOVERZICHT | GIS_VEHICLE_CATALOG [categorie] [ZIJ|SIDE]; \
+                 GIS-bestand / GIS file: GIS_BESTAND | GIS_FILE [pad] (venster), GIS_BESTAND_IMPORT | GIS_FILE_IMPORT <pad> [EPSG:code].",
             ),
             v => match QUICK.iter().find(|(c, ..)| *c == v) {
                 Some((_, label, q)) => quick(host, q, label),

@@ -122,6 +122,25 @@ def main():
         after = ocs.entities()
         return (mid > before and after > mid), f"contours +{mid - before}, spot heights +{after - mid}"
 
+    def gis_files():
+        ocs.run("GIS_SITE 8.5402 47.3779 600 600 EPSG:2056 Zurich HB")
+        time.sleep(2)
+        files = REPO / "tests" / "data" / "gisbestanden"
+        report = []
+        ok = True
+        for name in ["zurich.geojson", "zurich_lines.shp", "zurich.gpkg", "zurich.kml", "zurich.gpx", "zurich_lv95.csv"]:
+            before = ocs.entities()
+            ocs.run(f"GIS_FILE_IMPORT {files / name}")
+            ocs.settle(minimum_seconds=1.0, timeout=60, first_change=20)
+            added = ocs.entities() - before
+            ok &= added > 0
+            report.append(f"{name} +{added}")
+        h = ocs.first("GIS-ZURICH_LINES")
+        xd = ocs.xdata(h) if h else []
+        ok &= any("Track" in str(x) for x in xd)
+        return ok, ", ".join(report) + f"; shapefile XDATA {xd[:2]}"
+
+    step("gis files", gis_files)
     step("vehicle", vehicle)
     step("side view", side)
     step("catalogue", catalogue)

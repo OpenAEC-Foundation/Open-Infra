@@ -6,6 +6,7 @@ pub mod ahn;
 pub mod bgt;
 pub mod caps;
 pub mod crs;
+pub mod files;
 pub mod geocode;
 pub mod http;
 pub mod klic;

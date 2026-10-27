@@ -67,6 +67,7 @@ fn icon(name: &str) -> egui::Image<'static> {
         "nlcs" => include_str!("../../assets/bgt.svg"),
         "ahn" => include_str!("../../assets/ahn.svg"),
         "vehicle" => include_str!("../../assets/vehicle.svg"),
+        "file" => include_str!("../../assets/file.svg"),
         _ => include_str!("../../assets/list.svg"),
     };
     let bytes = svg.replace("currentColor", "#dfe5ea").into_bytes();
@@ -357,6 +358,7 @@ pub struct App {
     coords: CoordsPage,
     servers: Vec<MapServer>,
     lib: super::library::LibraryPage,
+    files: super::files::FilesPage,
 }
 
 impl App {
@@ -391,6 +393,7 @@ impl App {
             coords: CoordsPage { crs: "EPSG:4326".into(), xy: [4.660_612, 51.814_158], picked: None, job: None },
             servers: servers::all(),
             lib: Default::default(),
+            files: Default::default(),
         }
     }
 
@@ -439,6 +442,14 @@ impl App {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
                 }
                 UiMsg::SiteChanged => self.reload_site(),
+                UiMsg::File(path) => {
+                    self.tab = Tab::Files;
+                    self.reload_site();
+                    self.files.open(ctx, path);
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                }
                 UiMsg::Klic(path) => {
                     self.tab = Tab::Nlcs;
                     self.reload_site();
@@ -2146,7 +2157,8 @@ impl eframe::App for App {
             nav(ui, Tab::Coords, "point", "Coördinaten");
             nav(ui, Tab::Servers, "server", "Servers");
             ui.add_space(8.0);
-            ui.label(RichText::new(crate::lang::tr("BIBLIOTHEEK", "LIBRARY")).small().weak());
+            ui.label(RichText::new(crate::lang::tr("BESTANDEN EN BIBLIOTHEEK", "FILES AND LIBRARY")).small().weak());
+            nav(ui, Tab::Files, "file", crate::lang::tr("GIS-bestand", "GIS file"));
             nav(ui, Tab::Library, "vehicle", crate::lang::tr("Voertuigen", "Vehicles"));
             super::library::language_switch(ui);
             ui.add_space(14.0);
@@ -2204,6 +2216,7 @@ impl eframe::App for App {
                     Tab::Servers => self.servers_page(ui),
                     Tab::Coords => self.coords(ui),
                     Tab::Library => self.lib.page(ui),
+                    Tab::Files => self.files.page(ui),
                 }
             });
         });
