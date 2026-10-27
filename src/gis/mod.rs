@@ -16,6 +16,7 @@ pub mod ogcapi;
 pub mod osm;
 pub mod pointcloud;
 pub mod raster;
+pub mod rdnap;
 pub mod servers;
 pub mod site;
 pub mod terrain;

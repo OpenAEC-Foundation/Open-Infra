@@ -217,6 +217,21 @@ fn proj(code: &str) -> Result<Proj, String> {
     Proj::from_proj_string(&info.proj4).map_err(|e| format!("{code}: {e}"))
 }
 
+/// RD New: transformed with NSGI's 2018 procedure ([`super::rdnap`]) instead
+/// of a seven-parameter Proj definition.
+const RD: &str = "EPSG:28992";
+/// ETRS89 and WGS 84 longitude/latitude, the other side of the RD step.
+const LL: &str = "EPSG:4326";
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Rd {
+    None,
+    /// The source is RD: RD → ETRS89 first, then Proj from lon/lat.
+    From,
+    /// The target is RD: Proj to lon/lat, then ETRS89 → RD.
+    To,
+}
+
 /// A reusable transformation between two systems (degrees for geographic CRS).
 pub struct Transformer {
     src: Proj,
@@ -224,27 +239,65 @@ pub struct Transformer {
     src_geo: bool,
     dst_geo: bool,
     identity: bool,
+    rd: Rd,
 }
 
 impl Transformer {
     pub fn new(from: &str, to: &str) -> Result<Self, String> {
         let (from, to) = (normalize(from), normalize(to));
+        let rd = if from == to {
+            Rd::None
+        } else if from == RD {
+            Rd::From
+        } else if to == RD {
+            Rd::To
+        } else {
+            Rd::None
+        };
+        if rd != Rd::None {
+            // The correction grid comes from NSGI once; until it is there the
+            // correction is 0 (the procedure's rule outside the grid).
+            super::rdnap::prefetch();
+        }
+        let (pf, pt) = match rd {
+            Rd::From => (LL.to_string(), to.clone()),
+            Rd::To => (from.clone(), LL.to_string()),
+            Rd::None => (from.clone(), to.clone()),
+        };
         Ok(Self {
-            src: proj(&from)?,
-            dst: proj(&to)?,
-            src_geo: is_geographic(&from),
-            dst_geo: is_geographic(&to),
-            identity: from == to,
+            src: proj(&pf)?,
+            dst: proj(&pt)?,
+            src_geo: is_geographic(&pf),
+            dst_geo: is_geographic(&pt),
+            identity: pf == pt,
+            rd,
         })
     }
 
-    pub fn apply(&self, p: XY) -> Result<XY, String> {
+    fn proj_step(&self, p: XY) -> Result<XY, String> {
         if self.identity {
             return Ok(p);
         }
         let mut pt = if self.src_geo { (p[0].to_radians(), p[1].to_radians(), 0.0) } else { (p[0], p[1], 0.0) };
         proj4rs::transform::transform(&self.src, &self.dst, &mut pt).map_err(|e| e.to_string())?;
         Ok(if self.dst_geo { [pt.0.to_degrees(), pt.1.to_degrees()] } else { [pt.0, pt.1] })
+    }
+
+    pub fn apply(&self, p: XY) -> Result<XY, String> {
+        if !p[0].is_finite() || !p[1].is_finite() {
+            return Err("coordinate is not a number".into());
+        }
+        match self.rd {
+            Rd::None => self.proj_step(p),
+            Rd::From => {
+                let [lat, lon] = super::rdnap::rd_to_etrs89(p[0], p[1]);
+                self.proj_step([lon, lat])
+            }
+            Rd::To => {
+                let [lon, lat] = self.proj_step(p)?;
+                Ok(super::rdnap::etrs89_to_rd(lat, lon))
+            }
+        }
     }
 }
 

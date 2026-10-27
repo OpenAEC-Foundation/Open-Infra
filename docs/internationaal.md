@@ -78,6 +78,27 @@ A drawing from AutoCAD, Civil 3D or BricsCAD with a geographic location (GEOGRAP
 
 Writing GEODATA needs Open CAD Studio to offer it: the plugin API v2026.42 creates no objects other than XRecords.
 
+## RD New with NSGI's 2018 procedure (issue #5)
+
+Every transformation to or from RD New (EPSG:28992) now follows NSGI's ETRS89 ↔ RD procedure of 2018, implementation variant 1 (`src/gis/rdnap.rs`):
+1. a seven-parameter step at a fixed height, with the parameters for each direction;
+2. the `rdcorr2018` correction grid;
+3. the RD double stereographic projection.
+
+The `nlgeo2018` quasi-geoid gives NAP heights.
+
+The grids are not part of the plugin:
+- The first time a drawing works in RD, Open Infra downloads NSGI's official package once (about 7 MB) and keeps the two unchanged grid files with a NOTICE in `<config>/OpenCADStudio/open-infra/rdnap2018/`.
+- Until the download is done, the correction is 0, as the procedure prescribes outside the grid. That gives the seven-parameter result, at most about 0.25 m off.
+
+Checked against NSGI's self-validation set (`Z001_ETRS89andRDNAP.txt`, 10,000 points) with `NSGI_GRIDS=… NSGI_Z001=… cargo test --lib rdnap -- --ignored`:
+- **Inside the grid area (Netherlands + EEZ, 7,959 points):** all within 0.0010 m and 1e-8°, in both directions and for NAP.
+- **Outside the grid area (2,041 points):** the forward direction is all within tolerance. The inverse misses 1e-8° for 239 points more than about 750 km from Amersfoort, as NSGI's documentation says it will.
+
+Open points:
+- **Licence:** NSGI's documentation calls the grids CC BY 4.0, while `license.txt` in the package says CC BY-ND 4.0. That is why the grids are downloaded rather than shipped.
+- **The name RDNAPTRANS™** may only be used after NSGI's written consent, which needs 100 % from their validation service in both directions. This branch does not use the name.
+
 ## Vehicle library
 
 **Voertuigen / Vehicles** in the ribbon opens the library:
