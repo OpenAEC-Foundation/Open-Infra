@@ -411,9 +411,20 @@ def scenario_verhuizen(ocs, rap, van, naar):
     rap.stap("verhuizen", van["id"], f"tweede locatie ({naar['id']})", verhuizen)
 
 
+def default_ocs():
+    """The Open CAD Studio this plugin is built for (v2026.43): the AppImage of
+    the OpenAEC installer, else one on the PATH."""
+    import glob
+    found = sorted(glob.glob(str(Path.home() / ".local/share/openaec-installer/apps/open-cad-studio/OpenCADStudio-v2026.43*.AppImage")))
+    if found:
+        return found[-1]
+    import shutil
+    return shutil.which("OpenCADStudio") or "OpenCADStudio"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--ocs", default=os.environ.get("OCS_BIN", str(Path.home() / "Documenten/OpenCADStudio-v2026.42/target/release/OpenCADStudio")))
+    ap.add_argument("--ocs", default=os.environ.get("OCS_BIN", default_ocs()))
     ap.add_argument("--poort", type=int, default=18740)
     ap.add_argument("--locaties", default="dordrecht,vaals,lelystad,londen")
     ap.add_argument("--snel", action="store_true", help="alleen Dordrecht, zonder buitenland")

@@ -1,11 +1,61 @@
-Open Infra — GIS-workbench, NLCS-basisdata en AHN voor **Open CAD Studio v2026.42** (plugin-API 10), voor infra en civiele techniek in Nederland en wereldwijd.
+Open Infra — GIS, NLCS en civiel ontwerp voor **Open CAD Studio v2026.43** (plugin-API 13), voor infra en civiele techniek in Nederland en wereldwijd. Twee plugins: het tabblad **GIS** en het nieuwe tabblad **Civiel**.
 
-![Voorbeeld: situatie bestaand rond de Grote Kerk in Dordrecht, A1 1:500](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44.2/examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
+**Let op:** deze release is gebouwd voor Open CAD Studio **v2026.43**. Een plugin voor v2026.42 laadt niet in v2026.43, en andersom; werk Open Infra dus samen met Open CAD Studio bij.
 
-**Installeren:** in Open CAD Studio `PLUGINS` → *Add a repository* → `OpenAEC-Foundation/Open-Infra`. Installeer deze release en herstart.
-Handmatig kan ook: zet `openaec.open-infra-<platform>` en `plugin.toml` in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
+**Nieuw — tabblad Civiel (Civil 3D-achtig, naar Hakans FreeCAD Road-workbench)**
 
-**Nieuw in 2026.44.2 — overzichtelijk zoeken bij Geo-locatie**
+- **Punten:**
+  - meetpunten uit PNEZD/PENZD/CSV, met scheidingsteken, decimale komma en N/E-volgorde automatisch herkend;
+  - punten plaatsen met de hoogte uit TIN of AHN;
+  - exporteren;
+  - LandXML (punten, oppervlakken, assen met bogen en clothoïden).
+- **Oppervlak:**
+  - TIN uit punten, 3D-lijnen, hoogtelijnen of AHN, met status B (bestaand) of N (ontwerp);
+  - hoogtelijnen op de TIN;
+  - hoogteanalyse in kleurbanden;
+  - grondverzet: ontwerp tegen bestaand, of tegen een peil.
+- **As:**
+  - uit een polylijn, of uit PI-punten met boogstralen;
+  - stationering (0+100), raaklijnpunten BB/EB/HP en boogstralen;
+  - verschoven lijnen;
+  - station en offset van punten.
+- **Profielen:**
+  - lengteprofiel met boogband;
+  - ontwerpprofiel uit PVI's met parabolische top- en voetbogen (L en R) en hellingen;
+  - dwarsprofielen in een raster.
+- **Corridor:**
+  - sjablonen weg, fietspad, snelweg en dijk; rijstrook, berm, hellingen, taluds, kruin en verkanting met uitrol zijn instelbaar;
+  - aansluiting op het maaiveld;
+  - ontwerp-TIN en 3D-kantlijnen;
+  - afgraven en ophogen per dwarsprofiel (gemiddelde-eindvlakmethode) met massabalans (CSV);
+  - dwarsprofielen met het ontwerp erin.
+- **3D-model:**
+  - het AHN-terrein gekleurd met de PDOK-luchtfoto;
+  - 3D BAG-panden in LoD 1.2, 1.3 of 2.2;
+  - de hele BGT in 3D: vlakken gedrapeerd, gebouwen en muren geëxtrudeerd, water op peil, bruggen op dekhoogte, palen en bomen als 3D-symbool, in natuurlijke kleuren.
+
+**Nieuw — API en MCP-server**
+
+- **Argumenten:** elk `CIV_`-commando en de GIS-datacommando's werken ook met argumenten (`SLEUTEL=waarde`, punten `x,y`). Met `ID=<naam>` staat het resultaat als JSON in `<config>/OpenCADStudio/open-infra/api/` (handles, lengtes, volumes).
+- **MCP-server** (`mcp/open_infra_mcp.py`): ongeveer 30 tools waarmee een AI-agent (Claude Code, Claude Desktop) hele modellen bouwt. Hij vindt elk Open CAD Studio-venster vanzelf.
+- **Getest met een megamodel van Dordrecht-binnenstad** (1,2 × 1 km), via de MCP-server gebouwd:
+  - 299.000 fotocellen;
+  - 18.560 BGT-objecten in 3D;
+  - 2.864 panden in LoD 2.2;
+  - een rondweg en een dijk met corridor en dwarsprofielen.
+
+**Verder**
+
+- **NLCS-controle en hoeveelheden** (ook in 2026.44.x-beta's):
+  - de controle in een eigen pagina, met herstel (ongedaan te maken) en een rapport;
+  - hoeveelheden per laag of object, als CSV of als staat in de tekening.
+- **GIS-lint:** de Nederlandse PDOK-onderdelen staan compact in één groep *Nederland (PDOK)*, als menu's. De wereldwijde kaart- en datatools krijgen de ruimte.
+- **Grote tekeningen:**
+  - de plugin leest ze via de gedeelde geheugenweergave van Open CAD Studio;
+  - elementen gaan in delen onder de berichtgrens van 64 MB;
+  - 3D-objecten zijn lichte meshes.
+
+**Uit 2026.44.2 — overzichtelijk zoeken bij Geo-locatie**
 
 - **Suggesties tijdens het typen:** na een korte pauze verschijnt een lijst met Nederlandse adressen (PDOK). Enter of **Zoeken** zoekt ook wereldwijd (OpenStreetMap).
 - **Elke treffer op twee regels:** de naam vet, eronder de plaats ("3311 CJ Dordrecht"). Een gekleurd label toont het soort treffer: adres, straat, plaats, perceel of coördinaat. Bij treffers uit beide bronnen zijn ze gegroepeerd onder *Nederland · PDOK* en *Wereldwijd · OpenStreetMap*.

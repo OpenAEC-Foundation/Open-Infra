@@ -3,6 +3,7 @@
 //! drawing entities.
 
 pub mod ahn;
+pub mod bag3d;
 pub mod bgt;
 pub mod caps;
 pub mod crs;
@@ -17,6 +18,7 @@ pub mod osm;
 pub mod pointcloud;
 pub mod raster;
 pub mod rdnap;
+pub mod rasterbestand;
 pub mod servers;
 pub mod site;
 pub mod terrain;

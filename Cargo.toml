@@ -7,15 +7,25 @@ license = "GPL-3.0-only"
 repository = "https://github.com/OpenAEC-Foundation/Open-Infra"
 
 [lib]
-# cdylib: the plugin the host loads; rlib: lets `cargo test` link the engine.
+# cdylib: the GIS plugin the host loads; rlib: the engine for `cargo test`
+# and for the Civiel plugin (civiel/).
 crate-type = ["cdylib", "rlib"]
 
+[features]
+# The plugin entry points. The Civiel plugin links this crate without them,
+# so build the two plugins with separate `cargo build -p …` runs.
+default = ["plugin"]
+plugin = []
+
+[workspace]
+members = [".", "civiel"]
+
 [dependencies]
-# Stable host contract, pinned to the Open CAD Studio v2026.42 release (API 10).
+# Stable host contract, pinned to the Open CAD Studio v2026.43 release (API 13).
 # Pin the commit of the Open CAD Studio release you target:
 # it also pins the opencadcodec revision, and the host only loads a plugin built
 # against the same opencadcodec commit and rustc.
-ocs_plugin_api = { git = "https://github.com/HakanSeven12/OpenCADStudio", rev = "b6fbac39ffc74398ba5d283ce2bc1dc07a8fd8f0", features = ["host"] }
+ocs_plugin_api = { git = "https://github.com/HakanSeven12/OpenCADStudio", rev = "ece627c662b98316f33d22cc09695ad16a1a6816", features = ["host"] }
 
 # GIS engine
 proj4rs = "0.2"
@@ -23,6 +33,8 @@ ureq = "3"
 roxmltree = "0.21"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Large drawings: entities of the host's shared-memory view are bincode-encoded
+bincode = "1"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 # KLIC (IMKL 2.0) reader from the OpenAEC crates warehouse (MIT)
 klic2geo = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse" }
@@ -35,6 +47,13 @@ copc-rs = "0.5"
 shapefile = "0.9"
 rusqlite = { version = "0.41", features = ["bundled"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
+# Point cloud files (LAS/LAZ) and their CRS: the versions copc-rs uses
+las = { version = "0.9.5", features = ["laz"] }
+las-crs = "0.1"
+# Civil: TIN (Delaunay) for terrain from survey points
+delaunator = "1"
+# 3D: triangulating planar polygons with holes (3D BAG surfaces, BGT areas)
+earcutr = "0.4"
 
 # Workbench window (runs in the plugin process, beside the host)
 eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }

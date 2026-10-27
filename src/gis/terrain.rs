@@ -135,6 +135,51 @@ impl Source {
     }
 }
 
+/// Heights at single points, tiles fetched as needed and kept: AHN tiles in
+/// the Netherlands, Terrain Tiles elsewhere. Positions are in the source's CRS.
+pub struct Sampler {
+    inner: SamplerKind,
+}
+
+enum SamplerKind {
+    Ahn(ahn::Sampler),
+    World { to_ll: Transformer, mosaic: Mosaic },
+}
+
+impl Source {
+    /// A point sampler for this source; `lat` picks the tile zoom outside AHN.
+    pub fn sampler(&self, lat: f64, cell: f64) -> Result<Sampler, String> {
+        Ok(Sampler {
+            inner: match self.kind {
+                Kind::Ahn => SamplerKind::Ahn(ahn::Sampler::new(self.model, cell)),
+                Kind::Terrarium => {
+                    crs::ensure(&self.crs)?;
+                    SamplerKind::World { to_ll: Transformer::new(&self.crs, "EPSG:4326")?, mosaic: Mosaic::new(zoom_for(lat, cell.max(self.native_cell()))) }
+                }
+            },
+        })
+    }
+}
+
+impl Sampler {
+    pub fn height(&mut self, x: f64, y: f64) -> Option<f64> {
+        match &mut self.inner {
+            SamplerKind::Ahn(s) => s.height(x, y),
+            SamplerKind::World { to_ll, mosaic } => {
+                let ll = to_ll.apply([x, y]).ok()?;
+                mosaic.sample(ll[0], ll[1])
+            }
+        }
+    }
+
+    pub fn error(&self) -> Option<String> {
+        match &self.inner {
+            SamplerKind::Ahn(s) => s.error.clone(),
+            SamplerKind::World { mosaic, .. } => mosaic.error.clone(),
+        }
+    }
+}
+
 // ── Terrain Tiles (terrarium PNG) ───────────────────────────────────────────
 
 fn ground_resolution(lat: f64, z: u32) -> f64 {

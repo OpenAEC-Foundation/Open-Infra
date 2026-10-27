@@ -25,13 +25,35 @@ pub enum Tab {
     Pdok,
     Nlcs,
     Ahn,
+    Controle,
+    Hoeveelheden,
     Servers,
     Coords,
     Library,
     Files,
+    /// The Civiel plugin's settings and actions.
+    Civiel,
 }
 
-pub(crate) enum UiMsg {
+/// Which plugin this window belongs to: the GIS tab or the Civiel tab (each
+/// plugin runs in its own process with its own window).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Product {
+    Gis,
+    Civiel,
+}
+
+static PRODUCT: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
+pub fn set_product(p: Product) {
+    PRODUCT.store(p as u8, std::sync::atomic::Ordering::Relaxed);
+}
+
+pub fn product() -> Product {
+    if PRODUCT.load(std::sync::atomic::Ordering::Relaxed) == Product::Civiel as u8 { Product::Civiel } else { Product::Gis }
+}
+
+pub enum UiMsg {
     Show(Tab),
     /// A point picked in the drawing (project CRS), for the coordinate tab.
     Picked([f64; 2]),
@@ -41,6 +63,8 @@ pub(crate) enum UiMsg {
     Klic(std::path::PathBuf),
     /// A GIS file chosen in Open CAD Studio's file dialog.
     File(std::path::PathBuf),
+    /// Run the page's action (validation, quantities) right away.
+    Run(Tab),
 }
 
 struct Handle {
@@ -54,7 +78,7 @@ fn handle() -> &'static Mutex<Option<Handle>> {
 
 static CTX: OnceLock<egui::Context> = OnceLock::new();
 
-pub(crate) fn send(msg: UiMsg) -> bool {
+pub fn send(msg: UiMsg) -> bool {
     let guard = handle().lock().unwrap();
     let Some(h) = guard.as_ref() else { return false };
     let ok = h.tx.send(msg).is_ok();
@@ -80,8 +104,8 @@ pub fn open(tab: Tab) -> Result<(), String> {
         .spawn(move || {
             let mut options = eframe::NativeOptions {
                 viewport: egui::ViewportBuilder::default()
-                    .with_title("Open Infra — GIS-workbench")
-                    .with_app_id("open-infra-gis")
+                    .with_title(if product() == Product::Civiel { "Open Infra — Civiel" } else { "Open Infra — GIS-workbench" })
+                    .with_app_id(if product() == Product::Civiel { "open-infra-civiel" } else { "open-infra-gis" })
                     .with_inner_size([1280.0, 1000.0])
                     .with_min_inner_size([760.0, 560.0]),
                 ..Default::default()

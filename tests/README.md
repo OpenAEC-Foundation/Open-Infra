@@ -73,6 +73,28 @@ Er verschijnt dus een venster. Zonder venster verwerkt Open CAD Studio de achter
 
 Het rapport staat in `target/e2e/rapport.md`; de tekeningen staan in `target/e2e/`.
 
+## 4. Groot model via de MCP-server
+
+```bash
+python3 tests/e2e/mcp_model.py --venster <pid of tekeningnaam>
+```
+
+Dit bouwt in een lege metrische tekening hetzelfde als een AI-agent via de MCP-server zou doen. Het bevat:
+
+- **Dordrecht-binnenstad in 3D (1,2 × 1 km):**
+  - AHN-terrein met de luchtfoto (299.000 cellen);
+  - de BGT in 3D (18.560 objecten);
+  - de 3D BAG in LoD 2.2 (2.864 panden).
+- **Civiel:**
+  - een bestaand terrein (TIN);
+  - een rondweg met lengteprofiel, ontwerpprofiel en corridor met 127 dwarsprofielen;
+  - een dijk als corridor op kruinhoogte;
+  - grondverzet.
+- **Controle:** modelinfo, hoeveelheden en NLCS-controle.
+- **Beelden:** in `target/e2e/mcp/`.
+
+Start Open CAD Studio voor deze test met `OCS_V4_SNAPSHOT_SEGMENT_SIZE=268435456`, anders kunnen hoeveelheden en NLCS-controle de tekening van ~80 MB niet lezen. Laatste run: 20/20 stappen in ongeveer 110 s. Het grondverzet uit de dwarsprofielen en uit TIN tegen TIN verschilt minder dan 1 %.
+
 ## Wat de testset tot nu toe vond
 
 In de plugin, opgelost:
@@ -83,7 +105,15 @@ In de plugin, opgelost:
 - **AHN buiten Nederland:** gaf een kale WCS-fout. Nu volgt vooraf een duidelijke melding.
 - **IMKL-kleuren:** "buisleiding gevaarlijke inhoud" had de kleur van petrochemie; "wees" en "overig" ontbraken. Ze volgen nu de PMKL-handreiking 3.0.
 
-In Open CAD Studio v2026.42 (host), nog open:
+Met het grote model gevonden en opgelost in de plugin:
+- **Berichtgrens van 64 MB:** elementen gaan nu in delen van hoogstens ~12 MB naar de host. 3D-objecten zijn lichte MESH-elementen; een POLYFACE-hoekpunt is een volledig record.
+- **Hele tekening opvragen:** een snapshot boven 64 MB legt de plugin stil. De civiele commando's lezen nu via een objectindex in de tekening (`OPENINFRA/INDEX`) en per handle. De eenheid staat in `OPENINFRA/UNITS`, zodat de plugin bij het openen van een grote tekening niets groots opvraagt.
+- **Gedeelde weergave:** die wordt na het lezen weer gesloten; anders publiceert de host hem na elke wijziging opnieuw.
+- **Strepen op water:** de gaten in AHN worden per aaneengesloten gebied vlak gevuld, onder de laagste oever.
+
+In Open CAD Studio (host), nog open:
+- **v2026.43:** de gedeelde documentweergave voor plugins is standaard 16 MB (`OCS_V4_SNAPSHOT_SEGMENT_SIZE`). Groter dan 256 MB lukt niet: de plugin-kant mapt hoogstens 1 GiB voor twee segmenten.
+- **v2026.43:** plugins krijgen geen INSUNITS en geen tekeningextents (alleen CLAYER, SNAPANG en CTAB). Ook is er geen opvraging per laag of type.
 - **Ongedaan maken:** een import van de plugin is niet ongedaan te maken. Elementen die een plugin op de achtergrond toevoegt komen niet in de ongedaan-maakstap.
 - **Zonder venster** (`--http` zonder tekening) verwerkt Open CAD Studio de achtergrondverzoeken van een plugin alleen tijdens een plugin-commando.
 - **REST:** de routes `/save` en `/undo` nemen geen `document_id` mee in de GUI-modus. De test gebruikt daarom `QSAVE` en `U`.

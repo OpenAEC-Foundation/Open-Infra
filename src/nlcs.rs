@@ -63,6 +63,52 @@ pub fn humanize(name: &str) -> String {
     c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default()
 }
 
+impl Status {
+    pub fn from_code(code: &str) -> Option<Status> {
+        Status::ALL.into_iter().find(|s| s.code() == code)
+    }
+}
+
+/// A layer name taken apart: `STATUS-DISCIPLINE-HOOFDGROEP-OBJECT-ELEMENT`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct LayerName {
+    pub status: Status,
+    pub discipline: String,
+    pub group: String,
+    /// May itself contain hyphens (e.g. `WATERGANG-WERK`).
+    pub object: String,
+    pub element: String,
+}
+
+/// Why a layer name is not an NLCS name, or its parts.
+pub fn parse_layer(name: &str) -> Result<LayerName, String> {
+    let parts: Vec<&str> = name.split('-').collect();
+    if parts.len() < 5 {
+        return Err("geen NLCS-laagnaam (STATUS-DISCIPLINE-HOOFDGROEP-OBJECT-ELEMENT)".into());
+    }
+    let status = Status::from_code(parts[0]).ok_or_else(|| format!("tekenstatus '{}' bestaat niet (B, N, T of V)", parts[0]))?;
+    let (discipline, group) = (parts[1], parts[2]);
+    if !disciplines().iter().any(|(c, _)| *c == discipline) {
+        return Err(format!("discipline '{discipline}' bestaat niet"));
+    }
+    if group_name(group).is_empty() {
+        return Err(format!("hoofdgroep '{group}' bestaat niet"));
+    }
+    let element = parts[parts.len() - 1].to_string();
+    let object = parts[3..parts.len() - 1].join("-");
+    Ok(LayerName { status, discipline: discipline.into(), group: group.into(), object, element })
+}
+
+/// Element codes for annotation, allowed on every object: text, dimensions,
+/// leaders.
+pub const ANNOTATION_ELEMENTS: &[&str] = &["T", "M", "L"];
+
+/// Whether `element` may be used for the object (the table's G/S/A, plus
+/// annotation).
+pub fn element_allowed(obj: &Object, element: &str) -> bool {
+    ANNOTATION_ELEMENTS.contains(&element) || obj.element.split('/').any(|e| e.trim() == element) || (obj.element.trim().is_empty() && element == "G")
+}
+
 /// NLCS disciplines: (code, short description).
 pub fn disciplines() -> Vec<(&'static str, &'static str)> {
     DISCIPLINES
@@ -249,18 +295,32 @@ pub fn linetype_is_complex(name: &str) -> bool {
 fn parse_pattern(def: &str) -> Option<Vec<f64>> {
     let body = def.trim().strip_prefix("A,").or_else(|| def.trim().strip_prefix("a,"))?;
     // Drop the bracketed complex elements (they hold commas of their own).
+    // A symbol leaves a marker: between two dashes it becomes a short gap,
+    // so a linetype of dashes and symbols only (GW-MAAIVELD-SO) stays valid.
     let mut plain = String::new();
     let mut depth = 0;
     for ch in body.chars() {
         match ch {
             '[' => depth += 1,
-            ']' => depth -= 1,
+            ']' => {
+                depth -= 1;
+                if depth == 0 {
+                    plain.push('S');
+                }
+            }
             _ if depth == 0 => plain.push(ch),
             _ => {}
         }
     }
     let mut out: Vec<f64> = Vec::new();
-    for v in plain.split(',').filter_map(|t| t.trim().parse::<f64>().ok()) {
+    for t in plain.split(',').map(str::trim) {
+        if t == "S" {
+            if out.last().is_none_or(|v| *v >= 0.0) {
+                out.push(-1.0);
+            }
+            continue;
+        }
+        let Ok(v) = t.parse::<f64>() else { continue };
         match out.last_mut() {
             // Two gaps in a row (a symbol sat between them): one longer gap.
             Some(last) if *last < 0.0 && v < 0.0 => *last += v,
@@ -532,5 +592,24 @@ mod tests {
         assert!(bgt_default("kunstwerkdeel_lijn").is_some());
         assert_eq!(text_class(2.5), Some((7, 25)));
         assert_eq!(text_class(1.8), Some((10, 18)));
+    }
+
+    #[test]
+    fn symbol_only_linetypes_get_a_pattern() {
+        assert_eq!(linetype_pattern("GW-MAAIVELD-SO"), Some(vec![12.0, -1.0, 12.0]));
+        // Symbols between gaps leave the gaps as they were.
+        assert_eq!(linetype_pattern("MO-BODEM_CONTOUR_INTERVENTIEWAARDE-SO"), Some(vec![17.25, -14.0, 17.25]));
+    }
+
+    #[test]
+    fn layer_names_are_parsed() {
+        let l = parse_layer("B-XX-VH-GESLOTENVERHARDING_ASFALT-G").unwrap();
+        assert_eq!((l.status, l.discipline.as_str(), l.group.as_str(), l.object.as_str(), l.element.as_str()), (Status::B, "XX", "VH", "GESLOTENVERHARDING_ASFALT", "G"));
+        assert_eq!(parse_layer("N-WA-GW-WATERGANG-WERK-A").unwrap().object, "WATERGANG-WERK");
+        assert!(parse_layer("0").is_err());
+        assert!(parse_layer("X-XX-VH-WEG-G").unwrap_err().contains("tekenstatus"));
+        assert!(parse_layer("B-QQ-VH-WEG-G").unwrap_err().contains("discipline"));
+        let obj = object_by_name("VH", "GESLOTENVERHARDING_ASFALT").unwrap();
+        assert!(element_allowed(obj, "G") && element_allowed(obj, "T") && !element_allowed(obj, "Q"));
     }
 }

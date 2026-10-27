@@ -103,7 +103,7 @@ fn get_map_url(caps: &WmsCaps, layer: &str, crs: &str, b: [f64; 4], w: u32, h: u
 /// Reproject `src` (covering `src_bbox` in `src_crs`) onto a w×h raster that
 /// covers `dst_bbox` in `dst_crs`: 33×33 control grid, bilinear interpolation
 /// of source positions, nearest-neighbour sampling.
-fn warp(src: &RgbaImage, src_crs: &str, src_bbox: [f64; 4], dst_crs: &str, dst_bbox: [f64; 4], w: u32, h: u32) -> Result<RgbaImage, String> {
+pub(crate) fn warp(src: &RgbaImage, src_crs: &str, src_bbox: [f64; 4], dst_crs: &str, dst_bbox: [f64; 4], w: u32, h: u32) -> Result<RgbaImage, String> {
     let inv = Transformer::new(dst_crs, src_crs)?;
     const G: usize = 32;
     let (sw, sh) = (src.width() as f64, src.height() as f64);
