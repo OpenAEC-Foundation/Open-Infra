@@ -95,6 +95,29 @@ Dit bouwt in een lege metrische tekening hetzelfde als een AI-agent via de MCP-s
 
 Start Open CAD Studio voor deze test met `OCS_V4_SNAPSHOT_SEGMENT_SIZE=268435456`, anders kunnen hoeveelheden en NLCS-controle de tekening van ~80 MB niet lezen. Laatste run: 20/20 stappen in ongeveer 110 s. Het grondverzet uit de dwarsprofielen en uit TIN tegen TIN verschilt minder dan 1 %.
 
+## 5. Alle knoppen van de vensters
+
+`tests/e2e/ui_knoppen.py` klikt in een echte Open CAD Studio elke knop van de vensters GIS en Civiel aan en meldt wat er gebeurde: een melding, een andere pagina, een gesloten venster, een veranderd beeld, of niets. In keuzelijsten kiest het een andere optie; houdt die geen knoppen aan, dan zet het de oude terug. Vinkjes gaan aan en weer uit.
+
+De plugins worden daarvoor gebouwd met de feature `ui-test`: die zet de egui-vensters op de toegankelijkheidsbus (AT-SPI). Open CAD Studio draait in een eigen D-Bus-sessie met een eigen toegankelijkheidsbus en een eigen configuratiemap. Je bureaubladinstellingen en je geïnstalleerde plugins blijven dus zoals ze zijn.
+
+```sh
+CARGO_TARGET_DIR=target/ui-test cargo build --release -p open-infra --features ui-test
+CARGO_TARGET_DIR=target/ui-test cargo build --release -p open-infra-civiel --features ui-test
+python3 tests/e2e/ui_knoppen.py                 # beide vensters; --venster gis|civiel, --pagina <naam>
+```
+
+Het rapport staat in `target/e2e/ui/knoppen.md`. Nodig: `wmctrl`, `python3-xlib` en de AT-SPI-bindings (`gir1.2-atspi-2.0`).
+
+## 6. BGT-mutatie
+
+`tests/e2e/bgt_mutatie_e2e.py` importeert de BGT rond de Grote Kerk en maakt een ontwerp: een wegdeel krijgt nieuw asfalt (oud object op V, nieuw vlak op R), een tweede wegdeel is gewijzigd (R) en een fietspad is gepland (N). `GIS_BGT_MUTATIE` moet dan 2 nieuwe, 1 gewijzigd en 1 beëindigd object geven. Met `--xsd` wordt de GML ook getoetst aan het IMGeo 2.1.1-schema (lxml).
+
+```sh
+cargo build --release -p open-infra && cargo build --release -p open-infra-civiel
+python3 tests/e2e/bgt_mutatie_e2e.py --xsd
+```
+
 ## Wat de testset tot nu toe vond
 
 In de plugin, opgelost:
@@ -104,6 +127,11 @@ In de plugin, opgelost:
 - **AHN-puntenwolk:** AHN5 is nog niet compleet (bijvoorbeeld bij Loppersum). Een ontbrekende tegel komt nu uit AHN4.
 - **AHN buiten Nederland:** gaf een kale WCS-fout. Nu volgt vooraf een duidelijke melding.
 - **IMKL-kleuren:** "buisleiding gevaarlijke inhoud" had de kleur van petrochemie; "wees" en "overig" ontbraken. Ze volgen nu de PMKL-handreiking 3.0.
+
+Met de knoppentest gevonden en opgelost:
+- **Annuleren** op het locatiescherm deed niets zichtbaars. Nu draait het de wijzigingen terug en sluit het venster, zoals in de FreeCAD-dialogen.
+- **Zoeken** met een leeg zoekveld deed niets. De knop staat nu uit tot er iets getypt is.
+- **GIS_SITE** nam RD-coördinaten zonder het woord `RD` aan als lengte- en breedtegraad. Nu volgt een melding.
 
 Met het grote model gevonden en opgelost in de plugin:
 - **Berichtgrens van 64 MB:** elementen gaan nu in delen van hoogstens ~12 MB naar de host. 3D-objecten zijn lichte MESH-elementen; een POLYFACE-hoekpunt is een volledig record.

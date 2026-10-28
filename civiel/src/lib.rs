@@ -51,6 +51,7 @@ const I_INFO: IconKind = icon!("info.svg");
 const I_BAG3D: IconKind = icon!("bag3d.svg");
 const I_PHOTO: IconKind = icon!("fototerrein.svg");
 const I_BGT3D: IconKind = icon!("bgt3d.svg");
+const I_WATER: IconKind = icon!("waterpeil.svg");
 
 fn command(id: &'static str) -> ModuleEvent {
     ModuleEvent::Command(id.to_string())
@@ -137,6 +138,7 @@ impl CadModule for CivielModule {
                         large("CIV_BAG3D", "3D BAG", I_BAG3D),
                         small("CIV_FOTOTERREIN", "Terrein + luchtfoto", I_PHOTO),
                         small("CIV_BGT3D", "BGT naar 3D", I_BGT3D),
+                        small("CIV_WATERPEIL", "Waterpeil", I_WATER),
                     ],
                 },
                 // Civil 3D "Corridors": assembly along axis and design profile.
@@ -328,6 +330,19 @@ impl BuiltinPlugin for OpenInfraCiviel {
 }
 
 /// KLEUR=realistisch (natural colours, the default) or KLEUR=nlcs (layer colours).
+/// `STIJL=mooi|maquette|realistisch|nlcs` (or the older `KLEUR=`).
+fn bag_style(args: &Args) -> Result<civiel::model3d::BagStyle, String> {
+    use civiel::model3d::BagStyle;
+    match args.str("STIJL") {
+        Some(s) => BagStyle::parse(s).ok_or_else(|| "STIJL: mooi, maquette, realistisch of nlcs".to_string()),
+        // Without a choice: the detailed look; KLEUR=nlcs keeps the layer colours.
+        None => Ok(match args.str("KLEUR") {
+            None => BagStyle::Mooi,
+            Some(_) => if realistic(args)? { BagStyle::Realistisch } else { BagStyle::Nlcs },
+        }),
+    }
+}
+
 fn realistic(args: &Args) -> Result<bool, String> {
     match args.str("KLEUR").map(|s| s.to_ascii_lowercase()) {
         None => Ok(true),
@@ -535,8 +550,8 @@ fn run(host: &mut dyn HostApi, verb: &str, args: &Args, id: Option<String>) -> R
             });
         }
         "CIV_BAG3D" => {
-            let o = opt(&["LOD", "MAX", "KLEUR"])?;
-            let real = realistic(args)?;
+            let o = opt(&["LOD", "MAX", "KLEUR", "STIJL"])?;
+            let real = bag_style(args)?;
             let lod = match args.str("LOD") {
                 Some(l) => civiel_lod(l)?,
                 None => open_infra::gis::bag3d::Lod::L22,
@@ -548,6 +563,11 @@ fn run(host: &mut dyn HostApi, verb: &str, args: &Args, id: Option<String>) -> R
             let o = opt(&[])?;
             let cell = args.f64("CEL")?.unwrap_or(2.0);
             job(host, "Terrein met luchtfoto", id, move |p| civiel::model3d::photo_terrain(&o, cell, p));
+        }
+        "CIV_WATERPEIL" => {
+            let o = opt(&["PEIL"])?;
+            let level = args.f64("PEIL")?.or(args.words.first().and_then(|w| w.replace(',', ".").parse().ok())).ok_or("CIV_WATERPEIL PEIL=<m NAP>, bijv. PEIL=2,5")?;
+            job(host, "Waterpeil", id, move |p| civiel::model3d::water_level(&o, level, p));
         }
         "CIV_BGT3D" => {
             let o = opt(&["GROEPEN", "PANDEN", "KLEUR"])?;
@@ -561,8 +581,8 @@ fn run(host: &mut dyn HostApi, verb: &str, args: &Args, id: Option<String>) -> R
         }
         "CIV_3DMODEL" => {
             // All at once: photo terrain, 3D BAG, the BGT without its buildings.
-            let o = opt(&["LOD", "MAX", "KLEUR"])?;
-            let real = realistic(args)?;
+            let o = opt(&["LOD", "MAX", "KLEUR", "STIJL"])?;
+            let real = bag_style(args)?;
             let lod = match args.str("LOD") {
                 Some(l) => civiel_lod(l)?,
                 None => open_infra::gis::bag3d::Lod::L22,
@@ -572,7 +592,7 @@ fn run(host: &mut dyn HostApi, verb: &str, args: &Args, id: Option<String>) -> R
             job(host, "3D-model", id, move |p| {
                 let mut parts = vec![civiel::model3d::photo_terrain(&o, cell, p)?];
                 let groups: Vec<String> = civiel::model3d::default_groups().into_iter().map(str::to_string).collect();
-                parts.push(civiel::model3d::bgt3d(&o, &groups, false, real, p)?);
+                parts.push(civiel::model3d::bgt3d(&o, &groups, false, real != civiel::model3d::BagStyle::Nlcs, p)?);
                 parts.push(civiel::model3d::bag3d(&o, lod, max, real, p)?);
                 Ok(parts.join(" | "))
             });
@@ -588,7 +608,7 @@ fn run(host: &mut dyn HostApi, verb: &str, args: &Args, id: Option<String>) -> R
              CIV_TIN [BRON=AHN|PUNTEN|SELECTIE] [LAAG=] [STATUS=B|N] [AFSTAND=] [MAXRIBBE=]; CIV_HOOGTELIJNEN / CIV_ANALYSE [OPPERVLAK=B|N]; CIV_VOLUME [ONTWERP=PEIL] [PEIL=] [CEL=]; \
              CIV_AS AS=<handle> | PI=x,y;x,y;… R=r;… [NAAM=] [BEGIN=]; CIV_AS_OFFSET AS= VERSCHUIVING=-3.5;3.5; CIV_STATION AS= x,y; \
              CIV_LENGTEPROFIEL AS= [PLAATS=x,y]; CIV_ONTWERPPROFIEL AS= PVI=station:hoogte;… [BOOG=]; CIV_DWARSPROFIELEN AS= [PLAATS=] [OM=] [LINKS=] [RECHTS=]; \
-             3D: CIV_BAG3D [LOD=1.2|1.3|2.2] [MAX=], CIV_FOTOTERREIN [CEL=2], CIV_BGT3D [GROEPEN=wegen;terrein;water;gebouwen;kunstwerken;scheidingen;spoor;inrichting;vegetatie] [PANDEN=nee], CIV_3DMODEL (alles); \
+             3D: CIV_BAG3D [LOD=1.2|1.3|2.2] [MAX=] [STIJL=mooi|maquette|realistisch|nlcs], CIV_FOTOTERREIN [CEL=2], CIV_BGT3D [GROEPEN=wegen;terrein;water;gebouwen;kunstwerken;scheidingen;spoor;inrichting;vegetatie] [PANDEN=nee], CIV_3DMODEL (alles), CIV_WATERPEIL PEIL=<m NAP>; \
              CIV_CORRIDOR AS= [SJABLOON=weg|fietspad|snelweg|dijk] [NIVEAU=|BOVEN=] [RIJSTROOK=] [BERM=] [HELLING=] [TALUD=] [INGRAVING=] [KRUIN=] [VERKANTING=] [FREQUENTIE=] [DWARSPROFIELEN=ja|x,y]; CIV_INFO.",
         ),
         _ => return Err(format!("onbekend commando {verb}; zie CIV_HELP")),

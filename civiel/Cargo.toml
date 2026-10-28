@@ -16,3 +16,7 @@ ocs_plugin_api = { git = "https://github.com/HakanSeven12/OpenCADStudio", rev = 
 # The engine, without the GIS plugin's entry points.
 open-infra = { path = "..", default-features = false }
 serde_json = "1"
+
+[features]
+# See the GIS plugin's Cargo.toml.
+ui-test = ["open-infra/ui-test"]

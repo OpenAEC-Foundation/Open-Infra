@@ -16,6 +16,9 @@ crate-type = ["cdylib", "rlib"]
 # so build the two plugins with separate `cargo build -p …` runs.
 default = ["plugin"]
 plugin = []
+# Expose the windows to the desktop's accessibility bus (AT-SPI), so
+# tests/e2e/ui_knoppen.py can find and click every button.
+ui-test = ["eframe/accesskit"]
 
 [workspace]
 members = [".", "civiel"]

@@ -334,13 +334,15 @@ fn legend(s: &mut Sheet, x0: f64, x1: f64, y0: f64, y1: f64) -> usize {
             group = g.clone();
         }
         // The sample sits on the layer itself: its colour, lineweight and
-        // linetype are the layer's.
+        // linetype are the layer's. Marked as sheet, so a BGT mutation or a
+        // quantity take-off can leave it out.
         let (a, b) = (s.at(x + 1.0, y), s.at(x + 13.0, y));
+        let mark = bridge::object_data([("bron", "tekenblad".to_string())]);
         if l.name.ends_with("-S") {
             let c = s.at(x + 7.0, y);
-            s.out.push((l.clone(), emit::markers(&[c], &l.name, 0.8 * s.k, None)));
+            s.out.push((l.clone(), emit::markers(&[c], &l.name, 0.8 * s.k, Some(&mark))));
         } else {
-            s.out.push((l.clone(), emit::polylines(&[(vec![a, b], false)], &l.name, s.k, None)));
+            s.out.push((l.clone(), emit::polylines(&[(vec![a, b], false)], &l.name, s.k, Some(&mark))));
         }
         s.text("LEGENDA", x + 16.0, y, &nlcs::humanize(&obj), 1.8, true);
         y -= row;

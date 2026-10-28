@@ -436,6 +436,31 @@ pub fn bgt_object_name(collection: &str) -> Option<&'static str> {
     })
 }
 
+/// One row of the NLCS-BGT mapping, with the IMGeo attribute each value is
+/// for (the table's column names: `function`, `surfaceMaterial`, `class`,
+/// `bgt-type`, `plus-type`, …). For the way back: NLCS design → BGT.
+pub struct BgtRow {
+    /// The mapping's object name (`WEGDEEL`, `BEGROEID TERREINDEEL`, …).
+    pub object: String,
+    pub values: Vec<(String, String)>,
+}
+
+/// The mapping rows that lead to NLCS object `nlcs_object`.
+pub fn bgt_rows(nlcs_object: u32) -> Vec<BgtRow> {
+    let mut lines = BGT.lines();
+    let head: Vec<&str> = lines.next().unwrap_or("").split('\t').collect();
+    lines
+        .filter_map(|line| {
+            let c: Vec<&str> = line.split('\t').collect();
+            if c.len() < 15 || c[13].parse::<u32>().ok()? != nlcs_object {
+                return None;
+            }
+            let values = (1..13).filter(|&i| !c[i].trim().is_empty()).map(|i| (head[i].to_string(), c[i].trim().to_string())).collect();
+            Some(BgtRow { object: c[0].trim().to_uppercase(), values })
+        })
+        .collect()
+}
+
 /// Most specific mapping rule whose attribute values all occur on the feature.
 /// Returns (NLCS object id, NLCS symbol id).
 pub fn bgt_lookup(collection: &str, props: &serde_json::Map<String, serde_json::Value>) -> Option<(u32, Option<u32>)> {
