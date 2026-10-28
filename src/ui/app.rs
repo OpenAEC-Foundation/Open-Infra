@@ -208,11 +208,15 @@ struct ControlePage {
     report: Option<Report>,
     open: Option<Rule>,
     repair: Option<Job<String>>,
+    /// BGT mutation of the design (IMGeo-GML).
+    bronhouder: String,
+    as_built: bool,
+    mutation: Option<Job<String>>,
 }
 
 impl Default for ControlePage {
     fn default() -> Self {
-        Self { scale: 500.0, text_heights: true, empty_layers: true, job: None, report: None, open: None, repair: None }
+        Self { scale: 500.0, text_heights: true, empty_layers: true, job: None, report: None, open: None, repair: None, bronhouder: String::new(), as_built: false, mutation: None }
     }
 }
 
@@ -731,7 +735,8 @@ impl App {
                             }
                         }
                     }
-                    if ui.add_enabled(self.loc.search.is_none(), egui::Button::new("Zoeken")).on_hover_text("In Nederland (PDOK) en wereldwijd (OpenStreetMap)").clicked() {
+                    let typed = !self.loc.query.trim().is_empty();
+                    if ui.add_enabled(self.loc.search.is_none() && typed, egui::Button::new("Zoeken")).on_hover_text("In Nederland (PDOK) en wereldwijd (OpenStreetMap)").on_disabled_hover_text("Typ eerst een adres, plaats of coördinaten").clicked() {
                         search_all = true;
                     }
                 });
@@ -1413,9 +1418,15 @@ impl App {
                     Err(e) => self.err(format!("Opslaan mislukt: {e}")),
                 }
             }
-            if ui.button("Annuleren").on_hover_text("Wijzigingen terugdraaien naar de opgeslagen locatie").clicked() {
+            if ui.button("Annuleren").on_hover_text("Wijzigingen terugdraaien en het venster sluiten").clicked() {
+                // As in the FreeCAD dialogs: drop the changes and close.
                 self.reload_site();
+                self.loc.query.clear();
                 self.loc.hits.clear();
+                self.loc.popup = false;
+                self.loc.highlight = None;
+                self.message = None;
+                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
             }
             job_status(ui, &self.loc.apply);
             job_status(ui, &self.loc.search);
@@ -2007,6 +2018,12 @@ impl App {
                 Err(e) => self.err(e),
             }
         }
+        if let Some(r) = poll(&mut self.controle.mutation) {
+            match r {
+                Ok(m) => self.ok(m),
+                Err(e) => self.err(e),
+            }
+        }
         page_header(ui, "check", "NLCS-controle", "Toetst de tekening aan NLCS 5.02: laagnamen, laagkleur, -lijndikte en -lijntype per tekenstatus, elementen op DuLaag, teksthoogtes.");
         group(ui, "Instellingen", |ui| {
             ui.horizontal(|ui| {
@@ -2019,6 +2036,15 @@ impl App {
                 ui.checkbox(&mut self.controle.text_heights, "Teksthoogtes");
                 ui.checkbox(&mut self.controle.empty_layers, "Lege lagen melden");
             });
+        });
+        group(ui, "BGT-mutatie", |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Bronhouder");
+                ui.add(egui::TextEdit::singleline(&mut self.controle.bronhouder).desired_width(70.0).hint_text("G0505"))
+                    .on_hover_text("Code van de gemeente (G + CBS-code). Leeg: die van de BGT-objecten in de tekening.");
+                ui.checkbox(&mut self.controle.as_built, "Gerealiseerd: lagen N als revisie (geen plantopografie)");
+            });
+            ui.label(RichText::new("Nieuw (N) wordt plantopografie, revisie (R) gerealiseerd, V beëindigt het BGT-object. Type en functie komen uit de BGT-gegevens, het BGT-object eronder of de NLCS-laag; wat niet eenduidig is, staat in het rapport.").small().weak());
         });
         let Some(rep) = self.controle.report.clone() else {
             group(ui, "Resultaat", |ui| {
@@ -2112,8 +2138,17 @@ impl App {
                     }
                 }
             }
+            let (bronhouder, as_built) = (self.controle.bronhouder.clone(), self.controle.as_built);
+            if ui
+                .add_enabled(!busy && self.controle.mutation.is_none(), egui::Button::new("BGT-mutatie"))
+                .on_hover_text("Het ontwerp op NLCS-lagen als BGT-mutatie (IMGeo-GML 2.1.1) met een rapport, naast de tekening. N = plantopografie, R = gerealiseerd, V = beëindigen.")
+                .clicked()
+            {
+                self.controle.mutation = Some(Job::spawn(&ctx, "BGT-mutatie maken…", move |_| crate::bgt_mutatie::export(&bronhouder, as_built, None)));
+            }
             job_status(ui, &self.controle.job);
             job_status(ui, &self.controle.repair);
+            job_status(ui, &self.controle.mutation);
         });
     }
 

@@ -44,8 +44,29 @@ Open Infra — GIS, NLCS en civiel ontwerp voor **Open CAD Studio v2026.43** (pl
   - 2.864 panden in LoD 2.2;
   - een rondweg en een dijk met corridor en dwarsprofielen.
 
+**Nieuw — mooier 3D en waterpeil**
+
+- **3D BAG in de stijl "mooi"** (nu de standaard van `CIV_BAG3D`):
+  - strakke dak- en gevelvlakken;
+  - elk dak in zijn kleur op de luchtfoto;
+  - gevels naar bouwjaar;
+  - monumenten in natuursteen;
+  - ramen per verdieping;
+  - een plint tot onder het maaiveld.
+- `STIJL=maquette` geeft een wit stedenbouwkundig model; `STIJL=realistisch` en `STIJL=nlcs` blijven.
+- Bomen in BGT 3D krijgen een ronde kroon.
+- `CIV_WATERPEIL PEIL=<m NAP>` (Civiel → 3D-model → Waterpeil) legt een watervlak over het projectgebied en meldt welk deel lager ligt. Met een ander peil schuift hetzelfde vlak mee: klimaatadaptatie in één beeld. Ook als MCP-tool `civ_water_level`.
+
+**Nieuw — NLCS-ontwerp als BGT-mutatie (#10)**
+
+- `GIS_BGT_MUTATIE` (lint *NLCS → BGT-mutatie*, of de pagina NLCS-controle) zet het ontwerp terug naar de BGT, als IMGeo-GML 2.1.1 met een rapport naast de tekening. De GML voldoet aan het IMGeo 2.1.1-schema; het BGT-pakket van de gemeente leest hem in en levert aan de LV-BGT.
+- Lagen N worden plantopografie, R (of N met *Gerealiseerd*) gerealiseerd, V beëindigt het BGT-object. Bestaande objecten houden hun `lokaal_id`; nieuwe krijgen `<bronhouder>.<uuid>`.
+- Type en functie komen uit de BGT-gegevens, uit het BGT-object waar het nieuwe vlak overheen ligt, of uit de NLCS-laag als die eenduidig is. Wat niet eenduidig is, staat in het rapport.
+- Controles: zelfdoorsnijding, hoogstens 5000 punten, millimeters, ringrichting, overlap op maaiveld.
+
 **Verder**
 
+- **Knoppentest:** `tests/e2e/ui_knoppen.py` klikt elke knop van beide vensters aan in een echte Open CAD Studio. Gevonden en opgelost: *Annuleren* op het locatiescherm sluit nu het venster, *Zoeken* staat uit bij een leeg zoekveld, en `GIS_SITE` weigert RD-coördinaten zonder het woord `RD`.
 - **NLCS-controle en hoeveelheden** (ook in 2026.44.x-beta's):
   - de controle in een eigen pagina, met herstel (ongedaan te maken) en een rapport;
   - hoeveelheden per laag of object, als CSV of als staat in de tekening.

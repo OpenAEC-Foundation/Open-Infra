@@ -18,6 +18,7 @@ pub mod hoogte;
 pub mod gis;
 pub mod import;
 pub mod basisdata;
+pub mod bgt_mutatie;
 pub mod nlcs;
 pub mod nlcs_check;
 pub mod tekenblad;
@@ -63,6 +64,7 @@ const I_CLOUD: IconKind = IconKind::Svg(include_bytes!("../assets/puntenwolk.svg
 const I_CHECK: IconKind = IconKind::Svg(include_bytes!("../assets/nlcs-controle.svg"));
 const I_QUANTITIES: IconKind = IconKind::Svg(include_bytes!("../assets/hoeveelheden.svg"));
 const I_TABLE: IconKind = IconKind::Svg(include_bytes!("../assets/hoeveelhedenstaat.svg"));
+const I_MUTATION: IconKind = IconKind::Svg(include_bytes!("../assets/bgt-mutatie.svg"));
 
 /// One-click imports from the ribbon (no window): command → what to fetch.
 enum Quick {
@@ -177,6 +179,7 @@ impl CadModule for GisModule {
                         small("GIS_NLCS_CONTROLE", "Controle", I_CHECK),
                         small("GIS_HOEVEELHEDEN", "Hoeveelheden", I_QUANTITIES),
                         small("GIS_HOEVEELHEDEN_TABEL", "Hoeveelhedenstaat", I_TABLE),
+                        small("GIS_BGT_MUTATIE", "BGT-mutatie", I_MUTATION),
                     ],
                 },
                 RibbonGroup { title: "Hulpmiddelen", tools: vec![tool("GIS_SERVERS", "Servers", I_SERVER)] },
@@ -462,6 +465,35 @@ fn nlcs_command(host: &mut dyn HostApi, verb: &str) {
 
 struct OpenInfra;
 
+/// `GIS_BGT_MUTATIE [BRONHOUDER=G0505] [GEREALISEERD] [SELECTIE]`: the NLCS
+/// design as a BGT mutation (IMGeo-GML 2.1.1) with a report, beside the drawing.
+fn mutation_command(host: &mut dyn HostApi, cmd: &str) {
+    if require_site(host).is_none() {
+        return;
+    }
+    let args = civiel::api::Args::parse(cmd.split_once(char::is_whitespace).map(|(_, a)| a).unwrap_or(""));
+    let flag = |w: &str| args.words.iter().any(|x| x.eq_ignore_ascii_case(w));
+    let only = if flag("SELECTIE") {
+        match bridge::selection() {
+            Ok(h) if !h.is_empty() => Some(h.into_iter().collect()),
+            _ => {
+                host.push_error("[Open Infra] GIS_BGT_MUTATIE SELECTIE: selecteer eerst de objecten.");
+                bridge::reply(false, "niets geselecteerd");
+                return;
+            }
+        }
+    } else {
+        None
+    };
+    let bronhouder = args.str("BRONHOUDER").unwrap_or("").to_string();
+    let as_built = flag("GEREALISEERD");
+    host.push_info("[Open Infra] BGT-mutatie maken …");
+    std::thread::spawn(move || match bgt_mutatie::export(&bronhouder, as_built, only) {
+        Ok(m) => bridge::info(&m),
+        Err(e) => bridge::error(&format!("GIS_BGT_MUTATIE: {e}")),
+    });
+}
+
 fn require_site(host: &mut dyn HostApi) -> Option<Site> {
     let s = bridge::site();
     if s.is_none() {
@@ -515,6 +547,12 @@ fn site_command(host: &mut dyn HostApi, cmd: &str) {
         bridge::reply(false, "GIS_SITE <lon> <lat> [breedte] [hoogte] [EPSG:code] of GIS_SITE RD <x> <y> [breedte] [hoogte]");
         return;
     };
+    if !rd && (a.abs() > 180.0 || b.abs() > 90.0) {
+        let msg = format!("GIS_SITE {a} {b}: dat zijn geen lengte- en breedtegraad. Voor RD-coördinaten: GIS_SITE RD {a} {b} …");
+        host.push_error(&format!("[Open Infra] {msg}"));
+        bridge::reply(false, &msg);
+        return;
+    }
     if let Some(code) = args.iter().find(|a| a.to_ascii_uppercase().starts_with("EPSG:")) {
         site.crs = code.to_ascii_uppercase();
     } else if rd {
@@ -644,6 +682,7 @@ impl BuiltinPlugin for OpenInfra {
                 nlcs_command(host, v);
             }
             "GIS_HOEVEELHEDEN_TABEL" => host.start_interactive(Box::new(TableCmd)),
+            "GIS_BGT_MUTATIE" => mutation_command(host, cmd),
             "GIS_HOOGTEPUNTEN" | "GIS_HOOGTELIJNEN" | "GIS_PUNTENWOLK" => ahn_command(host, &verb),
             "GIS_PROFIEL" => {
                 let Some(site) = require_site(host) else { return true };
@@ -702,7 +741,7 @@ impl BuiltinPlugin for OpenInfra {
                  snel: GIS_Q_LUCHTFOTO, GIS_Q_KADASTER, GIS_Q_AHN, GIS_Q_OSMKAART, GIS_Q_SATELLIET, GIS_Q_BAG, \
                  GIS_Q_PERCELEN, GIS_Q_NWB, GIS_Q_HECTO, GIS_Q_SPOOR, GIS_Q_OSM; \
                  GIS_SITE <lon> <lat> [b] [h] [EPSG:code] [RELATIEF] [naam] | GIS_SITE RD <x> <y> [b] [h] [RELATIEF] [naam]; \
-                 NLCS: GIS_NLCS_CONTROLE, GIS_NLCS_RAPPORT, GIS_NLCS_HERSTEL, GIS_HOEVEELHEDEN, GIS_HOEVEELHEDEN_CSV, GIS_HOEVEELHEDEN_TABEL; \
+                 NLCS: GIS_NLCS_CONTROLE, GIS_NLCS_RAPPORT, GIS_NLCS_HERSTEL, GIS_HOEVEELHEDEN, GIS_HOEVEELHEDEN_CSV, GIS_HOEVEELHEDEN_TABEL, GIS_BGT_MUTATIE [BRONHOUDER=G0505] [GEREALISEERD] [SELECTIE]; \
                  AHN: GIS_AHN (venster), GIS_HOOGTEPUNTEN, GIS_HOOGTELIJNEN, GIS_PROFIEL, GIS_PUNTENWOLK; \
                  NLCS: GIS_BGT (venster), GIS_Q_BGT, GIS_Q_BRK, GIS_KLIC [bestand], GIS_KLIC_IMPORT <bestand>, GIS_TEKENBLAD [onderwerp]; \
                  bestanden: GIS_RASTER_IMPORT <GeoTIFF/ASC/JPG/PNG+world file/LAS/LAZ>; scripts: ID=<naam> → <config>/OpenCADStudio/open-infra/api/<naam>.json.",

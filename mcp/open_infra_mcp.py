@@ -331,6 +331,16 @@ def t_nlcs(a):
     return OCS.run("GIS_NLCS_HERSTEL" if a.get("repair") else "GIS_NLCS_RAPPORT")
 
 
+@tool("bgt_mutation", "The NLCS design as a BGT mutation (IMGeo-GML 2.1.1) with a report, beside the drawing. "
+      "Layers N become plan topography (as_built=true: built), R built (changed when it carries a BGT lokaal_id), "
+      "V ends the BGT object. Type and function come from the BGT object data, the BGT object beneath or the NLCS layer; "
+      "ambiguous objects are listed in the report, not exported.",
+      {"bronhouder": STR, "as_built": {"type": "boolean"}, "selection": {"type": "boolean"}})
+def t_mutation(a):
+    words = (" GEREALISEERD" if a.get("as_built") else "") + (" SELECTIE" if a.get("selection") else "")
+    return OCS.run(f"GIS_BGT_MUTATIE {_kv(BRONHOUDER=a.get('bronhouder'))}{words}")
+
+
 @tool("quantities", "Quantities per NLCS layer (count, length, area) as CSV beside the drawing.")
 def t_quantities(a):
     return OCS.run("GIS_HOEVEELHEDEN_CSV")
@@ -432,15 +442,24 @@ def t_corridor(a):
         REIKWIJDTE=a.get("reach"), FREQUENTIE=a.get("frequency"), DWARSPROFIELEN=views))
 
 
-@tool("civ_bag3d", "3D BAG buildings of the project area (LoD 1.2, 1.3 or 2.2): roof and wall meshes per building.",
-      {"lod": {"type": "string", "enum": ["1.2", "1.3", "2.2"]}, "max": NUM, "colours": {"type": "string", "enum": ["realistisch", "nlcs"]}})
+@tool("civ_bag3d", "3D BAG buildings of the project area (LoD 1.2, 1.3 or 2.2): roof and wall meshes per building. "
+      "style: mooi (roof colours from the aerial photo, walls by building year, windows per storey, crisp planes), "
+      "maquette (white architectural model), realistisch (two plain colours) or nlcs (layer colours).",
+      {"lod": {"type": "string", "enum": ["1.2", "1.3", "2.2"]}, "max": NUM, "style": {"type": "string", "enum": ["mooi", "maquette", "realistisch", "nlcs"]}})
 def t_bag3d(a):
-    return OCS.run(f"CIV_BAG3D {_kv(LOD=a.get('lod'), MAX=a.get('max'), KLEUR=a.get('colours'))}", 1800)
+    return OCS.run(f"CIV_BAG3D {_kv(LOD=a.get('lod'), MAX=a.get('max'), STIJL=a.get('style'))}", 1800)
 
 
 @tool("civ_photo_terrain", "The AHN ground of the project area as a 3D surface coloured by the PDOK aerial photo.", {"cell": NUM})
 def t_photo(a):
     return OCS.run(f"CIV_FOTOTERREIN {_kv(CEL=a.get('cell'))}", 1800)
+
+
+@tool("civ_water_level", "A water surface at a level (m NAP) over the project area, to see what floods; call again with another "
+      "level to move it. Returns the share of the area below that level (AHN ground).",
+      {"level": NUM}, ["level"])
+def t_water(a):
+    return OCS.run(f"CIV_WATERPEIL PEIL={_num(a['level'])}")
 
 
 @tool("civ_bgt3d", "BGT in 3D: areas draped on the ground, buildings and walls extruded to the AHN surface, water at its level, bridges at deck height, posts and trees as symbols.",

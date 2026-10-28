@@ -91,11 +91,12 @@ fn record<'a>(on: bool, pairs: impl IntoIterator<Item = (&'a str, String)>) -> O
 
 // ── BGT ─────────────────────────────────────────────────────────────────────
 
-/// Attributes not worth carrying into the drawing.
+/// Attributes not worth carrying into the drawing. `creation_date` (the
+/// objectBeginTijd) stays: a BGT mutation of the object needs it.
 fn bgt_skip(key: &str) -> bool {
     key.ends_with("_codespace")
         || key.ends_with("_leeg")
-        || matches!(key, "version" | "lv_publicatiedatum" | "creation_date" | "tijdstip_registratie" | "eind_registratie" | "termination_date" | "in_onderzoek")
+        || matches!(key, "version" | "lv_publicatiedatum" | "tijdstip_registratie" | "eind_registratie" | "termination_date" | "in_onderzoek")
 }
 
 fn prop_string(v: &serde_json::Value) -> Option<String> {
