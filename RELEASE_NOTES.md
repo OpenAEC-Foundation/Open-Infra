@@ -11,6 +11,23 @@ Open Infra Studio — open-source GIS and civil design for **Open CAD Studio v20
 
 `<config>` is `%APPDATA%` on Windows, `~/.config` on Linux and `~/Library/Application Support` on macOS.
 
+The libraries are signed: Authenticode with a timestamp on Windows (publisher Impertio Studio B.V.), Developer ID and notarized by Apple on macOS, and a detached OpenPGP signature of the OpenAEC Foundation (`.asc`) per Linux file. Check those with `gpg --verify <file>.asc <file>` against `openaec-signing-public-key.asc` (fingerprint `13F6D414ADEE4ED4CD09AC60601D86C93C504D29`).
+
+**New — IFC 4.3 export**
+
+- **GIS → Output → IFC 4x3** and **Civiel → 3D model → IFC 4x3** (`GIS_IFC`, `CIV_IFC [BESTAND=] [SELECTIE] [TEKST=nee]`, MCP tool `ifc_export`) write the whole drawing as IFC 4.3 (IFC4X3_ADD2) beside it.
+- Every object becomes the IFC entity of what it is, from its NLCS layer and object data:
+  - terrain and photo terrain as `IfcGeographicElement`;
+  - 3D BAG and CityGML buildings as `IfcBuilding`;
+  - pavements, kerbs, markings, walls, fences, green and water;
+  - KLIC cables, pipes, casings and appurtenances, sewers and manholes;
+  - CPTs and boreholes as `IfcBorehole` with a stratum per soil layer;
+  - excavation and fill, and a corridor as `IfcRoad`.
+- **Axes become IfcAlignments** with their horizontal layout (lines and arcs) and, from the design profile, the vertical one (grades and parabolic curves), with a station referent.
+- **Georeferenced:** `IfcProjectedCRS` and `IfcMapConversion` from the project location.
+- **Data:** object data and the NLCS layer as property sets, DWG layers and colours as IFC layers and styles.
+- **Checked with IfcOpenShell:** schema and EXPRESS rules, and the alignment geometry against its layout. The example drawings export without errors.
+
 **New — international first**
 
 - The ribbons put the worldwide tools first: location, maps & data (services worldwide, WMS/TMS, WFS, OpenStreetMap, files), elevation, output, library. Everything Dutch sits in one compact **Netherlands** group of menus on the GIS tab and one **3D Netherlands** menu on the Civiel tab.

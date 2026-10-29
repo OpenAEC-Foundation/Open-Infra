@@ -18,6 +18,7 @@ Open, scriptable GIS and civil design inside CAD. Open Infra Studio is a plugin 
   - length profiles, design profiles and cross sections;
   - corridors with daylight, earthworks and a mass balance.
 - **CityGML and CityJSON import**: 3D city models from anywhere (CityGML 1.0–3.0, CityJSON 1.x/2.0 and CityJSONSeq), reprojected to the project location and streamed object by object, so files of a whole city district load in seconds.
+- **IFC 4.3 export**: the whole drawing as IFC4X3_ADD2 for BIM and infra software. Every object gets its IFC class (terrain, buildings, pavements, cables and pipes, boreholes, earthworks …), axes become IfcAlignments with horizontal and vertical layout, georeferenced, with object data as property sets.
 - **Scriptable and agent-ready**: every command takes arguments and reports back as JSON. An MCP server ([`mcp/`](mcp/README.md)) lets an AI agent build whole models.
 
 **Plus deep Dutch integration:**
@@ -47,9 +48,10 @@ Features you will not easily find together in one tool, let alone a free one:
 7. **A full 3D city model in one command.** Terrain coloured by the aerial photo, every building from 3D BAG (roof colours from the photo, walls by year of construction), the whole BGT in 3D, trees, water at its level.
 8. **Drawing-standard aware.** Every object lands on its NLCS layer with its source attributes as object data; NLCS check and repair, quantities per object, and design changes back to the BGT as an IMGeo-GML mutation.
 9. **Civil design after the FreeCAD Road workbench.** Survey points, LandXML, TIN, alignments with stationing, length, design and cross sections, corridors with daylight and a mass balance.
-10. **Agent-ready.** Every command takes arguments and answers in JSON; an MCP server exposes 38 tools, so an AI assistant can build whole models.
+10. **Agent-ready.** Every command takes arguments and answers in JSON; an MCP server exposes 39 tools, so an AI assistant can build whole models.
 11. **International first, Dutch when you need it.** English and Dutch interface following Open CAD Studio's language; the Dutch modules sit in one group and can be switched off.
-12. **Free and open source (GPL-3.0).** No licence fees, no lock-in, built on the open-source Open CAD Studio.
+12. **Open BIM out.** One command writes the drawing as IFC 4.3, with alignments, the georeference and the object data: ready for any IFC 4.3 viewer or BIM tool.
+13. **Free and open source (GPL-3.0).** No licence fees, no lock-in, built on the open-source Open CAD Studio.
 
 ## At a glance
 
@@ -58,12 +60,12 @@ Features you will not easily find together in one tool, let alone a free one:
 | **Coordinate systems** | 14 built in, automatic UTM worldwide, any EPSG code via epsg.io |
 | **Service catalogue** | 600 checked public services (426 WMS, 131 WFS, 43 XYZ) in 45 countries, Europe, Africa and worldwide, searchable by place, theme and coordinate system, plus built-in presets and your own servers |
 | **3D city models** | CityGML 1.0–3.0 and CityJSON 1.x/2.0 import, reprojected and filtered to the project area while reading |
-| **Historical maps** | Topotijdreis (every Dutch topographic map 1815–2014) and HisGIS 1832 cadastral maps, via ArcGIS tile caches and XYZ tiles |
+| **Historical maps** | Topotijdreis (every Dutch topographic map 1815–2014) and HisGIS 1832 cadastral maps, via map tile caches and XYZ tiles |
 | **Map backgrounds** | 5: OpenStreetMap, PDOK BRT (standard and grey), PDOK aerial photo, Sentinel-2 |
 | **One-click imports** | 11 OpenStreetMap themes, 11 PDOK datasets, 11 quick buttons |
 | **Civil design** | survey points (PNEZD/PENZD/CSV), LandXML 1.x, TIN, alignments, length, design and cross sections, corridors with 4 assemblies, earthworks with a mass balance |
-| **File formats** | 24 file formats to open (vector GIS, rasters and height grids, point clouds, survey points, LandXML, CityGML/CityJSON, KLIC), 8 kinds of output files, 12 web service and data protocols: see [File formats](#file-formats) |
-| **Automation** | arguments and JSON results for every `CIV_` command and the GIS data commands; MCP server with 38 tools |
+| **File formats** | 24 file formats to open (vector GIS, rasters and height grids, point clouds, survey points, LandXML, CityGML/CityJSON, KLIC), 9 kinds of output files including IFC 4.3, 12 web service and data protocols: see [File formats](#file-formats) |
+| **Automation** | arguments and JSON results for every `CIV_` command and the GIS data commands; MCP server with 39 tools |
 | **Commands** | 35 `GIS_*` commands for the ribbon, scripts and automation |
 | **Code** | about 29,000 lines of Rust, 120 unit tests; Linux, Windows and macOS builds |
 
@@ -322,6 +324,34 @@ GIS_KLIC_IMPORT <path>/Levering_21O072584_1.zip
 GIS_TEKENBLAD Situatie bestaand - BGT, kadaster en kabels en leidingen
 ```
 
+## IFC 4.3 export
+
+**GIS → Output → IFC 4x3**, **Civiel → 3D model → IFC 4x3**, or `GIS_IFC` / `CIV_IFC [BESTAND=<pad>] [SELECTIE] [TEKST=nee]` writes the drawing as IFC 4.3 (IFC4X3_ADD2) beside it, as `<drawing>_IFC4X3.ifc`. The MCP tool is `ifc_export`. Each object becomes the IFC entity of what it is, read from its NLCS layer and its object data:
+
+| In the drawing | In IFC 4.3 |
+|---|---|
+| Axis (`AM-AS`) with its design profile | `IfcAlignment` with `IfcAlignmentHorizontal` (lines, circular arcs) and `IfcAlignmentVertical` (grades, parabolic curves), the geometry as `IfcCompositeCurve` and `IfcGradientCurve`, a station referent (`Pset_Stationing`) |
+| TIN (`OG-TRIANGULATIE`), terrain with aerial photo (`OG-DTM`), water level | `IfcGeographicElement` TERRAIN: one triangulated surface per layer, the photo colours per triangle (`IfcIndexedColourMap`) |
+| 3D BAG, CityGML and BGT buildings (`OG-BEBOUWING`) | `IfcBuilding` per building id, roof and walls as coloured meshes |
+| Pavements (`VH`) | `IfcPavement` (asphalt FLEXIBLE, concrete RIGID), kerbs `IfcKerb` |
+| Green (`GR`), water (`OG-WATER`, `WH`), unpaved terrain | `IfcGeographicElement` VEGETATION, USERDEFINED, TERRAIN |
+| Structures (`KW`), street furniture (`IE`) | `IfcCivilElement`; fences and guard rails `IfcRailing`, walls and retaining walls `IfcWall` |
+| Road markings (`VW`) | `IfcSurfaceFeature` on the pavement beneath it |
+| KLIC cables and pipes (`KL`) | `IfcCableSegment`, `IfcPipeSegment`; casings `IfcCableCarrierSegment`; appurtenances `IfcCableFitting`, `IfcPipeFitting` |
+| Sewers (`RI`) | `IfcPipeSegment`; manholes `IfcDistributionChamberElement` MANHOLE |
+| CPTs and boreholes (`MO-ONDERZOEK`) | `IfcBorehole` per BRO id, with an `IfcGeotechnicalStratum` per soil layer |
+| Earthworks (`GW`) | excavation `IfcEarthworksCut` (it cuts the existing ground), fill `IfcEarthworksFill` |
+| Corridor (feature lines, design surface) | in an `IfcRoad` per corridor |
+| Contours, spot heights, survey points, parcels, labels, other lines | `IfcAnnotation` CONTOURLINE, SURVEY, TEXT, USERDEFINED |
+
+- **Georeference:** `IfcProjectedCRS` (the project's EPSG code, NAP heights in RD) and `IfcMapConversion` with the base point. Coordinates are in metres from the base point; the site carries latitude and longitude.
+- **Data:**
+  - every object gets the property sets `OpenInfra_NLCS` (layer, status, discipline, main group, object, element) and `OpenInfra_ObjectData` (its object data, such as BAG id, year of construction or BRO id);
+  - the DWG layers become `IfcPresentationLayerAssignment`, the colours surface and curve styles;
+  - the DWG handle goes into `Tag`.
+- **Stable ids:** GlobalIds follow from the drawing and the object, so a second export of the same drawing gives the same ids.
+- **Not exported:** map images, point clouds, hatches, block references and dimensions. The drawing sheet and the length-profile and cross-section views are drawings, not objects, so they stay out too.
+
 ## File formats
 
 Open CAD Studio itself opens and saves the drawing (DWG and DXF, R13 to 2018) and plots it to PDF. Open Infra Studio adds the formats below. Imported files are reprojected to the project location. The coordinate system comes from the file where it has one (GeoJSON `crs`, a `.prj` beside the file, GML `srsName`, LAS/LAZ headers); otherwise the project's is used.
@@ -330,8 +360,8 @@ Open CAD Studio itself opens and saves the drawing (DWG and DXF, R13 to 2018) an
 
 | Kind | Formats | Command |
 |---|---|---|
-| **Vector GIS** | GeoJSON (`.geojson`, `.json`) · Esri Shapefile (`.shp` with `.dbf`, `.shx`, `.prj`) · GeoPackage (`.gpkg`, pick a layer) · KML (`.kml`) · KMZ (`.kmz`) · GPX (`.gpx`) · GML (`.gml`, `.xml`) · CSV, TXT and TSV with coordinate columns (`x`/`y`, `lon`/`lat`) | `GIS_BESTAND <file>`, or *Maps & data → Files*; attributes become object data |
-| **Rasters and height grids** | GeoTIFF (`.tif`, `.tiff`), both images and float32 height grids · Esri ASCII grid (`.asc`) · JPEG and PNG (`.jpg`, `.jpeg`, `.png`) with a world file (`.jgw`, `.pgw`, `.wld`) and `.prj` | `GIS_BESTAND <file>`; images go behind the vectors |
+| **Vector GIS** | GeoJSON (`.geojson`, `.json`) · Shapefile (`.shp` with `.dbf`, `.shx`, `.prj`) · GeoPackage (`.gpkg`, pick a layer) · KML (`.kml`) · KMZ (`.kmz`) · GPX (`.gpx`) · GML (`.gml`, `.xml`) · CSV, TXT and TSV with coordinate columns (`x`/`y`, `lon`/`lat`) | `GIS_BESTAND <file>`, or *Maps & data → Files*; attributes become object data |
+| **Rasters and height grids** | GeoTIFF (`.tif`, `.tiff`), both images and float32 height grids · ASCII grid (`.asc`) · JPEG and PNG (`.jpg`, `.jpeg`, `.png`) with a world file (`.jgw`, `.pgw`, `.wld`) and `.prj` | `GIS_BESTAND <file>`; images go behind the vectors |
 | **Point clouds** | LAS and LAZ (`.las`, `.laz`), CRS from the file | `GIS_BESTAND <file>`; written to `.rcs` and attached |
 | **Survey points** | PNEZD, PENZD, NEZD and ENZD in `.csv`, `.txt`, `.xyz`, `.pnt` or `.asc`; separator, decimal comma and north/east order are detected | `CIV_PUNTEN_IMPORT` |
 | **LandXML** | LandXML 1.x (`.xml`, `.landxml`): points (CgPoints), surfaces (TIN), alignments with lines, arcs and clothoids | `CIV_LANDXML` |
@@ -351,6 +381,7 @@ Beside the drawing, unless the command is given a path.
 | **Quantities** | CSV: `hoeveelheden.csv`, or a table in the drawing | `GIS_HOEVEELHEDEN_CSV`, `GIS_HOEVEELHEDEN_TABEL` |
 | **NLCS check** | Markdown report: `nlcs-controle.md` | `GIS_NLCS_RAPPORT` |
 | **BGT mutation** | IMGeo-GML 2.1.1 (`bgt-mutatie.gml`) with a Markdown report (`bgt-mutatie.md`) | `GIS_BGT_MUTATIE` |
+| **IFC 4.3** | IFC4X3_ADD2: `<drawing>_IFC4X3.ifc` (see [IFC 4.3 export](#ifc-43-export)) | `GIS_IFC`, `CIV_IFC` |
 | **Command results** | JSON per call: `<config>/OpenCADStudio/open-infra/api/<ID>.json` | any `CIV_` or GIS data command with `ID=<name>` |
 
 ### Web services and data APIs
@@ -359,7 +390,7 @@ Beside the drawing, unless the command is given a path.
 |---|---|---|
 | **WMS 1.1.1 and 1.3.0** | PNG and JPEG maps, XML capabilities | map images from any server in the catalogue |
 | **XYZ / TMS tiles** | PNG and JPEG; WMTS REST endpoints as a tile template | OpenStreetMap, aerial photos, HisGIS |
-| **ArcGIS tile caches** | `…/MapServer` with `tileInfo` | Topotijdreis |
+| **Map tile caches** | `…/MapServer` with `tileInfo` | Topotijdreis |
 | **WFS 1.1.0 and 2.0.0** | GML and GeoJSON, with paging | vector layers from any server in the catalogue |
 | **OGC API Features** | GeoJSON | BGT and GWSW sewers (PDOK) |
 | **WCS** | GeoTIFF float32 | AHN height grids |
@@ -372,7 +403,7 @@ Beside the drawing, unless the command is given a path.
 
 ### Not yet
 
-The file dialog recognises JPEG 2000 (`.jp2`), E57 and PLY, but cannot read them yet. There is no export to LandXML, GeoJSON, Shapefile or GeoPackage, and no IFC. Convert such files first, or [open an issue](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/issues).
+The file dialog recognises JPEG 2000 (`.jp2`), E57 and PLY, but cannot read them yet. There is no export to LandXML, GeoJSON, Shapefile or GeoPackage, and no IFC import. Convert such files first, or [open an issue](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/issues).
 
 ## Commands
 
@@ -389,6 +420,7 @@ For the command line, scripts and automation:
 | NLCS base data | `GIS_Q_BGT`, `GIS_Q_BRK`, `GIS_Q_SONDERINGEN [BRON=]` (BRO CPTs and boreholes in plan), `GIS_KLIC [file]` (opens the page), `GIS_KLIC_IMPORT <file>`, `GIS_TEKENBLAD [subject]` |
 | AHN | `GIS_AHN` (page), `GIS_HOOGTEPUNTEN`, `GIS_HOOGTELIJNEN`, `GIS_PROFIEL`, `GIS_PUNTENWOLK` |
 | NLCS | `GIS_NLCS_CONTROLE`, `GIS_NLCS_RAPPORT`, `GIS_NLCS_HERSTEL`, `GIS_HOEVEELHEDEN`, `GIS_HOEVEELHEDEN_CSV`, `GIS_HOEVEELHEDEN_TABEL`, `GIS_BGT_MUTATIE [BRONHOUDER=G0505] [GEREALISEERD] [SELECTIE]` |
+| IFC 4.3 | `GIS_IFC`, `CIV_IFC` `[BESTAND=<pad>] [SELECTIE] [TEKST=nee]` |
 | Civiel tab | `CIV_PUNTEN_IMPORT`, `CIV_PUNT`, `CIV_PUNTEN_EXPORT`, `CIV_LANDXML`, `CIV_TIN`, `CIV_HOOGTELIJNEN`, `CIV_ANALYSE`, `CIV_VOLUME`, `CIV_AS`, `CIV_AS_OFFSET`, `CIV_STATION`, `CIV_LENGTEPROFIEL`, `CIV_ONTWERPPROFIEL`, `CIV_DWARSPROFIELEN`, `CIV_CORRIDOR`, `CIV_BAG3D`, `CIV_FOTOTERREIN`, `CIV_BGT3D`, `CIV_WATERPEIL`, `CIV_CITYGML`, `CIV_KLIC3D`, `CIV_DOORZICHT`, `CIV_SONDERINGEN3D`, `CIV_3DMODEL`, `CIV_INFO`, `CIV_INSTELLINGEN` |
 | Help | `GIS_HELP`, `CIV_HELP` |
 

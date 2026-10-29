@@ -118,6 +118,30 @@ cargo build --release -p open-infra && cargo build --release -p open-infra-civie
 python3 tests/e2e/bgt_mutatie_e2e.py --xsd
 ```
 
+## 7. IFC 4.3-export
+
+De unit-tests van `src/ifc` exporteren een voorbeeldtekening met van alles één:
+- een as met ontwerpprofiel, een TIN, een fototerrein en een 3D BAG-pand;
+- KLIC, een sondering met twee lagen, verharding met markering, een ontgraving en een corridor;
+- teksten en een kaartbeeld.
+
+Ze schrijven `target/ifc-test/voorbeeld.ifc`. `tests/ifc_validate.py` toetst dat bestand met IfcOpenShell:
+- aan het schema IFC4X3_ADD2 en de EXPRESS-regels;
+- de as-geometrie: de geometriekernel rekent de horizontale en verticale curve uit, en de punten moeten op de segmenten liggen.
+
+In CI gebeurt dat bij elke push.
+
+`tests/ifc_dwg.rs` exporteert een echte tekening rechtstreeks uit de DWG, zonder Open CAD Studio. De projectlocatie komt uit de tekening.
+
+```sh
+cargo test --lib -p open-infra ifc
+pip install ifcopenshell
+python3 tests/ifc_validate.py target/ifc-test/voorbeeld.ifc
+cargo test --release --test ifc_dwg -- --ignored --nocapture
+OI_IFC_DWG=docs/video/bron/data/dordrecht-showcase.dwg cargo test --release --test ifc_dwg -- --ignored --nocapture
+python3 tests/ifc_validate.py target/ifc-test/dordrecht-showcase.ifc
+```
+
 ## Wat de testset tot nu toe vond
 
 In de plugin, opgelost:
