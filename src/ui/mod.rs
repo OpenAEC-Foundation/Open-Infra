@@ -31,6 +31,8 @@ pub enum Tab {
     Coords,
     Library,
     Files,
+    /// Service browser: WMS/WFS/tile services worldwide.
+    Services,
     /// The Civiel plugin's settings and actions.
     Civiel,
 }

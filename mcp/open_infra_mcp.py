@@ -325,6 +325,29 @@ def t_gis(a):
     return OCS.run(DATASETS[a["dataset"]])
 
 
+SERVICE_CATEGORIES = ["cadastre", "aerial", "elevation", "subsurface", "zoning", "buildings", "buildings3d", "basemap", "environment",
+                      "roads", "protected", "water", "rail", "landcover", "admin", "structures", "utilities"]
+
+
+@tool("gis_services", "Search the catalogue of about 620 public WMS, WFS and XYZ tile services in 50+ countries (cadastral parcels, "
+      "aerial photos, elevation, geology, zoning, buildings …). Free text in Dutch or English (e.g. 'cadastral parcels Bavaria', "
+      "'luchtfoto', 'Flurstücke'); `here` keeps only services covering the project location, or give lon/lat. Returns id, type, "
+      "name, provider, country, coverage, category, url, default_layer, crs (request CRS first), license and bbox per service.",
+      {"query": STR, "category": {"type": "string", "enum": SERVICE_CATEGORIES}, "type": {"type": "string", "enum": ["WMS", "WFS", "XYZ"]},
+       "here": {"type": "boolean"}, "lon": NUM, "lat": NUM, "limit": NUM})
+def t_services(a):
+    words = " HIER" if a.get("here") and a.get("lon") is None else ""
+    return OCS.run("GIS_SERVICES " + _kv(ZOEK=a.get("query"), CATEGORIE=a.get("category"), TYPE=a.get("type"),
+                                         LON=a.get("lon"), LAT=a.get("lat"), LIMIET=a.get("limit") or 50) + words)
+
+
+@tool("gis_service_load", "Load one layer of a catalogue service (id from gis_services) into the project area: WMS and tiles as "
+      "images, WFS as features with attributes, reprojected to the project CRS. `layer` defaults to the service's preset layer.",
+      {"service": STR, "layer": STR, "resolution": NUM, "limit": NUM}, ["service"])
+def t_service_load(a):
+    return OCS.run("GIS_SERVICE_LOAD " + _kv(DIENST=a["service"], LAAG=a.get("layer"), RESOLUTIE=a.get("resolution"), LIMIET=a.get("limit")))
+
+
 @tool("nlcs_check", "NLCS 5.02 check of the drawing (report beside the drawing); repair=true sets layer styles and ByLayer.",
       {"repair": {"type": "boolean"}})
 def t_nlcs(a):
@@ -445,9 +468,11 @@ def t_corridor(a):
 @tool("civ_bag3d", "3D BAG buildings of the project area (LoD 1.2, 1.3 or 2.2): roof and wall meshes per building. "
       "style: mooi (roof colours from the aerial photo, walls by building year, windows per storey, crisp planes), "
       "maquette (white architectural model), realistisch (two plain colours) or nlcs (layer colours).",
-      {"lod": {"type": "string", "enum": ["1.2", "1.3", "2.2"]}, "max": NUM, "style": {"type": "string", "enum": ["mooi", "maquette", "realistisch", "nlcs"]}})
+      {"lod": {"type": "string", "enum": ["1.2", "1.3", "2.2"]}, "max": NUM, "style": {"type": "string", "enum": ["mooi", "maquette", "realistisch", "nlcs"]},
+       "windows": {"type": "boolean", "description": "false: plain facades without windows"}})
 def t_bag3d(a):
-    return OCS.run(f"CIV_BAG3D {_kv(LOD=a.get('lod'), MAX=a.get('max'), STIJL=a.get('style'))}", 1800)
+    ramen = "nee" if a.get("windows") is False else None
+    return OCS.run(f"CIV_BAG3D {_kv(LOD=a.get('lod'), MAX=a.get('max'), STIJL=a.get('style'), RAMEN=ramen)}", 1800)
 
 
 @tool("civ_photo_terrain", "The AHN ground of the project area as a 3D surface coloured by the PDOK aerial photo.", {"cell": NUM})
@@ -462,12 +487,59 @@ def t_water(a):
     return OCS.run(f"CIV_WATERPEIL PEIL={_num(a['level'])}")
 
 
+@tool("gis_server", "Import any map server of the catalogue by id (PDOK, 600 worldwide services, HisGIS, Topotijdreis, the user's own): "
+      "tile/WMS as image, WFS as vectors. year gives Topotijdreis of that year (1815-2014).",
+      {"id": STR, "layer": STR, "resolution": NUM, "year": NUM})
+def t_server(a):
+    if a.get("year"):
+        return OCS.run(f"GIS_Q_SERVER JAAR={int(a['year'])} {_kv(RES=a.get('resolution'))}", 900)
+    return OCS.run(f"GIS_Q_SERVER {a['id']} {_kv(LAAG=a.get('layer'), RES=a.get('resolution'))}", 900)
+
+
+@tool("civ_klic3d", "KLIC cables and pipes as 3D tubes under the AHN ground (depth from the delivery, else the usual cover depth per network type), "
+      "in IMKL colours. Without path: the delivery imported last. scale thickens the tubes for overview pictures.",
+      {"path": STR, "scale": NUM})
+def t_klic3d(a):
+    return OCS.run(f"CIV_KLIC3D {a.get('path') or ''} {_kv(VERGROOT=a.get('scale'))}", 1800)
+
+
+@tool("civ_see_through", "Make the ground surfaces transparent (percent, default 70) so cables, pipes and CPT columns show beneath; "
+      "all=true also buildings; percent=0 makes the ground opaque again.",
+      {"percent": NUM, "all": {"type": "boolean"}})
+def t_see_through(a):
+    pct = a.get("percent")
+    if pct is not None and float(pct) <= 0:
+        return OCS.run("CIV_DOORZICHT UIT")
+    return OCS.run(f"CIV_DOORZICHT {_kv(PCT=pct)} {'ALLES' if a.get('all') else ''}")
+
+
+@tool("civ_citygml", "Import a CityGML file (2.0 or 3.0, also IMGeo/BGT GML) or CityJSON (1.x/2.0, also CityJSONSeq .jsonl) as 3D meshes in the project area: buildings with roof and wall "
+      "meshes (LoD1/LoD2, walls by year of construction), roads, green, water, bridges and relief on NLCS layers; 2D objects draped on the AHN. "
+      "The file's CRS is transformed to the project location.",
+      {"path": STR, "style": {"type": "string", "enum": ["mooi", "maquette", "realistisch", "nlcs"]}}, ["path"])
+def t_citygml(a):
+    return OCS.run(f"CIV_CITYGML {a['path']} {_kv(STIJL=a.get('style'))}", 1800)
+
+
 @tool("civ_bgt3d", "BGT in 3D: areas draped on the ground, buildings and walls extruded to the AHN surface, water at its level, bridges at deck height, posts and trees as symbols.",
       {"groups": {"type": "array", "items": {"type": "string", "enum": ["wegen", "terrein", "water", "gebouwen", "kunstwerken", "scheidingen", "spoor", "inrichting", "vegetatie"]}},
        "buildings": {"type": "boolean"}, "colours": {"type": "string", "enum": ["realistisch", "nlcs"]}})
 def t_bgt3d(a):
     groups = ";".join(a.get("groups") or [])
     return OCS.run(f"CIV_BGT3D {_kv(GROEPEN=groups, PANDEN=a.get('buildings'), KLEUR=a.get('colours'))}", 1800)
+
+
+@tool("civ_subsurface", "The subsurface from the BRO (Dutch key register, successor of DINOloket): cone penetration tests (CPT) and "
+      "geotechnical boreholes (BHR-GT) of the project area as 3D columns from the surface level (m NAP) down, one mesh per soil "
+      "layer coloured by soil type (sand yellow, clay green, peat brown, silt grey-green, gravel orange); CPT layers from qc and Rf "
+      "(Robertson 2010 SBT), boreholes from their described soil names; qc/Rf graphs beside the CPTs. plan_only=true draws just "
+      "the plan symbols with BRO id (no measurements fetched). Returns per column the BRO id, surface level and layers.",
+      {"source": {"type": "string", "enum": ["alles", "sonderingen", "boringen"]}, "max": NUM, "radius": NUM, "min_layer": NUM,
+       "graphs": {"type": "boolean"}, "labels": {"type": "boolean"}, "plan_only": {"type": "boolean"}})
+def t_subsurface(a):
+    if a.get("plan_only"):
+        return OCS.run(f"GIS_Q_SONDERINGEN {_kv(BRON=a.get('source'))}", 600)
+    return OCS.run(f"CIV_SONDERINGEN3D {_kv(BRON=a.get('source'), MAX=a.get('max'), STRAAL=a.get('radius'), MINLAAG=a.get('min_layer'), QC=a.get('graphs'), LABELS=a.get('labels'))}", 1800)
 
 
 @tool("oi_view", "Set the view: preset (TOP, SWISO, SEISO, NEISO, NWISO, FRONT…), visual style (GOURAUDSHADED, FLATSHADED, WIREFRAME2D, HIDDENLINE…) and zoom to extents.",
@@ -536,7 +608,7 @@ INSTRUCTIONS = (
     "Open Infra: infra and civil modelling in Open CAD Studio (Netherlands: PDOK, AHN, BGT, 3D BAG, NLCS). "
     "Start with oi_sessions and oi_site (project location and area), then import data (gis_import), "
     "terrain (civ_tin), axes (civ_alignment), profiles (civ_length_profile, civ_design_profile), corridors (civ_corridor), "
-    "earthwork (civ_volume) and the 3D model (civ_photo_terrain, civ_bag3d, civ_bgt3d). oi_status lists handles; "
+    "earthwork (civ_volume), the 3D model (civ_photo_terrain, civ_bag3d, civ_bgt3d) and the subsurface (civ_subsurface: BRO CPTs and boreholes). oi_status lists handles; "
     "oi_view and oi_capture show the result. Coordinates are project coordinates in metres (RD in NL)."
 )
 

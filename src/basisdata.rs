@@ -260,8 +260,18 @@ impl Default for KlicOptions {
     }
 }
 
+/// The KLIC delivery read last (for KLIC in 3D, which runs in the Civiel
+/// plugin's own process): kept in the config directory.
+pub fn last_klic() -> Option<std::path::PathBuf> {
+    let p = std::fs::read_to_string(crate::gis::servers::config_dir().join("laatste-klic.txt")).ok()?;
+    let p = std::path::PathBuf::from(p.trim());
+    p.exists().then_some(p)
+}
+
 pub fn klic(site: &Site, path: &Path, opt: &KlicOptions) -> Result<String, String> {
     let lev = klic::read(path)?;
+    let dir = crate::gis::servers::config_dir();
+    let _ = std::fs::create_dir_all(&dir).and_then(|_| std::fs::write(dir.join("laatste-klic.txt"), path.to_string_lossy().as_bytes()));
     klic_place(site, &lev, opt)
 }
 
