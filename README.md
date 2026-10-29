@@ -1,12 +1,12 @@
-# Open Infra — GIS, NLCS and civil design for Open CAD Studio
+# Open Infra Studio — GIS, NLCS and civil design for Open CAD Studio
 
-[![Release](https://img.shields.io/github/v/release/OpenAEC-Foundation/Open-Infra?label=release)](https://github.com/OpenAEC-Foundation/Open-Infra/releases/latest)
+[![Release](https://img.shields.io/github/v/release/OpenAEC-Foundation/Open-Infra-Studio?label=release)](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/releases/latest)
 [![Open CAD Studio](https://img.shields.io/badge/Open%20CAD%20Studio-v2026.43-2196dc)](https://github.com/HakanSeven12/OpenCADStudio)
 [![Plugin API](https://img.shields.io/badge/plugin%20API-13-6db7ed)](https://github.com/HakanSeven12/OpenCADStudio/tree/master/crates/ocs_plugin_api)
 [![NLCS](https://img.shields.io/badge/NLCS-5.02-98c379)](https://www.nlcs.nl)
 [![Licence](https://img.shields.io/badge/licence-GPL--3.0--only-lightgrey)](LICENSE)
 
-Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio) for infrastructure and civil engineering, anywhere in the world. It is a free, open-source (GPL) alternative to commercial civil-CAD and desktop-GIS suites: GIS context and civil design in one drawing, driven from the ribbon, from scripts or by an AI agent.
+Open, scriptable GIS and civil design inside CAD. Open Infra Studio is a plugin for [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio) for infrastructure and civil engineering, anywhere in the world. It is a free, open-source (GPL) alternative to commercial civil-CAD and desktop-GIS suites: GIS context and civil design in one drawing, driven from the ribbon, from scripts or by an AI agent.
 
 **Worldwide:**
 
@@ -26,15 +26,15 @@ Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Op
 - **AHN heights**: spot heights, contour lines and length profiles from AHN4, and the AHN5 point cloud attached in 3D.
 - **3D city and landscape model**: the AHN terrain coloured by the aerial photo, 3D BAG buildings (LoD 1.2–2.2), the whole BGT in 3D, KLIC cables and pipes in 3D under a see-through ground, and the subsurface: BRO cone penetration tests and boreholes as columns of soil layers.
 
-[![Open Infra in one minute: watch the video](docs/video/open-infra-poster.jpg)](docs/video/open-infra.mp4)
+[![Open Infra Studio in one minute: watch the video](docs/video/open-infra-poster.jpg)](docs/video/open-infra.mp4)
 
-<sub>Open Infra in one minute (MP4, 64 s): the application and its 3D model, 2D drawings to NLCS, map services in Paris, Cologne and Zurich, historical maps of the Netherlands, KLIC and CPTs under a see-through ground. Click the image to play.</sub>
+<sub>Open Infra Studio in one minute (MP4, 64 s): the application and its 3D model, 2D drawings to NLCS, map services in Paris, Cologne and Zurich, historical maps of the Netherlands, KLIC and CPTs under a see-through ground. Click the image to play.</sub>
 
 ![Example: existing situation around the Grote Kerk in Dordrecht, A1 1:500](examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
 
 <sub>[Example drawing](examples/dordrecht-nlcs): BGT, cadastre and a KLIC delivery around the Grote Kerk in Dordrecht. A1 at 1:500, made with five commands. Available as DWG, PDF and PNG.</sub>
 
-## What makes Open Infra different
+## What makes Open Infra Studio different
 
 Features you will not easily find together in one tool, let alone a free one:
 
@@ -62,9 +62,10 @@ Features you will not easily find together in one tool, let alone a free one:
 | **Map backgrounds** | 5: OpenStreetMap, PDOK BRT (standard and grey), PDOK aerial photo, Sentinel-2 |
 | **One-click imports** | 11 OpenStreetMap themes, 11 PDOK datasets, 11 quick buttons |
 | **Civil design** | survey points (PNEZD/PENZD/CSV), LandXML 1.x, TIN, alignments, length, design and cross sections, corridors with 4 assemblies, earthworks with a mass balance |
+| **File formats** | 24 file formats to open (vector GIS, rasters and height grids, point clouds, survey points, LandXML, CityGML/CityJSON, KLIC), 8 kinds of output files, 12 web service and data protocols: see [File formats](#file-formats) |
 | **Automation** | arguments and JSON results for every `CIV_` command and the GIS data commands; MCP server with 38 tools |
 | **Commands** | 35 `GIS_*` commands for the ribbon, scripts and automation |
-| **Code** | about 6,900 lines of Rust, 17 unit tests; Linux, Windows and macOS builds |
+| **Code** | about 29,000 lines of Rust, 120 unit tests; Linux, Windows and macOS builds |
 
 **Plus, for the Netherlands:**
 
@@ -104,7 +105,7 @@ The ribbon tab **"Open Infra — GIS"** puts the worldwide tools first. Everythi
 
 ### Language and Dutch modules
 
-- **Language:** English or Dutch. Open Infra follows Open CAD Studio's interface language (`language` in its `settings.json`; with "system" the system locale, as the host does) and falls back to English. A choice made in the workbench (NL / EN in the navigation column) overrides that.
+- **Language:** English or Dutch. Open Infra Studio follows Open CAD Studio's interface language (`language` in its `settings.json`; with "system" the system locale, as the host does) and falls back to English. A choice made in the workbench (NL / EN in the navigation column) overrides that.
 - **Dutch modules on/off:** next to the language choice. Off removes the Netherlands group from the GIS ribbon and the Dutch 3D menu from the Civiel ribbon, for users elsewhere. Both are stored in `<config>/OpenCADStudio/open-infra/settings.json` (`language`, `netherlands`) and take effect after a restart.
 - **Icons:** the workbench windows have their own icon in the taskbar (a map pin for GIS, a profile for Civiel).
 
@@ -180,13 +181,13 @@ Dordrecht city centre (1.2 × 1.0 km), built by an agent through the MCP server 
 
 **Large drawings:**
 - Open CAD Studio sends a plugin at most 64 MB per message, and shares a document view of 16 MB by default.
-- Open Infra sends entities in batches under that limit and draws 3D objects as light MESH entities.
+- Open Infra Studio sends entities in batches under that limit and draws 3D objects as light MESH entities.
 - It keeps an object index in the drawing (`OPENINFRA/INDEX`: terrains, alignments, profiles, corridors, survey points), so the civil commands fetch what they need by handle at any drawing size.
 - Whole-drawing tools (NLCS check, quantities) need the shared view. For drawings over 16 MB, start Open CAD Studio with `OCS_V4_SNAPSHOT_SEGMENT_SIZE=268435456` (256 MB; larger values exceed the 1 GiB the plugin side maps).
 
 ## Subsurface: CPTs and boreholes from the BRO
 
-The BRO (Basisregistratie Ondergrond, the successor of DINOloket) holds the Dutch cone penetration tests and borehole descriptions as open data (CC0). Open Infra reads them from the public REST services at `publiek.broservices.nl`:
+The BRO (Basisregistratie Ondergrond, the successor of DINOloket) holds the Dutch cone penetration tests and borehole descriptions as open data (CC0). Open Infra Studio reads them from the public REST services at `publiek.broservices.nl`:
 - **CPT** (`sr/cpt/v1`): cone resistance qc, local friction fs and friction ratio Rf per depth, the surface level in m NAP and the end depth.
 - **BHR-GT** (`sr/bhrgt/v2`): geotechnical boreholes, with the soil layers described by NEN-EN-ISO 14688 (or NEN 5104 for archive data).
 
@@ -220,7 +221,7 @@ Every `CIV_` command and the GIS data commands take arguments:
 - points `x,y` in project coordinates;
 - lists separated by `;`.
 
-With `ID=<name>` the outcome is written to `<config>/OpenCADStudio/open-infra/api/<name>.json`, as `{ok, message, data}` with handles, lengths, volumes and so on. This makes Open Infra drivable from scripts and from Open CAD Studio's REST/automation API. `CIV_HELP` and `GIS_HELP` list the arguments.
+With `ID=<name>` the outcome is written to `<config>/OpenCADStudio/open-infra/api/<name>.json`, as `{ok, message, data}` with handles, lengths, volumes and so on. This makes Open Infra Studio drivable from scripts and from Open CAD Studio's REST/automation API. `CIV_HELP` and `GIS_HELP` list the arguments.
 
 ```
 GIS_SITE RD 104900 425350 1200 1000 Dordrecht binnenstad ID=s1
@@ -321,6 +322,58 @@ GIS_KLIC_IMPORT <path>/Levering_21O072584_1.zip
 GIS_TEKENBLAD Situatie bestaand - BGT, kadaster en kabels en leidingen
 ```
 
+## File formats
+
+Open CAD Studio itself opens and saves the drawing (DWG and DXF, R13 to 2018) and plots it to PDF. Open Infra Studio adds the formats below. Imported files are reprojected to the project location. The coordinate system comes from the file where it has one (GeoJSON `crs`, a `.prj` beside the file, GML `srsName`, LAS/LAZ headers); otherwise the project's is used.
+
+### Files you open
+
+| Kind | Formats | Command |
+|---|---|---|
+| **Vector GIS** | GeoJSON (`.geojson`, `.json`) · Esri Shapefile (`.shp` with `.dbf`, `.shx`, `.prj`) · GeoPackage (`.gpkg`, pick a layer) · KML (`.kml`) · KMZ (`.kmz`) · GPX (`.gpx`) · GML (`.gml`, `.xml`) · CSV, TXT and TSV with coordinate columns (`x`/`y`, `lon`/`lat`) | `GIS_BESTAND <file>`, or *Maps & data → Files*; attributes become object data |
+| **Rasters and height grids** | GeoTIFF (`.tif`, `.tiff`), both images and float32 height grids · Esri ASCII grid (`.asc`) · JPEG and PNG (`.jpg`, `.jpeg`, `.png`) with a world file (`.jgw`, `.pgw`, `.wld`) and `.prj` | `GIS_BESTAND <file>`; images go behind the vectors |
+| **Point clouds** | LAS and LAZ (`.las`, `.laz`), CRS from the file | `GIS_BESTAND <file>`; written to `.rcs` and attached |
+| **Survey points** | PNEZD, PENZD, NEZD and ENZD in `.csv`, `.txt`, `.xyz`, `.pnt` or `.asc`; separator, decimal comma and north/east order are detected | `CIV_PUNTEN_IMPORT` |
+| **LandXML** | LandXML 1.x (`.xml`, `.landxml`): points (CgPoints), surfaces (TIN), alignments with lines, arcs and clothoids | `CIV_LANDXML` |
+| **3D city models** | CityGML 1.0, 2.0 and 3.0 (`.gml`, `.xml`, `.citygml`) · IMGeo/BGT GML · CityJSON 1.x and 2.0 (`.city.json`, `.json`) · CityJSONSeq (`.city.jsonl`, `.jsonl`) | `CIV_CITYGML <file>` |
+| **KLIC delivery** | IMKL 2.0: the delivery as `.zip`, or its GI `.xml` | `GIS_KLIC_IMPORT <file>`, or drop it on the workbench window |
+
+### Files it writes
+
+Beside the drawing, unless the command is given a path.
+
+| Output | Format and name | Command |
+|---|---|---|
+| **Map images** | PNG, in the folder `<drawing>_GIS` | every WMS, tile and raster import |
+| **Point cloud** | `.rcs`, attached to the drawing | `GIS_PUNTENWOLK`, LAS/LAZ import |
+| **Survey points** | CSV as PENZD (default), PNEZD, NEZD or ENZD: `punten.csv` | `CIV_PUNTEN_EXPORT` |
+| **Mass balance** | CSV per corridor: `corridor_<name>.csv` | `CIV_CORRIDOR` |
+| **Quantities** | CSV: `hoeveelheden.csv`, or a table in the drawing | `GIS_HOEVEELHEDEN_CSV`, `GIS_HOEVEELHEDEN_TABEL` |
+| **NLCS check** | Markdown report: `nlcs-controle.md` | `GIS_NLCS_RAPPORT` |
+| **BGT mutation** | IMGeo-GML 2.1.1 (`bgt-mutatie.gml`) with a Markdown report (`bgt-mutatie.md`) | `GIS_BGT_MUTATIE` |
+| **Command results** | JSON per call: `<config>/OpenCADStudio/open-infra/api/<ID>.json` | any `CIV_` or GIS data command with `ID=<name>` |
+
+### Web services and data APIs
+
+| Protocol | Formats | Used for |
+|---|---|---|
+| **WMS 1.1.1 and 1.3.0** | PNG and JPEG maps, XML capabilities | map images from any server in the catalogue |
+| **XYZ / TMS tiles** | PNG and JPEG; WMTS REST endpoints as a tile template | OpenStreetMap, aerial photos, HisGIS |
+| **ArcGIS tile caches** | `…/MapServer` with `tileInfo` | Topotijdreis |
+| **WFS 1.1.0 and 2.0.0** | GML and GeoJSON, with paging | vector layers from any server in the catalogue |
+| **OGC API Features** | GeoJSON | BGT and GWSW sewers (PDOK) |
+| **WCS** | GeoTIFF float32 | AHN height grids |
+| **COPC over HTTP** | LAZ 1.4 (COPC), only the octree nodes of the area | AHN4/AHN5 point clouds |
+| **3D BAG API** | CityJSON 2.0 | 3D buildings |
+| **BRO REST** | IMBRO XML | CPTs (CPT) and boreholes (BHR-GT) |
+| **Overpass API** | OSM JSON | OpenStreetMap themes |
+| **Geocoding** | PDOK Locatieserver and Nominatim (JSON) | address and place search |
+| **epsg.io** | PROJ strings | coordinate systems that are not built in |
+
+### Not yet
+
+The file dialog recognises JPEG 2000 (`.jp2`), E57 and PLY, but cannot read them yet. There is no export to LandXML, GeoJSON, Shapefile or GeoPackage, and no IFC. Convert such files first, or [open an issue](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/issues).
+
 ## Commands
 
 For the command line, scripts and automation:
@@ -389,7 +442,7 @@ Open CAD Studio runs plugins out-of-process and has no dialog API for plugins, s
 
 ## Installing
 
-Use Open CAD Studio's **Plugin Manager** (`PLUGINS`): choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra` and install the [latest release](https://github.com/OpenAEC-Foundation/Open-Infra/releases/latest). This installs the GIS plugin.
+Use Open CAD Studio's **Plugin Manager** (`PLUGINS`): choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra-Studio` and install the [latest release](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/releases/latest). This installs the GIS plugin.
 
 Or install by hand:
 1. Download `openaec.open-infra-<platform>` and `plugin.toml` from the release.

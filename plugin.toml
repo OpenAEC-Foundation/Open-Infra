@@ -5,7 +5,7 @@ version = "2026.44.3"
 description = "GIS-workbench en NLCS-basisdata voor infra en civiele techniek: projectlocatie, WMS/WFS-servers, OpenStreetMap, BGT, kadaster en KLIC conform NLCS. Nederland (PDOK) en wereldwijd."
 author = "OpenAEC Foundation"
 license = "GPL-3.0-only"
-repository = "OpenAEC-Foundation/Open-Infra"
+repository = "OpenAEC-Foundation/Open-Infra-Studio"
 
 [opencad]
 api_version = 13

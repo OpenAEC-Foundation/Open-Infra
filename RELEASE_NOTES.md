@@ -1,11 +1,11 @@
-Open Infra — open-source GIS and civil design for **Open CAD Studio v2026.43** (plugin API 13), for infrastructure and civil engineering anywhere in the world. It is a free alternative to commercial civil-CAD and desktop-GIS suites: project location and coordinate systems worldwide, web map services and OpenStreetMap, and civil design from survey points and TIN to alignments, corridors and earthworks, all scriptable and agent-ready. Plus deep integration with Dutch base data (BGT, BRK, KLIC, AHN, 3D BAG) and the NLCS drawing standard. Two plugins: the **GIS** ribbon tab and the new **Civiel** (civil) ribbon tab.
+Open Infra Studio — open-source GIS and civil design for **Open CAD Studio v2026.43** (plugin API 13), for infrastructure and civil engineering anywhere in the world. It is a free alternative to commercial civil-CAD and desktop-GIS suites: project location and coordinate systems worldwide, web map services and OpenStreetMap, and civil design from survey points and TIN to alignments, corridors and earthworks, all scriptable and agent-ready. Plus deep integration with Dutch base data (BGT, BRK, KLIC, AHN, 3D BAG) and the NLCS drawing standard. Two plugins: the **GIS** ribbon tab and the new **Civiel** (civil) ribbon tab.
 
 **Note:** this release is built for Open CAD Studio **v2026.43**. A plugin for v2026.42 does not load in v2026.43, and the other way round. So update Open Infra together with Open CAD Studio.
 
 **Installing**
 
 1. Update Open CAD Studio to [v2026.43](https://github.com/HakanSeven12/OpenCADStudio/releases/tag/v2026.43).
-2. **GIS plugin:** in Open CAD Studio, run `PLUGINS` (Plugin Manager), choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra`, pick this release and click *Install*. By hand: put `openaec.open-infra-<platform>` and `plugin.toml` from this release in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
+2. **GIS plugin:** in Open CAD Studio, run `PLUGINS` (Plugin Manager), choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra-Studio`, pick this release and click *Install*. By hand: put `openaec.open-infra-<platform>` and `plugin.toml` from this release in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 3. **Civiel plugin:** unzip `open-infra-civiel-<platform>.zip` into `<config>/OpenCADStudio/plugins/`. That gives the folder `openaec.open-infra-civiel` with its library and `plugin.toml`.
 4. Restart Open CAD Studio. The ribbon shows the tabs **GIS** and **Civiel**.
 
@@ -168,7 +168,7 @@ A new test set fetches data at 16 locations, from Dordrecht and the Vaalserberg 
 - **KLIC IMKL theme colours** now follow the PMKL-handreiking 3.0 (PMKL guideline) exactly: buisleiding gevaarlijke inhoud (pipelines with hazardous contents) #ff7f00, plus wees (orphaned) and overig (other).
 - **`GIS_SITE … RELATIEF`** sets the project location with the base point at 0,0.
 
-Test set ([tests/README.md](https://github.com/OpenAEC-Foundation/Open-Infra/blob/main/tests/README.md)):
+Test set ([tests/README.md](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/blob/main/tests/README.md)):
 - **Offline:** on every push to GitHub.
 - **Online:** weekly, with search, map image, BGT, BRK, OSM, AHN, profile and point cloud for each location.
 - **End-to-end in Open CAD Studio:** import, move, change layer, erase, undo, save and reopen, mm drawing, relative coordinates.
@@ -179,7 +179,7 @@ Known issues, in Open CAD Studio v2026.42 itself:
 
 **From 2026.44 — AHN heights, profiles and point cloud**
 
-![AHN5 point cloud in Open CAD Studio](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra/v2026.44.2/docs/images/ahn-pointcloud.png)
+![AHN5 point cloud in Open CAD Studio](https://raw.githubusercontent.com/OpenAEC-Foundation/Open-Infra-Studio/v2026.44.2/docs/images/ahn-pointcloud.png)
 
 - **Spot heights:** AHN4 ground level (DTM) or surface (DSM) in a grid of 2 to 100 m.
   - They go on `OG-HOOGTEPUNT`, with heights such as `+2,43` m NAP.
