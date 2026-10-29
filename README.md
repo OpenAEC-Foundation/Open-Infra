@@ -301,6 +301,12 @@ Length profile across the Grotekerksplein: the ground line breaks at the harbour
 
 ## Example drawing
 
+[`examples/dordrecht-3d`](examples/dordrecht-3d) is the city centre of Dordrecht in one drawing: the plan (BGT, cadastre, KLIC) and the 3D model (BGT in 3D, 3D BAG, KLIC in 3D, BRO CPTs, a street design with corridor). It comes as DWG and as IFC 4.3, with the script that builds it.
+
+| Plan | 3D | Beneath the ground |
+|---|---|---|
+| ![Plan](examples/dordrecht-3d/dordrecht-3d-plattegrond.png) | ![3D model](examples/dordrecht-3d/dordrecht-3d-3d.png) | ![KLIC and CPTs](examples/dordrecht-3d/dordrecht-3d-ondergrond-grote-kerk.png) |
+
 [`examples/dordrecht-nlcs`](examples/dordrecht-nlcs) is the existing situation around the Grote Kerk in Dordrecht. It is 300 × 250 m in RD, on an A1 sheet at 1:500.
 
 | | |
