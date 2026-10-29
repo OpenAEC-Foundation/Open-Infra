@@ -39,7 +39,8 @@ def schema_errors(f, max_errors):
 
 
 def evaluator(settings, curve):
-    fn = wrapper.map_shape(settings, curve.wrapped_data)
+    # IfcOpenShell 0.8 maps the wrapped instance; later versions take the instance itself.
+    fn = wrapper.map_shape(settings, getattr(curve, "wrapped_data", curve))
     return wrapper.function_item_evaluator(settings, fn)
 
 
