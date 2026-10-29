@@ -1,8 +1,7 @@
 //! Dutch base data drawn conform NLCS: BGT (PDOK), the cadastral map
 //! (Kadaster BRK) and KLIC deliveries. Every object lands on its NLCS layer
 //! (`STATUS-DISCIPLINE-HOOFDGROEP-OBJECT-ELEMENT`) and carries its source
-//! attributes as object data (XDATA "OPENINFRA"), like the InfraCAD Map
-//! imports.
+//! attributes as object data (XDATA "OPENINFRA").
 
 use std::collections::BTreeMap;
 use std::path::Path;

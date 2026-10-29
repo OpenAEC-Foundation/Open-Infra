@@ -1,4 +1,4 @@
-//! Open Infra — Civiel: the second ribbon tab, with Civil 3D-like tools after
+//! Open Infra — Civiel: the second ribbon tab, with civil design tools after
 //! Hakan Seven's FreeCAD Road workbench. Survey points, surfaces (TIN,
 //! contours, height analysis, earthwork), alignments (stationing, offsets,
 //! station/offset), length, design and cross sections. The engine is
@@ -18,7 +18,7 @@ static MANIFEST: PluginManifest = PluginManifest {
     id: "openaec.open-infra-civiel",
     name: "Open Infra — Civiel",
     version: env!("CARGO_PKG_VERSION"),
-    description: "Civil 3D-achtige tools: meetpunten, terrein (TIN), assen met stationering, lengte-, ontwerp- en dwarsprofielen, grondverzet. Op NLCS-lagen.",
+    description: "Civiele ontwerptools: meetpunten, terrein (TIN), assen met stationering, lengte-, ontwerp- en dwarsprofielen, grondverzet. Op NLCS-lagen.",
     api_version: ApiVersion::CURRENT,
     ribbon_order: 61,
     xdata_apps: &[bridge::XDATA_APP],
@@ -98,7 +98,7 @@ impl CadModule for CivielModule {
         GROUPS.get_or_init(|| {
             use open_infra::lang::{dutch, tr};
             let mut groups = vec![
-                // Civil 3D "Points" / Road "GeoPoints" and "Input-Output".
+                // Points (Road "GeoPoints" and "Input-Output").
                 RibbonGroup {
                     title: tr("Punten", "Points"),
                     tools: vec![
@@ -108,7 +108,7 @@ impl CadModule for CivielModule {
                         file_tool("CIV_LANDXML", "LandXML", I_LANDXML, tr("LandXML openen", "Open LandXML"), "LandXML", &["xml", "landxml"], false),
                     ],
                 },
-                // Civil 3D "Surfaces".
+                // Surfaces.
                 RibbonGroup {
                     title: tr("Oppervlak", "Surface"),
                     tools: vec![
@@ -118,7 +118,7 @@ impl CadModule for CivielModule {
                         small("CIV_VOLUME", tr("Grondverzet", "Earthworks"), I_VOLUME),
                     ],
                 },
-                // Civil 3D "Alignments".
+                // Alignments.
                 RibbonGroup {
                     title: tr("As", "Alignment"),
                     tools: vec![
@@ -127,7 +127,7 @@ impl CadModule for CivielModule {
                         small("CIV_STATION", tr("Station / offset", "Station / offset"), I_STATION),
                     ],
                 },
-                // Civil 3D "Profiles" and "Sections".
+                // Profiles and sections.
                 RibbonGroup {
                     title: tr("Profielen", "Profiles"),
                     tools: vec![
@@ -136,7 +136,7 @@ impl CadModule for CivielModule {
                         small("CIV_DWARSPROFIELEN", tr("Dwarsprofielen", "Cross sections"), I_SECTIONS),
                     ],
                 },
-                // Civil 3D "Corridors": assembly along axis and design profile.
+                // Corridors: assembly along axis and design profile.
                 RibbonGroup { title: "Corridor", tools: vec![large("CIV_CORRIDOR", "Corridor", I_CORRIDOR)] },
             ];
             // The 3D city and landscape model: open formats for everyone, the

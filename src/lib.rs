@@ -734,7 +734,7 @@ fn words(cmd: &str) -> Vec<&str> {
 }
 
 /// A drawing without an Open Infra site but with a GEODATA object (set in
-/// AutoCAD, Civil 3D or BricsCAD) gets its site from that object, once per
+/// other CAD programs) gets its site from that object, once per
 /// tab. The drawing is read on a worker through the bridge, never with
 /// `host.document()` in dispatch (that stalls dispatch on large drawings); a
 /// drawing too large for a full snapshot is skipped.

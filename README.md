@@ -11,7 +11,7 @@ Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Op
 **Worldwide:**
 
 - **GIS workbench**, modelled on the FreeCAD GIS(2BIM) workbench. Set the project location anywhere in the world, in a built-in coordinate system, automatic UTM or any EPSG code. Then pull aerial photos, WMS/WFS/XYZ layers and OpenStreetMap straight into the DWG.
-- **Civil design (second ribbon tab "Civiel")**, Civil 3D-like and after Hakan Seven's FreeCAD Road workbench. It covers:
+- **Civil design (second ribbon tab "Civiel")**, after Hakan Seven's FreeCAD Road workbench. It covers:
   - survey points and LandXML;
   - terrain (TIN, contours, height analysis);
   - alignments with stationing;
@@ -22,7 +22,7 @@ Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Op
 
 **Plus deep Dutch integration:**
 
-- **Dutch base data to NLCS**, like InfraCAD Map: BGT, cadastral map (BRK) and KLIC deliveries on NLCS layers, with object data and a finished drawing sheet. Design changes go back to the BGT as a BGT mutation (IMGeo-GML).
+- **Dutch base data to NLCS**: BGT, cadastral map (BRK) and KLIC deliveries on NLCS layers, with object data and a finished drawing sheet. Design changes go back to the BGT as a BGT mutation (IMGeo-GML).
 - **AHN heights**: spot heights, contour lines and length profiles from AHN4, and the AHN5 point cloud attached in 3D.
 - **3D city and landscape model**: the AHN terrain coloured by the aerial photo, 3D BAG buildings (LoD 1.2–2.2), the whole BGT in 3D, KLIC cables and pipes in 3D under a see-through ground, and the subsurface: BRO cone penetration tests and boreholes as columns of soil layers.
 
@@ -112,7 +112,7 @@ GIS_SERVICES ZOEK=luchtfoto CATEGORIE=aerial TYPE=WMS LON=16.37 LAT=48.21 LIMIET
 GIS_SERVICE_LOAD DIENST=w-de-by-ldbv-alkis-parzellarkarte-25832 [LAAG=<layer>] [RESOLUTIE=0.25] [LIMIET=5000]
 ```
 
-## The Civiel tab (Civil 3D-like)
+## The Civiel tab (civil design)
 
 A second plugin, `openaec.open-infra-civiel`, adds the ribbon tab **"Open Infra — Civiel"**. It shares the engine and the project location with the GIS tab. Everything goes on NLCS layers.
 
@@ -120,7 +120,7 @@ A second plugin, `openaec.open-infra-civiel`, adds the ribbon tab **"Open Infra 
 |---|---|---|
 | Punten (points) | **Punten importeren** (import points) · Punt plaatsen (place point) · Punten exporteren (export points) · LandXML | Survey points from PNEZD/PENZD/CSV files: separator, decimal comma and north/east order are detected. Points go on `OG-HOOGTEPUNT` with number, height and code. Clicked points get their ground height from the TIN or AHN. LandXML 1.x brings in points, surfaces and alignments (lines, curves, clothoid spirals). |
 | Oppervlak (surface) | **TIN maken** (create TIN) · Hoogtelijnen · Hoogteanalyse (height analysis) · Grondverzet (earthworks) | A TIN (Delaunay, longest-edge filter) from points, 3D lines, contour lines or AHN, as 3D faces on `OG-TRIANGULATIE`: status **B** for existing ground, **N** for a design. Then: exact contours on the TIN; elevation bands with a legend; cut and fill between design (N) and existing (B), or against a level. |
-| As (alignment) | **As maken** (create alignment) · As verschuiven (offset alignment) · Station / offset | An alignment from a polyline or from points of intersection with curve radii (Civil 3D *by layout*). It gets stationing `0+100` on `AM-KILOMETRERING`, tangent points BB/EB/HP on `AM-TANGENTPUNT` and radius labels. Then: offset lines; station and offset of any point. |
+| As (alignment) | **As maken** (create alignment) · As verschuiven (offset alignment) · Station / offset | An alignment from a polyline or from points of intersection with curve radii (*by layout*). It gets stationing `0+100` on `AM-KILOMETRERING`, tangent points BB/EB/HP on `AM-TANGENTPUNT` and radius labels. Then: offset lines; station and offset of any point. |
 | Profielen (profiles) | **Lengteprofiel** (length profile) · Ontwerpprofiel (design profile) · Dwarsprofielen (cross sections) | Length profile over the TIN or AHN, with stationing, heights and an alignment band. The design profile comes from PVIs or a line drawn in the profile: parabolic vertical curves (crest and sag, with L and R), and grade labels. Cross sections along the alignment in a grid of views. |
 | Corridor | **Corridor** | An assembly swept along the alignment and its design profile (or a level). Assemblies: *weg*, *fietspad*, *snelweg*, *dijk* (road, cycle path, motorway, dike); lane and shoulder widths, cross slopes, fill/cut slopes, crest and superelevation in curves (with runoff) are all adjustable. The corridor builds: daylight to the ground; a design TIN (status N); 3D feature lines (asphalt edge, shoulder, toe and crest of slope); cut and fill per section with average-end-area volumes and a mass balance (CSV); optional section views with the design. |
 | 3D-model (3D model) | **3D BAG** · Terrein + luchtfoto (terrain + aerial photo) · BGT naar 3D (BGT to 3D) | See below. |

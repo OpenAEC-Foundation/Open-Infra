@@ -2283,7 +2283,7 @@ impl App {
                 Err(e) => self.err(e),
             }
         }
-        page_header(ui, "axis", "Civiel — instellingen", "Civil 3D-achtige tools op het tabblad Civiel: meetpunten, terrein (TIN), assen, profielen en grondverzet. De instellingen gelden ook voor de knoppen in het lint.");
+        page_header(ui, "axis", "Civiel — instellingen", "Civiele ontwerptools op het tabblad Civiel: meetpunten, terrein (TIN), assen, profielen en grondverzet. De instellingen gelden ook voor de knoppen in het lint.");
         let o = &mut self.civ.opt;
         let num = |ui: &mut egui::Ui, v: &mut f64, lo: f64, hi: f64, speed: f64, suffix: &str| {
             ui.add(egui::DragValue::new(v).range(lo..=hi).speed(speed).suffix(suffix));

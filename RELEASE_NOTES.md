@@ -2,7 +2,7 @@ Open Infra — open-source GIS and civil design for **Open CAD Studio v2026.43**
 
 **Note:** this release is built for Open CAD Studio **v2026.43**. A plugin for v2026.42 does not load in v2026.43, and the other way round. So update Open Infra together with Open CAD Studio.
 
-**New — Civiel tab (Civil 3D-like, after Hakan's FreeCAD Road workbench)**
+**New — Civiel tab (after Hakan's FreeCAD Road workbench)**
 
 - **Points:**
   - survey points from PNEZD/PENZD/CSV; the separator, decimal comma and N/E order are detected automatically;

@@ -415,7 +415,7 @@ def t_volume(a):
     return OCS.run(f"CIV_VOLUME {_kv(CEL=a.get('cell'))}")
 
 
-@tool("civ_alignment", "Create an axis (alignment) with stationing, tangent points and radii: through points of intersection with curve radii (Civil 3D by layout), or from a line by handle.",
+@tool("civ_alignment", "Create an axis (alignment) with stationing, tangent points and radii: through points of intersection with curve radii (by layout), or from a line by handle.",
       {"pis": PTS, "radii": {"type": "array", "items": NUM}, "handle": STR, "name": STR, "start_station": NUM})
 def t_alignment(a):
     if a.get("pis"):
@@ -452,7 +452,7 @@ def t_sections(a):
     return OCS.run(f"CIV_DWARSPROFIELEN {_kv(AS=a.get('axis'), PLAATS=a.get('at') and _pt(a['at']), OM=a.get('every'), LINKS=a.get('left'), RECHTS=a.get('right'), DOVERHOGING=a.get('exaggeration'), PERRIJ=a.get('per_row'))}")
 
 
-@tool("civ_corridor", "Corridor (Civil 3D): an assembly swept along an axis and its design profile (or a level / height above ground), daylight to the ground, design TIN (N), feature lines, cut/fill per section and volumes; optional section views.",
+@tool("civ_corridor", "Corridor: an assembly swept along an axis and its design profile (or a level / height above ground), daylight to the ground, design TIN (N), feature lines, cut/fill per section and volumes; optional section views.",
       {"axis": AXIS, "assembly": {"type": "string", "enum": ["weg", "fietspad", "snelweg", "dijk"]}, "level": NUM, "above_ground": NUM,
        "lane_width": NUM, "shoulder_width": NUM, "cross_slope_pct": NUM, "shoulder_slope_pct": NUM, "fill_slope": NUM, "cut_slope": NUM,
        "crest_half_width": NUM, "superelevation_pct": NUM, "reach": NUM, "frequency": NUM, "sections": {"type": "boolean"}, "sections_at": PT})
