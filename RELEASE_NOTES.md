@@ -5,7 +5,7 @@ Open Infra Studio — open-source GIS and civil design for **Open CAD Studio v20
 **Installing**
 
 1. Update Open CAD Studio to [v2026.43](https://github.com/HakanSeven12/OpenCADStudio/releases/tag/v2026.43).
-2. **GIS plugin:** in Open CAD Studio, run `PLUGINS` (Plugin Manager), choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra-Studio`, pick this release and click *Install*. By hand: put `openaec.open-infra-<platform>` and `plugin.toml` from this release in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
+2. **GIS plugin:** in Open CAD Studio, run `PLUGINS` (Plugin Manager), pick **Open Infra Studio** from the list (or choose *Add a repository* and enter `OpenAEC-Foundation/Open-Infra-Studio`), pick this release and click *Install*. By hand: put `openaec.open-infra-<platform>` and `plugin.toml` from this release in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 3. **Civiel plugin:** unzip `open-infra-civiel-<platform>.zip` into `<config>/OpenCADStudio/plugins/`. That gives the folder `openaec.open-infra-civiel` with its library and `plugin.toml`.
 4. Restart Open CAD Studio. The ribbon shows the tabs **GIS** and **Civiel**.
 

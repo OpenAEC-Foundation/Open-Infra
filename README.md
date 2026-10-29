@@ -474,7 +474,7 @@ Open CAD Studio runs plugins out-of-process and has no dialog API for plugins, s
 
 ## Installing
 
-Use Open CAD Studio's **Plugin Manager** (`PLUGINS`): choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra-Studio` and install the [latest release](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/releases/latest). This installs the GIS plugin.
+Use Open CAD Studio's **Plugin Manager** (`PLUGINS`): Open Infra Studio is in its list of plugins. Pick it and install the [latest release](https://github.com/OpenAEC-Foundation/Open-Infra-Studio/releases/latest); in an older Open CAD Studio, choose *Add a repository* and enter `OpenAEC-Foundation/Open-Infra-Studio`. This installs the GIS plugin.
 
 Or install by hand:
 1. Download `openaec.open-infra-<platform>` and `plugin.toml` from the release.
