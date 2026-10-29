@@ -30,6 +30,7 @@ The libraries are signed: Authenticode with a timestamp on Windows (publisher Im
 
 **Fixed**
 
+- **IFC export (2026.44.5):** the contents of the cross-section and length-profile views (axis, ground and design lines, texts) went into the IFC, with an extra alignment per cross section. They now stay out; a corridor's 3D axis line is part of the IfcRoad.
 - **KLIC in 3D:** appurtenances (joints) and manholes were empty meshes, without faces, so they did not show. They are now closed columns with a lid and a base, also visible from above. Run `CIV_KLIC3D` again for an existing model.
 
 **Other changes**
