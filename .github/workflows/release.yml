@@ -56,6 +56,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag || github.ref }}
+      - name: Version matches the tag
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        run: |
+          want="${RELEASE_TAG#v}"
+          for f in Cargo.toml civiel/Cargo.toml plugin.toml civiel/plugin.toml; do
+            got=$(grep -m1 -E '^version = ' "$f" | cut -d'"' -f2)
+            [ "$got" = "$want" ] || { echo "::error::$f has version $got, the tag is $RELEASE_TAG: run scripts/version.sh $want"; exit 1; }
+          done
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}

@@ -489,6 +489,7 @@ Release numbers follow Open CAD Studio's calendar numbering. The current code is
 
 ```bash
 ./scripts/install.sh      # build both plugins and install them into ~/.config/OpenCADStudio/plugins/
+./scripts/version.sh      # set both plugins to JJJJ.W.N: this ISO week, the next free number (the release refuses a tag that differs)
 cargo test --lib -p open-infra   # engine tests (CRS, clipping, NLCS, TIN, alignments, corridor, 3D BAG, …)
 cargo test --test locaties                          # location test set, offline
 cargo test --test locaties -- --ignored --nocapture # fetch real data at 16 locations, report in target/locatietest
