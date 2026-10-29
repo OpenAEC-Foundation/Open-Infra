@@ -47,14 +47,20 @@ jobs:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
       - run: cargo test --lib --locked -p open-infra
       # Two plugins from one engine: separate builds, so the Civiel plugin
-      # links the engine without the GIS plugin's entry points.
+      # links the engine without the GIS plugin's entry points. That second
+      # build rewrites target/release/<gis lib> without them, so copy the GIS
+      # library before it runs.
       - run: cargo build --release --locked -p open-infra
+      - name: Stage the GIS library
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp "target/release/${{ matrix.lib }}" "dist/${{ matrix.asset }}"
       - run: cargo build --release --locked -p open-infra-civiel
       - name: Stage release assets
         shell: bash
         run: |
-          mkdir -p dist civiel-pkg/openaec.open-infra-civiel
-          cp "target/release/${{ matrix.lib }}" "dist/${{ matrix.asset }}"
+          mkdir -p civiel-pkg/openaec.open-infra-civiel
           acadrust_source=$(awk '/^name = "acadrust"$/{f=1} f&&/^source = /{gsub(/^source = "|"$/,""); print; exit}' Cargo.lock)
           stamp() { sed -e "s|__RUSTC_VERSION__|$(rustc --version)|" -e "s|__ACADRUST_SOURCE__|$acadrust_source|" "$1"; }
           stamp plugin.toml > dist/plugin.toml

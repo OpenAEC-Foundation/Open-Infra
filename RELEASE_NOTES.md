@@ -2,6 +2,15 @@ Open Infra — open-source GIS and civil design for **Open CAD Studio v2026.43**
 
 **Note:** this release is built for Open CAD Studio **v2026.43**. A plugin for v2026.42 does not load in v2026.43, and the other way round. So update Open Infra together with Open CAD Studio.
 
+**Installing**
+
+1. Update Open CAD Studio to [v2026.43](https://github.com/HakanSeven12/OpenCADStudio/releases/tag/v2026.43).
+2. **GIS plugin:** in Open CAD Studio, run `PLUGINS` (Plugin Manager), choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra`, pick this release and click *Install*. By hand: put `openaec.open-infra-<platform>` and `plugin.toml` from this release in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
+3. **Civiel plugin:** unzip `open-infra-civiel-<platform>.zip` into `<config>/OpenCADStudio/plugins/`. That gives the folder `openaec.open-infra-civiel` with its library and `plugin.toml`.
+4. Restart Open CAD Studio. The ribbon shows the tabs **GIS** and **Civiel**.
+
+`<config>` is `%APPDATA%` on Windows, `~/.config` on Linux and `~/Library/Application Support` on macOS.
+
 **New — international first**
 
 - The ribbons put the worldwide tools first: location, maps & data (services worldwide, WMS/TMS, WFS, OpenStreetMap, files), elevation, output, library. Everything Dutch sits in one compact **Netherlands** group of menus on the GIS tab and one **3D Netherlands** menu on the Civiel tab.
@@ -99,8 +108,6 @@ Open Infra — open-source GIS and civil design for **Open CAD Studio v2026.43**
 - For scripts and agents: `GIS_SERVICES ZOEK=… [CATEGORIE=] [TYPE=] [HIER | LON= LAT=]` returns the matches as JSON. `GIS_SERVICE_LOAD DIENST=<id> [LAAG=]` loads one layer. The MCP server gains the tools `gis_services` and `gis_service_load`.
 - `assets/servers/world.json` now carries each service's coordinate systems, provider, licence, coverage and a WGS 84 coverage box. `tools/import_gis2bim_servers.py` derives the box from the state, province or city the coverage names. Service ids are unchanged.
 - Reprojection: a WMS layer without the project CRS, Web Mercator or WGS 84 is now requested in a system that transforms, and an EPSG code that is not built in is loaded once from epsg.io. A WFS feature type that lists neither the project CRS nor WGS 84 is requested in a system it does list. Layer extents are now read from GetCapabilities, and WMS 1.1.1 capabilities with a DOCTYPE are no longer refused.
-
-**Verder**
 
 **New — KLIC in 3D under a see-through ground**
 

@@ -389,14 +389,16 @@ Open CAD Studio runs plugins out-of-process and has no dialog API for plugins, s
 
 ## Installing
 
-Use Open CAD Studio's **Plugin Manager** (`PLUGINS`): choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra` and install the [latest release](https://github.com/OpenAEC-Foundation/Open-Infra/releases/latest).
+Use Open CAD Studio's **Plugin Manager** (`PLUGINS`): choose *Add a repository*, enter `OpenAEC-Foundation/Open-Infra` and install the [latest release](https://github.com/OpenAEC-Foundation/Open-Infra/releases/latest). This installs the GIS plugin.
 
 Or install by hand:
 1. Download `openaec.open-infra-<platform>` and `plugin.toml` from the release.
 2. Put them in `<config>/OpenCADStudio/plugins/openaec.open-infra/`.
 3. Restart Open CAD Studio.
 
-Release numbers follow Open CAD Studio's calendar numbering. The current code is built for **Open CAD Studio v2026.43** (plugin API 13, opencadcodec `24b037a`, rustc 1.99.1); release 2026.44.2 was for v2026.42. The host only loads a plugin built against its own opencadcodec revision and rustc, so update the plugin together with Open CAD Studio.
+The Civiel plugin comes as `open-infra-civiel-<platform>.zip` in the same release: unzip it into `<config>/OpenCADStudio/plugins/` (it holds the folder `openaec.open-infra-civiel`) and restart. `<config>` is `%APPDATA%` on Windows, `~/.config` on Linux and `~/Library/Application Support` on macOS.
+
+Release numbers follow Open CAD Studio's calendar numbering. The current code is built for **Open CAD Studio v2026.43** (plugin API 13, opencadcodec `24b037a`, rustc 1.99.1), from release 2026.44.3 on; 2026.44.2 and earlier were for v2026.42. The host only loads a plugin built against its own opencadcodec revision and rustc, so update the plugin together with Open CAD Studio.
 
 ## Building
 
