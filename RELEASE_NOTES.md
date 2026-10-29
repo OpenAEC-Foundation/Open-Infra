@@ -45,6 +45,7 @@ The libraries are signed: Authenticode with a timestamp on Windows (publisher Im
 
 **Fixed**
 
+- **KLIC in 3D:** appurtenances (joints) and manholes were empty meshes, without faces, so they did not show. They are now closed columns with a lid and a base, also visible from above. Run `CIV_KLIC3D` again for an existing model.
 - `GIS_SITE` with a coordinate system that comes from epsg.io kept the previous location's coordinates.
 - Services that answer in ISO-8859-1 (e.g. the Spanish cadastre) were refused.
 - A new map image went behind the older ones; now the newest map lies on top (a cadastre over the photo), behind the vectors.
