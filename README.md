@@ -26,6 +26,10 @@ Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Op
 - **AHN heights**: spot heights, contour lines and length profiles from AHN4, and the AHN5 point cloud attached in 3D.
 - **3D city and landscape model**: the AHN terrain coloured by the aerial photo, 3D BAG buildings (LoD 1.2–2.2), the whole BGT in 3D, KLIC cables and pipes in 3D under a see-through ground, and the subsurface: BRO cone penetration tests and boreholes as columns of soil layers.
 
+[![Open Infra in one minute: watch the video](docs/video/open-infra-poster.jpg)](docs/video/open-infra.mp4)
+
+<sub>Open Infra in one minute (MP4, 64 s): the application and its 3D model, 2D drawings to NLCS, map services in Paris, Cologne and Zurich, historical maps of the Netherlands, KLIC and CPTs under a see-through ground. Click the image to play.</sub>
+
 ![Example: existing situation around the Grote Kerk in Dordrecht, A1 1:500](examples/dordrecht-nlcs/dordrecht-grote-kerk-nlcs.png)
 
 <sub>[Example drawing](examples/dordrecht-nlcs): BGT, cadastre and a KLIC delivery around the Grote Kerk in Dordrecht. A1 at 1:500, made with five commands. Available as DWG, PDF and PNG.</sub>
