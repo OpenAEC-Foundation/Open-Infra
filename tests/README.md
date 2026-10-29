@@ -135,7 +135,7 @@ In CI gebeurt dat bij elke push.
 
 ```sh
 cargo test --lib -p open-infra ifc
-pip install ifcopenshell
+pip install ifcopenshell pytest
 python3 tests/ifc_validate.py target/ifc-test/voorbeeld.ifc
 cargo test --release --test ifc_dwg -- --ignored --nocapture
 OI_IFC_DWG=docs/video/bron/data/dordrecht-showcase.dwg cargo test --release --test ifc_dwg -- --ignored --nocapture

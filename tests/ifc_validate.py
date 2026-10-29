@@ -10,7 +10,8 @@
    between them).
 3. A summary of the classes, georeference and property sets.
 
-Exits 1 when anything fails. Needs `pip install ifcopenshell` (0.8 or later).
+Exits 1 when anything fails. Needs `pip install ifcopenshell pytest` (IfcOpenShell
+0.8 or later; its EXPRESS rule checker uses pytest).
 """
 
 import argparse
