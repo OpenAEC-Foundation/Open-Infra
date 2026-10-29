@@ -389,7 +389,8 @@ impl App {
             ui.horizontal(|ui| {
                 ui.label(RichText::new(tr("Andere dienst (URL)", "Other service (URL)")).weak());
                 for k in [ServerKind::Wms, ServerKind::Wfs, ServerKind::Xyz] {
-                    ui.radio_value(&mut self.svc.url_kind, k, kind_label(k));
+                    // Not just "WMS": the type filter above has those names.
+                    ui.radio_value(&mut self.svc.url_kind, k, format!("{} {}", tr("als", "as"), kind_label(k)));
                 }
                 ui.add(egui::TextEdit::singleline(&mut self.svc.url).hint_text("https://…/wms  ·  https://…/wfs  ·  https://…/{z}/{x}/{y}.png").desired_width(ui.available_width() - 90.0));
                 if ui.add_enabled(!self.svc.url.trim().is_empty(), egui::Button::new(tr("Openen", "Open"))).clicked() {
