@@ -449,7 +449,12 @@ fn classify(ln: Option<&LayerName>, layer: &str, data: &Data, geo: &Geo) -> Resu
     Ok(match g {
         "AL" if o == "VERWIJZING_DOORSNEDE" => annotation("USERDEFINED", ot),
         "AL" => return Err("tekenblad en profielkader"),
-        "AM" if o.starts_with("AS") && !is_mesh && matches!(geo, Geo::Curve { .. }) && get(data, "verschuiving_m").is_none() && ln.element == "G" => {
+        "AM" if o.starts_with("AS")
+            && !is_mesh
+            && matches!(geo, Geo::Curve { .. })
+            && ln.element == "G"
+            && ["verschuiving_m", "corridor", "ontwerpprofiel"].iter().all(|k| get(data, k).is_none()) =>
+        {
             Class { role: Role::Axis, ..class("IfcAlignment", None, ot) }
         }
         "AM" | "ZZ" | "KG" => annotation("USERDEFINED", ot),
@@ -904,13 +909,33 @@ impl<'a, W: Write> Exporter<'a, W> {
         let fr = self.fr;
         // Length profiles and cross sections are views in their own frame
         // (AL-PROFIELBALK), not objects in the world: leave their contents out.
+        // A frame is a closed polyline, or one that returns to its start.
         let frames: Vec<[f64; 4]> = doc
             .model_space_entities()
-            .filter(|e| matches!(e, EntityType::LwPolyline(l) if l.is_closed))
+            .filter(|e| matches!(e, EntityType::LwPolyline(l) if l.is_closed || is_ring(l)))
             .filter(|e| nlcs::parse_layer(&e.common().layer).is_ok_and(|ln| ln.group == "AL" && ln.object == "PROFIELBALK"))
             .filter_map(|e| geometry(e, &fr).ok().map(|g| g.bbox()))
             .collect();
-        let inside = |b: &[f64; 4]| frames.iter().any(|r| b[0] >= r[0] - 1e-6 && b[1] >= r[1] - 1e-6 && b[2] <= r[2] + 1e-6 && b[3] <= r[3] + 1e-6);
+        // Views lie beside the project area: lines and texts wholly outside
+        // it and near a frame (a design line above the ground's height
+        // range, a PVI tick) belong to the view. Views hold no meshes.
+        let project = self.src.site.map(|s| {
+            let r = s.drawing_rect(fr.f);
+            let (a, b) = (fr.p(r[0], r[1], 0.0), fr.p(r[2], r[3], 0.0));
+            [a[0].min(b[0]), a[1].min(b[1]), a[0].max(b[0]), a[1].max(b[1])]
+        });
+        let inside = |b: &[f64; 4], mesh: bool| {
+            let within = frames.iter().any(|r| b[0] >= r[0] - 1e-6 && b[1] >= r[1] - 1e-6 && b[2] <= r[2] + 1e-6 && b[3] <= r[3] + 1e-6);
+            let beside = |a: &[f64; 4]| b[2] < a[0] || b[0] > a[2] || b[3] < a[1] || b[1] > a[3];
+            let near = || {
+                let c = [(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0];
+                frames.iter().any(|r| {
+                    let (mx, my) = ((r[2] - r[0]) * 0.25, (r[3] - r[1]) * 0.25);
+                    c[0] >= r[0] - mx && c[0] <= r[2] + mx && c[1] >= r[1] - my && c[1] <= r[3] + my
+                })
+            };
+            within || (!mesh && project.as_ref().is_some_and(beside) && near())
+        };
 
         let mut groups: Vec<Group> = Vec::new();
         let mut by_key: HashMap<String, usize> = HashMap::new();
@@ -935,6 +960,11 @@ impl<'a, W: Write> Exporter<'a, W> {
             let layer = e.common().layer.clone();
             let ln = nlcs::parse_layer(&layer).ok();
             let data = data_of(e);
+            // The design profile is drawn in its length profile; the alignment carries it.
+            if get(&data, "ontwerpprofiel").is_some() {
+                skip("profiel- en dwarsprofielweergave");
+                continue;
+            }
             let mut cl = match classify(ln.as_ref(), &layer, &data, &geo) {
                 Ok(c) => c,
                 Err(r) => {
@@ -942,7 +972,7 @@ impl<'a, W: Write> Exporter<'a, W> {
                     continue;
                 }
             };
-            if !frames.is_empty() && !(ln.as_ref().is_some_and(|l| l.group == "AL")) && inside(&geo.bbox()) {
+            if !frames.is_empty() && !(ln.as_ref().is_some_and(|l| l.group == "AL")) && inside(&geo.bbox(), matches!(geo, Geo::Mesh { .. })) {
                 skip("profiel- en dwarsprofielweergave");
                 continue;
             }
@@ -1333,6 +1363,11 @@ impl<'a, W: Write> Exporter<'a, W> {
     }
 }
 
+fn is_ring(l: &ocs_plugin_api::host::codec::LwPolyline) -> bool {
+    let (Some(a), Some(b)) = (l.vertices.first(), l.vertices.last()) else { return false };
+    l.vertices.len() >= 4 && (a.location.x - b.location.x).abs() < 1e-9 && (a.location.y - b.location.y).abs() < 1e-9
+}
+
 fn area(b: &[f64; 4]) -> f64 {
     (b[2] - b[0]).max(0.0) * (b[3] - b[1]).max(0.0)
 }
@@ -1517,6 +1552,13 @@ pub mod tests {
             &[("ontwerpprofiel", "Ontwerpprofiel A1"), ("as", "A1"), ("pvi", "0.000:10.000;100.000:12.000;180.000:11.000"), ("boog_m", "40")],
         ));
         add(on(lw(&[[910.0, 995.0], [1090.0, 998.0]], false, 0.0), &nl("GW", "MAAIVELD", Element::G, Status::B), &[]));
+        // A cross-section view: its frame returns to its start, open; the axis line inside.
+        add(on(lw(&[[1300.0, 990.0], [1360.0, 990.0], [1360.0, 1020.0], [1300.0, 1020.0], [1300.0, 990.0]], false, 0.0), &nl("AL", "PROFIELBALK", Element::G, Status::N), &[]));
+        add(on(lw(&[[1330.0, 995.0], [1330.0, 1018.0]], false, 0.0), &nl("AM", "AS", Element::G, Status::N), &[]));
+        // A PVI tick just above the length profile's frame (the design lies higher than the ground).
+        add(on(lw(&[[1010.0, 1052.0], [1010.0, 1056.0]], false, 0.0), &nl("AM", "AS", Element::G, Status::N), &[]));
+        // The corridor's axis as a 3D feature line: part of the road, not a second alignment.
+        add(on(line3(&[[0.0, 0.0, 10.0], [100.0, 0.0, 12.0]]), &nl("AM", "AS", Element::G, Status::N), &[("corridor", "Corridor A1"), ("as", "A1")]));
         add(on(mesh(&[[0.0, -20.0, 1.0], [200.0, -20.0, 1.5], [200.0, 100.0, 2.0], [0.0, 100.0, 1.2]], &[&[0, 1, 2], &[0, 2, 3]], None), &nl("OG", "TRIANGULATIE", Element::G, Status::B), &[("bron", "TIN")]));
         let pand = [("bron", "3D BAG LoD 2.2"), ("identificatie", "NL.IMBAG.Pand.0505100000012345"), ("bouwjaar", "1470"), ("maaiveld_m", "1.20")];
         let bebouwing = nl("OG", "BEBOUWING", Element::G, Status::B);
@@ -1558,6 +1600,7 @@ pub mod tests {
             crs_name: "Amersfoort / RD New".into(),
             origin_e: 105000.0,
             origin_n: 425000.0,
+            absolute: false,
             ..Site::default()
         }
     }
@@ -1590,7 +1633,7 @@ pub mod tests {
         assert!(ifc.contains("IFCRELVOIDSELEMENT("), "the excavation cuts the ground");
         assert!(n("IfcAnnotation") >= 4, "{:?}", r.classes);
         assert_eq!(r.skipped.get("kaartbeeld (raster)"), Some(&1));
-        assert_eq!(r.skipped.get("profiel- en dwarsprofielweergave"), Some(&2), "{:?}", r.skipped);
+        assert_eq!(r.skipped.get("profiel- en dwarsprofielweergave"), Some(&4), "{:?}", r.skipped);
         assert_eq!(r.crs.as_deref(), Some("EPSG:28992"));
         for needle in [
             "FILE_SCHEMA(('IFC4X3_ADD2'));",
