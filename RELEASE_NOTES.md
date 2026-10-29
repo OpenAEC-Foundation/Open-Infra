@@ -2,6 +2,30 @@ Open Infra — open-source GIS and civil design for **Open CAD Studio v2026.43**
 
 **Note:** this release is built for Open CAD Studio **v2026.43**. A plugin for v2026.42 does not load in v2026.43, and the other way round. So update Open Infra together with Open CAD Studio.
 
+**New — international first**
+
+- The ribbons put the worldwide tools first: location, maps & data (services worldwide, WMS/TMS, WFS, OpenStreetMap, files), elevation, output, library. Everything Dutch sits in one compact **Netherlands** group of menus on the GIS tab and one **3D Netherlands** menu on the Civiel tab.
+- **Dutch modules on/off** next to the language choice: off hides those menus for users elsewhere.
+- **Language:** Open Infra follows Open CAD Studio's interface language and falls back to English; every ribbon label is in English and Dutch.
+- The workbench windows have their own taskbar icon instead of a generic one.
+
+**New — historical and thematic maps**
+
+- **Topotijdreis:** every Dutch topographic map from 1815 to 2014 (Kadaster), read from ArcGIS tile caches in RD: `GIS_Q_TIJDREIS` or `GIS_Q_SERVER JAAR=1850`.
+- **HisGIS:** the cadastral maps (minuutplans) of 1832: `GIS_Q_HISGIS`.
+- **Natura 2000, the BRO geomorphological map and soil map** as one-click imports.
+- `GIS_Q_SERVER <id> [LAAG=] [RES=]` loads any server of the catalogue by id (MCP tool `gis_server`).
+- `CIV_BAG3D RAMEN=nee`: buildings with plain facades, without windows.
+
+**Fixed**
+
+- `GIS_SITE` with a coordinate system that comes from epsg.io kept the previous location's coordinates.
+- Services that answer in ISO-8859-1 (e.g. the Spanish cadastre) were refused.
+- A new map image went behind the older ones; now the newest map lies on top (a cadastre over the photo), behind the vectors.
+- Transparent PNG maps showed a white background.
+- A WMS default layer given as a list (`a,b`) took only the first layer.
+- A quick import over a large area (tens of km) asked for billions of pixels and hung; the resolution now follows the area.
+
 **New — Civiel tab (after Hakan's FreeCAD Road workbench)**
 
 - **Points:**

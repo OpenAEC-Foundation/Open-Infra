@@ -30,6 +30,23 @@ Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Op
 
 <sub>[Example drawing](examples/dordrecht-nlcs): BGT, cadastre and a KLIC delivery around the Grote Kerk in Dordrecht. A1 at 1:500, made with five commands. Available as DWG, PDF and PNG.</sub>
 
+## What makes Open Infra different
+
+Features you will not easily find together in one tool, let alone a free one:
+
+1. **GIS and civil design in one CAD drawing.** No export–import between a GIS program and a CAD program: map services, open data, terrain, alignments, corridors and drawing sheets all live in the DWG.
+2. **600+ map services in 45 countries, searchable.** A built-in catalogue of checked public WMS, WFS and tile services without API keys. Search by place or theme in several languages (*cadastre*, *kadaster*, *Flurstücke*, *cadastro*), see what covers the place on the map, and load it reprojected into the project's coordinate system.
+3. **Any coordinate system.** Built-in systems, automatic UTM worldwide, any EPSG code fetched from epsg.io once; WMS, WFS and tile data are reprojected on the fly.
+4. **Open 3D city models from anywhere.** CityGML 1.0–3.0 and CityJSON 1.x/2.0, streamed object by object and filtered to the project area while reading: a 97 MB city tile loads in under two seconds.
+5. **Underground in 3D.** KLIC cables and pipes as tubes at their (assumed) depth, BRO cone penetration tests and boreholes as soil columns classified with Robertson (2010), and a see-through ground to look at it all from below.
+6. **History at the click of a button.** Every Dutch topographic map since 1815 (Topotijdreis) and the cadastral maps of 1832 (HisGIS) as underlays, next to Natura 2000, the geomorphological map and the soil map.
+7. **A full 3D city model in one command.** Terrain coloured by the aerial photo, every building from 3D BAG (roof colours from the photo, walls by year of construction), the whole BGT in 3D, trees, water at its level.
+8. **Drawing-standard aware.** Every object lands on its NLCS layer with its source attributes as object data; NLCS check and repair, quantities per object, and design changes back to the BGT as an IMGeo-GML mutation.
+9. **Civil design after the FreeCAD Road workbench.** Survey points, LandXML, TIN, alignments with stationing, length, design and cross sections, corridors with daylight and a mass balance.
+10. **Agent-ready.** Every command takes arguments and answers in JSON; an MCP server exposes 38 tools, so an AI assistant can build whole models.
+11. **International first, Dutch when you need it.** English and Dutch interface following Open CAD Studio's language; the Dutch modules sit in one group and can be switched off.
+12. **Free and open source (GPL-3.0).** No licence fees, no lock-in, built on the open-source Open CAD Studio.
+
 ## At a glance
 
 | | |
@@ -41,7 +58,7 @@ Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Op
 | **Map backgrounds** | 5: OpenStreetMap, PDOK BRT (standard and grey), PDOK aerial photo, Sentinel-2 |
 | **One-click imports** | 11 OpenStreetMap themes, 11 PDOK datasets, 11 quick buttons |
 | **Civil design** | survey points (PNEZD/PENZD/CSV), LandXML 1.x, TIN, alignments, length, design and cross sections, corridors with 4 assemblies, earthworks with a mass balance |
-| **Automation** | arguments and JSON results for every `CIV_` command and the GIS data commands; MCP server with about 30 tools |
+| **Automation** | arguments and JSON results for every `CIV_` command and the GIS data commands; MCP server with 38 tools |
 | **Commands** | 35 `GIS_*` commands for the ribbon, scripts and automation |
 | **Code** | about 6,900 lines of Rust, 17 unit tests; Linux, Windows and macOS builds |
 
@@ -63,26 +80,29 @@ Open, scriptable GIS and civil design inside CAD. Open Infra is a plugin for [Op
 
 ![Open CAD Studio with the Open Infra ribbon tab and the example drawing](docs/images/open-cad-studio-open-infra.png)
 
-The ribbon tab **"Open Infra — GIS"**:
+The ribbon tab **"Open Infra — GIS"** puts the worldwide tools first. Everything that only works in the Netherlands sits in one compact group of menus, and can be switched off (see [Language and Dutch modules](#language-and-dutch-modules)). Labels follow the interface language; the Dutch label is given in brackets.
 
 | Group | Button | What it does |
 |---|---|---|
-| Webservices | **Geo-locatie** (geolocation) | Set the project location. Click it on the map, or search an address, street, place, parcel, `lat, lon` or RD `x y`. Suggestions appear while you type (PDOK); Enter also searches worldwide (Nominatim). Each hit shows its kind, name and place; use the arrow keys and Enter to pick. Choose the coordinate system, draw or type the bounding box, and choose absolute or relative coordinates. Optionally place a base-point marker and import an aerial photo. The location is stored in the drawing (NOD XRecord `OPENINFRA/SITE`). |
-| | **WMS / TMS** | Choose a server and browse its layers. **Test** shows a preview on the map; **OK en importeren** (OK and import) places IMAGE underlays behind the drawing. |
-| | **WFS** | Choose a server and feature type. **Test** draws the objects on the map. Then set the label attribute, colour and clipping. |
-| | **Services wereldwijd** | The service browser: search every known WMS, WFS and tile service in the world, see what covers the place on the map, and load a layer (see below). |
+| Location | **Geolocation** (Geo-locatie) | Set the project location. Click it on the map, or search an address, street, place, parcel, `lat, lon` or RD `x y`; worldwide via Nominatim, in the Netherlands also PDOK. Choose the coordinate system (built in, automatic UTM, or any EPSG code via epsg.io), draw or type the bounding box, and choose absolute or relative coordinates. The location is stored in the drawing (NOD XRecord `OPENINFRA/SITE`). |
+| | **Area** · **Point info** · **Coordinates** | Pick the import area in the drawing, read a point's coordinates, convert coordinates. |
+| Maps & data | **Services worldwide** | The service browser: search 600+ WMS, WFS and tile services in 45 countries, see what covers a place, and load a layer (see below). |
+| | **WMS / TMS** · **WFS** | Any server: browse its layers or feature types, **Test** on the map, then import as image underlay or as vectors with attributes. Historical maps too: Topotijdreis (every Dutch topographic map 1815–2014, an ArcGIS tile cache in RD) and the HisGIS cadastral maps of 1832. |
 | | **OpenStreetMap** | Worldwide themes: buildings, roads, rail, water, civil structures, land use, cables and pipelines, fences, house numbers. |
-| | **PDOK (NL)** | Several Dutch base registers in one go: aerial photo, cadastral map, AHN, BAG, parcels, NWB road sections and hectometre markers, ProRail tracks and kilometre markers, waterways. |
-| Snel importeren (quick import) | **Kaartbeeld ▾ / Vectordata ▾** (map image / vector data) | One click, no window, using the saved location. |
-| Basisdata NL (NLCS) (Dutch base data) | **BGT · BRK · KLIC** | The NLCS page of the workbench (see below). |
-| | **BGT** · **Kadaster** | One click: the current BGT, or cadastral boundaries and parcel numbers, on NLCS layers. |
-| | **KLIC** | Open a KLIC delivery: the Kadaster zip or `GI_gebiedsinformatielevering_*.xml`. It is shown on the map, then drawn. |
-| | **Tekenblad** (drawing sheet) | NLCS drawing sheet around the import area: frame, title block, legend of the layers used, north arrow, scale bar and RD coordinate crosses. |
-| Hoogte (AHN) (height) | **AHN** | The AHN page of the workbench: options, and **Test** to show contour lines on the map. |
-| | **Hoogtepunten** · **Hoogtelijnen** (spot heights · contour lines) | Spot heights in a grid, and contour lines (minor/major, labelled) from AHN4, at their true elevation. |
-| | **Profiel** (profile) | Length profile along a selected polyline or picked points: ground (DTM) and optionally surface (DSM), height grid, profile band with distances and heights, and section line A–A' in plan. |
-| | **Puntenwolk** (point cloud) | The AHN5 (or AHN4) point cloud of the import area, coloured by class, height or RGB. It is written as `.rcs` next to the drawing and attached; it shows in a 3D visual style. |
-| Hulpmiddelen (tools) | **Gebied** (area) · **Punt info** (point info) · **Coördinaten** (coordinates) · **Servers** | Pick the import area in the drawing, read a point's coordinates, convert coordinates, and manage presets and your own WMS/WFS/XYZ servers. |
+| | **Quick (world)** ▾ | One click: OpenStreetMap map, Sentinel-2 satellite image, OpenStreetMap vectors. |
+| | **Open file** | GeoJSON, Shapefile, GeoPackage, KML/KMZ, GPX, GML, CSV, GeoTIFF, ASC, JPG/PNG with world file, LAS/LAZ. |
+| Elevation | **Spot heights** · **Contours** · **Profile** | Heights from AHN4 in the Netherlands and from Terrain Tiles elsewhere: spot heights in a grid, labelled contour lines, and length profiles with a band of distances and heights. |
+| Netherlands | **Dutch base data** ▾ | BGT · BRK · KLIC window, BGT import and update, cadastre, KLIC delivery, GWSW sewers, BRO CPTs and boreholes, the AHN window and point cloud, the PDOK catalogue. |
+| | **Dutch maps** ▾ · **Dutch vector data** ▾ | One click: aerial photo, cadastral map, AHN, Natura 2000, geomorphological map, soil map, HisGIS 1832, Topotijdreis; BAG, parcels, NWB roads and hectometre posts, ProRail tracks. |
+| | **NLCS** ▾ | NLCS check and repair, quantities, bill of quantities, BGT mutation. |
+| Output | **Drawing sheet** (Tekenblad) · Servers | Drawing sheet around the import area: frame, title block, legend of the layers used, north arrow, scale bar and coordinate crosses. Manage presets and your own WMS/WFS/XYZ servers. |
+| Library | **Vehicles** · Catalogue · Swept path | Design vehicles as blocks and swept paths. |
+
+### Language and Dutch modules
+
+- **Language:** English or Dutch. Open Infra follows Open CAD Studio's interface language (`language` in its `settings.json`; with "system" the system locale, as the host does) and falls back to English. A choice made in the workbench (NL / EN in the navigation column) overrides that.
+- **Dutch modules on/off:** next to the language choice. Off removes the Netherlands group from the GIS ribbon and the Dutch 3D menu from the Civiel ribbon, for users elsewhere. Both are stored in `<config>/OpenCADStudio/open-infra/settings.json` (`language`, `netherlands`) and take effect after a restart.
+- **Icons:** the workbench windows have their own icon in the taskbar (a map pin for GIS, a profile for Civiel).
 
 ## Service browser: WMS, WFS and tiles worldwide
 
@@ -122,6 +142,7 @@ A second plugin, `openaec.open-infra-civiel`, adds the ribbon tab **"Open Infra 
 | Oppervlak (surface) | **TIN maken** (create TIN) · Hoogtelijnen · Hoogteanalyse (height analysis) · Grondverzet (earthworks) | A TIN (Delaunay, longest-edge filter) from points, 3D lines, contour lines or AHN, as 3D faces on `OG-TRIANGULATIE`: status **B** for existing ground, **N** for a design. Then: exact contours on the TIN; elevation bands with a legend; cut and fill between design (N) and existing (B), or against a level. |
 | As (alignment) | **As maken** (create alignment) · As verschuiven (offset alignment) · Station / offset | An alignment from a polyline or from points of intersection with curve radii (*by layout*). It gets stationing `0+100` on `AM-KILOMETRERING`, tangent points BB/EB/HP on `AM-TANGENTPUNT` and radius labels. Then: offset lines; station and offset of any point. |
 | Profielen (profiles) | **Lengteprofiel** (length profile) · Ontwerpprofiel (design profile) · Dwarsprofielen (cross sections) | Length profile over the TIN or AHN, with stationing, heights and an alignment band. The design profile comes from PVIs or a line drawn in the profile: parabolic vertical curves (crest and sag, with L and R), and grade labels. Cross sections along the alignment in a grid of views. |
+| 3D model | **CityGML/JSON** · See-through ground · **3D Netherlands** ▾ | Open 3D city models (CityGML, CityJSON) from anywhere; make the ground transparent to look at cables, pipes and soil columns beneath. The Dutch menu: the whole 3D model in one go, 3D BAG, terrain with aerial photo, BGT in 3D, KLIC in 3D, BRO CPTs in 3D, water level. See below. |
 | Corridor | **Corridor** | An assembly swept along the alignment and its design profile (or a level). Assemblies: *weg*, *fietspad*, *snelweg*, *dijk* (road, cycle path, motorway, dike); lane and shoulder widths, cross slopes, fill/cut slopes, crest and superelevation in curves (with runoff) are all adjustable. The corridor builds: daylight to the ground; a design TIN (status N); 3D feature lines (asphalt edge, shoulder, toe and crest of slope); cut and fill per section with average-end-area volumes and a mass balance (CSV); optional section views with the design. |
 | 3D-model (3D model) | **3D BAG** · Terrein + luchtfoto (terrain + aerial photo) · BGT naar 3D (BGT to 3D) | See below. |
 
@@ -306,7 +327,7 @@ For the command line, scripts and automation:
 | Service catalogue | `GIS_SERVICES [ZOEK=<text>] [CATEGORIE=<c>] [TYPE=WMS\|WFS\|XYZ] [HIER \| LON= LAT=] [LIMIET=50]`, `GIS_SERVICE_LOAD DIENST=<id> [LAAG=<layer>]` |
 | In the drawing | `GIS_GEBIED` (pick the import area), `GIS_PUNT` (point info) |
 | Location | `GIS_SITE RD <x> <y> [width] [height] [name]`, `GIS_SITE <lon> <lat> [width] [height] [EPSG:code] [name]` |
-| Map images | `GIS_Q_LUCHTFOTO`, `GIS_Q_KADASTER`, `GIS_Q_AHN`, `GIS_Q_OSMKAART`, `GIS_Q_SATELLIET` |
+| Map images | `GIS_Q_LUCHTFOTO`, `GIS_Q_KADASTER`, `GIS_Q_AHN`, `GIS_Q_OSMKAART`, `GIS_Q_SATELLIET`, `GIS_Q_NATURA2000`, `GIS_Q_GEOMORFOLOGIE`, `GIS_Q_BODEMKAART`, `GIS_Q_HISGIS`, `GIS_Q_TIJDREIS`; any server of the catalogue: `GIS_Q_SERVER <id> [LAAG=] [RES=m/px]`, Topotijdreis of any year: `GIS_Q_SERVER JAAR=1850` |
 | Vector data | `GIS_Q_BAG`, `GIS_Q_PERCELEN`, `GIS_Q_NWB`, `GIS_Q_HECTO`, `GIS_Q_SPOOR`, `GIS_Q_OSM` |
 | NLCS base data | `GIS_Q_BGT`, `GIS_Q_BRK`, `GIS_Q_SONDERINGEN [BRON=]` (BRO CPTs and boreholes in plan), `GIS_KLIC [file]` (opens the page), `GIS_KLIC_IMPORT <file>`, `GIS_TEKENBLAD [subject]` |
 | AHN | `GIS_AHN` (page), `GIS_HOOGTEPUNTEN`, `GIS_HOOGTELIJNEN`, `GIS_PROFIEL`, `GIS_PUNTENWOLK` |

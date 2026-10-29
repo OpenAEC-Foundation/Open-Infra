@@ -47,10 +47,18 @@ fn from_locale() -> Lang {
     Lang::En
 }
 
+/// Open CAD Studio's interface language; `None` for "system" or unknown.
+fn from_host() -> Option<Option<Lang>> {
+    let path = crate::gis::servers::config_dir().parent()?.join("settings.json");
+    let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
+    let code = v.get("language")?.as_str()?;
+    Some(if code.eq_ignore_ascii_case("system") { None } else { Some(if code.to_ascii_lowercase().starts_with("nl") { Lang::Nl } else { Lang::En }) })
+}
+
 /// The interface language, decided once per session.
 pub fn current() -> Lang {
     static L: OnceLock<Lang> = OnceLock::new();
-    *L.get_or_init(|| from_settings().unwrap_or_else(from_locale))
+    *L.get_or_init(|| from_settings().or_else(|| from_host().flatten()).unwrap_or_else(from_locale))
 }
 
 /// Store the language for the next session (the ribbon is built at load).
