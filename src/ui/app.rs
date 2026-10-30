@@ -524,6 +524,7 @@ impl App {
     fn handle_messages(&mut self, ctx: &egui::Context) {
         while let Ok(msg) = self.rx.try_recv() {
             match msg {
+                UiMsg::InfraLibrary => { self.tab = Tab::Library; self.lib.show_infra = true; }
                 UiMsg::Show(tab) => {
                     self.tab = tab;
                     self.reload_site();
@@ -2724,7 +2725,7 @@ impl eframe::App for App {
             ui.add_space(8.0);
             ui.label(RichText::new(crate::lang::tr("BESTANDEN EN BIBLIOTHEEK", "FILES AND LIBRARY")).small().weak());
             nav(ui, Tab::Files, "file", crate::lang::tr("GIS-bestand", "GIS file"));
-            nav(ui, Tab::Library, "vehicle", crate::lang::tr("Voertuigen", "Vehicles"));
+            nav(ui, Tab::Library, "vehicle", crate::lang::tr("Bibliotheek", "Library"));
             }
             super::library::language_switch(ui);
             ui.add_space(14.0);
