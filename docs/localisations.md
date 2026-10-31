@@ -78,6 +78,8 @@ Verdere implementatie kan op deze regio-opzet aansluiten: eerst een expliciet ov
 
 De internationale catalogus blijft beschikbaar voor onder meer België, Duitsland, het Verenigd Koninkrijk en andere landen. Nieuwe lokale profielen moeten hun bronhouders, dekking, CRS/hoogtereferenties, eenheden, tekenstandaard en gebruiksvoorwaarden afzonderlijk onderbouwen. Een taalkeuze of een WMS-vermelding geldt niet als bewijs van volledige landspecifieke ondersteuning.
 
+Het [onderzoek naar twintig aanvullende landen](localisations-20-landen.md) bevat officiële bronnen, referentiestelsels en integratievoorwaarden. De afzonderlijke JSON-profielen hebben status `researched`; ze zijn niet automatisch als werkende landmodules ingeschakeld.
+
 ## Verificatie van de implementatie
 
 Gecontroleerd met Rust `1.99.1-x86_64-pc-windows-msvc`: 168 Rust-tests geslaagd (10 bestaande online/lokale tests overgeslagen), 5 Python MCP-tests geslaagd en beide plugins afzonderlijk gebouwd. De regressietests dekken instellingenmigratie, taal/regio-onafhankelijkheid, projectrecord-rondreis zonder coördinatenwijziging, onbekende toekomstige regio's, survey-foot-conversie, regionale servicefilters en het wissen van een oude Nederlandse selectie bij openen van de Amerikaanse catalogus. Alle vier Amerikaanse snelknoppen verwijzen naar bestaande US-WMS-bronnen. Onafhankelijke reviewbevindingen rond GEODATA-adoptie en oude service-selecties zijn opgelost. Het nieuwe werkbankpaneel is niet integraal in een live pluginsessie bediend.
