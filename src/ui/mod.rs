@@ -11,6 +11,7 @@ mod jobs;
 mod library;
 mod infra;
 mod map;
+mod planning;
 
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Mutex, OnceLock};
@@ -34,6 +35,8 @@ pub enum Tab {
     Files,
     /// Service browser: WMS/WFS/tile services worldwide.
     Services,
+    /// Legacy IMRO and TAM spatial planning data.
+    Planning,
     /// The Civiel plugin's settings and actions.
     Civiel,
 }

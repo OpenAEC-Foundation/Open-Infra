@@ -20,11 +20,13 @@ pub mod gis;
 pub mod import;
 pub mod basisdata;
 pub mod bestand;
+pub mod plannen;
 pub mod bijwerken;
 pub mod lang;
 pub mod library;
 pub mod riolering;
 pub mod bgt_mutatie;
+pub mod planning_commands;
 pub mod nlcs;
 pub mod nlcs_check;
 pub mod tekenblad;
@@ -221,6 +223,7 @@ impl CadModule for GisModule {
                                     ("GIS_Q_SONDERINGEN", tr("Sonderingen en boringen (BRO)", "CPTs and boreholes (BRO)"), I_CPT),
                                     ("GIS_AHN", tr("AHN (venster)", "AHN (window)"), I_AHN),
                                     ("GIS_PUNTENWOLK", tr("AHN-puntenwolk", "AHN point cloud"), I_CLOUD),
+                                    ("GIS_PLANNEN", tr("Ruimtelijke plannen", "Spatial plans"), I_LAYERS),
                                     ("GIS_PDOK", tr("PDOK-catalogus", "PDOK catalogue"), I_PDOK),
                                 ],
                                 "GIS_BGT",
@@ -997,6 +1000,8 @@ impl BuiltinPlugin for OpenInfra {
             "GIS_WFS" => open(host, ui::Tab::Wfs),
             "GIS_OSM" => open(host, ui::Tab::Osm),
             "GIS_PDOK" => open(host, ui::Tab::Pdok),
+            "GIS_PLANNEN" | "GIS_PLANS" => open(host, ui::Tab::Planning),
+            "GIS_PLAN_SEARCH" | "GIS_PLAN_IMPORT" | "GIS_PLAN_GML" => planning_commands::dispatch(cmd),
             "GIS_SERVERS" => open(host, ui::Tab::Servers),
             "GIS_SERVICES" | "GIS_DIENSTEN" => services_command(host, cmd),
             "GIS_SERVICE_LOAD" | "GIS_DIENST_LADEN" => service_load_command(host, cmd),
