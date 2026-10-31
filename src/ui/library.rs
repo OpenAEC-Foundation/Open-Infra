@@ -12,6 +12,8 @@ use crate::library::{self, Vehicle};
 const ACCENT: Color32 = Color32::from_rgb(33, 150, 220);
 
 pub struct LibraryPage {
+    pub show_infra: bool,
+    infra: super::infra::InfraPage,
     search: String,
     category: Option<&'static str>,
     region: Option<String>,
@@ -22,7 +24,7 @@ pub struct LibraryPage {
 
 impl Default for LibraryPage {
     fn default() -> Self {
-        Self { search: String::new(), category: None, region: None, selected: None, view: View::Top, message: None }
+        Self { show_infra: false, infra: Default::default(), search: String::new(), category: None, region: None, selected: None, view: View::Top, message: None }
     }
 }
 
@@ -73,6 +75,11 @@ fn draw_vehicle(ui: &mut egui::Ui, v: &Vehicle, view: View, size: Vec2) {
 
 impl LibraryPage {
     pub fn page(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.show_infra, false, tr("Voertuigen", "Vehicles"));
+            ui.selectable_value(&mut self.show_infra, true, tr("Infra-objecten", "Infrastructure"));
+        });
+        if self.show_infra { self.infra.page(ui); return; }
         ui.add_space(4.0);
         ui.label(RichText::new(tr("Voertuigbibliotheek", "Vehicle library")).size(18.0).strong());
         ui.label(

@@ -193,6 +193,7 @@ impl CadModule for GisModule {
                 RibbonGroup {
                     title: tr("Bibliotheek", "Library"),
                     tools: vec![
+                        small("GIS_INFRA_LIBRARY", tr("Infra-objecten", "Infrastructure"), I_CATALOGUE),
                         tool("GIS_VOERTUIGEN", tr("Voertuigen", "Vehicles"), I_VEHICLE),
                         small("GIS_VOERTUIGOVERZICHT", tr("Overzicht", "Catalogue"), I_CATALOGUE),
                         small("GIS_VEEGPAD", tr("Veegpad", "Swept path"), I_SWEPT),
@@ -989,6 +990,8 @@ impl BuiltinPlugin for OpenInfra {
         bridge::expect_reply(id);
         adopt_geodata(host);
         match verb.as_str() {
+            "GIS_INFRA_LIBRARY" | "GIS_INFRA_BIBLIOTHEEK" => { open(host, ui::Tab::Library); ui::send(ui::UiMsg::InfraLibrary); bridge::reply(true, "Infra-bibliotheek geopend"); }
+            "GIS_INFRA_CATALOG" | "GIS_INFRA_CATALOGUS" | "GIS_INFRA_PLACE" | "GIS_INFRA_PLAATS" | "GIS_INFRA_INSPECT" | "GIS_INFRA_UPDATE" => library::infra::commands::dispatch(host, cmd),
             "GIS_LOCATIE" | "GIS_WERKBANK" => open(host, ui::Tab::Location),
             "GIS_KAART" | "GIS_WMS" => open(host, ui::Tab::Raster),
             "GIS_WFS" => open(host, ui::Tab::Wfs),

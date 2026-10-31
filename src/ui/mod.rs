@@ -9,6 +9,7 @@ mod app;
 mod files;
 mod jobs;
 mod library;
+mod infra;
 mod map;
 
 use std::sync::mpsc::{channel, Sender};
@@ -56,6 +57,7 @@ pub fn product() -> Product {
 }
 
 pub enum UiMsg {
+    InfraLibrary,
     Show(Tab),
     /// A point picked in the drawing (project CRS), for the coordinate tab.
     Picked([f64; 2]),

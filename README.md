@@ -103,7 +103,13 @@ The ribbon tab **"Open Infra — GIS"** puts the worldwide tools first. Everythi
 | | **Dutch maps** ▾ · **Dutch vector data** ▾ | One click: aerial photo, cadastral map, AHN, Natura 2000, geomorphological map, soil map, HisGIS 1832, Topotijdreis; BAG, parcels, NWB roads and hectometre posts, ProRail tracks. |
 | | **NLCS** ▾ | NLCS check and repair, quantities, bill of quantities, BGT mutation. |
 | Output | **Drawing sheet** (Tekenblad) · Servers | Drawing sheet around the import area: frame, title block, legend of the layers used, north arrow, scale bar and coordinate crosses. Manage presets and your own WMS/WFS/XYZ servers. |
-| Library | **Vehicles** · Catalogue · Swept path | Design vehicles as blocks and swept paths. |
+| Library | **Infrastructure** · Vehicles · Catalogue · Swept path | 94 parametric infrastructure items on NLCS layers, checked connectors and regeneration of connected objects; design vehicles and swept paths. |
+
+### Infrastructure library and drawing skills
+
+The infrastructure library covers paving, kerbs, sewers and fittings, drainage, utilities, lighting, green spaces, street furniture, signs, annotations and configurable sections. Connections check system, diameter, direction and socket occupancy. Kerbs can follow a surface edge; dependent objects are regenerated when parameters change. The geometry is custom and schematic, classified using NLCS 5.0.2.
+
+See the [library guide](docs/infra-bibliotheek.md), [complete item inventory](docs/infra-objecten.md) and [DWG/DXF examples](examples/infra-bibliotheek). Six repository skills in [`.agents/skills`](.agents/skills) support civil drawing workflows. MCP provides `infra_catalog`, `infra_place`, `infra_inspect` and `infra_update`.
 
 ### Language and Dutch modules
 

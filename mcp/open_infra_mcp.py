@@ -271,6 +271,50 @@ def tool(name, description, properties=None, required=None):
     return wrap
 
 
+@tool("infra_catalog", "Search the NLCS 5.0.2 infrastructure library; returns parameters, connectors, material variants and source conflicts.",
+      {"query": STR, "category": STR})
+def t_infra_catalog(a):
+    return OCS.run("GIS_INFRA_CATALOG " + _kv(QUERY=a.get("query"), CATEGORY=a.get("category")))
+
+
+def _infra_parameters(values):
+    import math
+    out = []
+    for key, value in values.items():
+        if not key.replace('_', '').isalnum() or not key.isascii():
+            raise ValueError("Invalid parameter name")
+        if isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value):
+            raise ValueError(f"{key}: a finite number is required")
+        out.append(f"{key.upper()}={value}")
+    return ' '.join(out)
+
+
+@tool("infra_place", "Place a parametric infrastructure object or attach it to an existing instance. Coordinates in project metres; rotation in degrees. Conflict items require confirm=true and explicit design parameters. Returns instance, handles, ports and warnings.",
+      {"item": STR, "at": PT, "path": PTS, "rotation": NUM, "scale": NUM,
+       "status": {"type":"string", "enum":["B","N","T","V"]}, "discipline": STR,
+       "parameters": {"type":"object", "additionalProperties": NUM},
+       "instance": STR, "connect": STR, "port": STR, "own": STR, "confirm": {"type":"boolean"}}, ["item"])
+def t_infra_place(a):
+    parameters = _infra_parameters(a.get('parameters', {}))
+    return OCS.run("GIS_INFRA_PLACE " + _kv(ITEM=a['item'], AT=_pt(a['at']) if 'at' in a else None,
+        PATH=_pts(a['path']) if 'path' in a else None, ROTATION=a.get('rotation'), SCALE=a.get('scale'),
+        STATUS=a.get('status'), DISCIPLINE=a.get('discipline'), INSTANCE=a.get('instance'),
+        CONNECT=a.get('connect'), PORT=a.get('port'), OWN=a.get('own'),
+        CONFIRM='true' if a.get('confirm') else None) + ' ' + parameters)
+
+
+@tool("infra_inspect", "Read saved infrastructure instances, parameters, connector positions and warnings from the active drawing.", {"instance": STR})
+def t_infra_inspect(a):
+    return OCS.run("GIS_INFRA_INSPECT " + _kv(INSTANCE=a.get('instance')))
+
+
+@tool("infra_update", "Regenerate a saved infrastructure instance and its connections atomically. Invalid or incompatible edits leave the drawing unchanged.",
+      {"instance": STR, "parameters": {"type":"object", "additionalProperties": NUM}, "path": PTS}, ["instance"])
+def t_infra_update(a):
+    parameters = _infra_parameters(a.get('parameters', {}))
+    return OCS.run("GIS_INFRA_UPDATE " + _kv(INSTANCE=a['instance'], PATH=_pts(a['path']) if 'path' in a else None) + ' ' + parameters)
+
+
 @tool("oi_sessions", "List the running Open CAD Studio windows; `select` picks one by session id, pid or drawing name.",
       {"select": STR})
 def t_sessions(a):
