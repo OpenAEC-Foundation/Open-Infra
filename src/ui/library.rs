@@ -235,21 +235,18 @@ pub fn language_switch(ui: &mut egui::Ui) {
             }
         }
     });
-    // Dutch sections in the ribbons and workbench navigation share one switch.
-    let on = lang::dutch();
+    let mut region = crate::localisation::configured();
+    let before = region;
     ui.horizontal(|ui| {
-        ui.label(RichText::new(tr("Nederlandse modules", "Dutch modules")).small().weak());
-        for (v, label) in [(true, tr("aan", "on")), (false, tr("uit", "off"))] {
-            let hover = tr(
-                "Nederland-secties met BAG, PDOK, BGT, BRK, KLIC, AHN, BRO, ruimtelijke plannen en NLCS in lint en werkbank. Geldt na een herstart van Open CAD Studio.",
-                "Netherlands sections with BAG, PDOK, BGT, BRK, KLIC, AHN, BRO, spatial plans and NLCS in the ribbon and workbench. Takes effect after restarting Open CAD Studio.",
-            );
-            if ui.selectable_label(on == v, RichText::new(label).small()).on_hover_text(hover).clicked() && on != v {
-                match lang::save_dutch(v) {
-                    Err(e) => bridge::error(&e),
-                    Ok(()) => bridge::info(tr("Opgeslagen; geldt na een herstart van Open CAD Studio.", "Saved; it takes effect after restarting Open CAD Studio.")),
-                }
-            }
-        }
+        ui.label(RichText::new(tr("Standaardregio", "Default region")).small().weak());
+        egui::ComboBox::from_id_salt("default-region").selected_text(region.label()).show_ui(ui, |ui| {
+            for choice in crate::localisation::REGIONS {ui.selectable_value(&mut region, choice, choice.label());}
+        });
     });
+    if before != region {
+        match crate::localisation::save(region) {
+            Err(e) => bridge::error(&e),
+            Ok(()) => bridge::info(tr("Standaardregio opgeslagen; herstart voor het lint. De projectregio staat bij Localisatie.", "Default region saved; restart for the ribbon. Set the drawing's region under Localisation.")),
+        }
+    }
 }
