@@ -73,7 +73,7 @@ pub fn save(lang: Lang) -> Result<(), String> {
 }
 
 /// The Dutch modules (PDOK, BGT, BRK, KLIC, AHN, BRO, 3D BAG, NLCS) in the
-/// ribbons: `netherlands` in settings.json, on unless switched off. Read
+/// ribbons and workbench navigation: `netherlands` in settings.json, on unless switched off. Read
 /// once per session, like the language (the ribbon is built at load).
 pub fn dutch() -> bool {
     static D: OnceLock<bool> = OnceLock::new();

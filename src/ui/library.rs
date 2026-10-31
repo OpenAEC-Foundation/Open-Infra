@@ -235,14 +235,14 @@ pub fn language_switch(ui: &mut egui::Ui) {
             }
         }
     });
-    // The Dutch modules (PDOK, BGT, NLCS, AHN, KLIC, BRO, 3D BAG) in the ribbons.
+    // Dutch sections in the ribbons and workbench navigation share one switch.
     let on = lang::dutch();
     ui.horizontal(|ui| {
         ui.label(RichText::new(tr("Nederlandse modules", "Dutch modules")).small().weak());
         for (v, label) in [(true, tr("aan", "on")), (false, tr("uit", "off"))] {
             let hover = tr(
-                "PDOK, BGT, BRK, KLIC, AHN, BRO, 3D BAG en NLCS in het lint. Geldt na een herstart van Open CAD Studio.",
-                "PDOK, BGT, BRK, KLIC, AHN, BRO, 3D BAG and NLCS in the ribbon. Takes effect after restarting Open CAD Studio.",
+                "Nederland-secties met BAG, PDOK, BGT, BRK, KLIC, AHN, BRO, ruimtelijke plannen en NLCS in lint en werkbank. Geldt na een herstart van Open CAD Studio.",
+                "Netherlands sections with BAG, PDOK, BGT, BRK, KLIC, AHN, BRO, spatial plans and NLCS in the ribbon and workbench. Takes effect after restarting Open CAD Studio.",
             );
             if ui.selectable_label(on == v, RichText::new(label).small()).on_hover_text(hover).clicked() && on != v {
                 match lang::save_dutch(v) {

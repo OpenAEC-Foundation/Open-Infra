@@ -2701,9 +2701,13 @@ impl eframe::App for App {
                 ui.add_space(8.0);
                 ui.label(RichText::new("ALGEMEEN").small().weak());
                 nav(ui, Tab::Location, "location", "Projectlocatie");
-                nav(ui, Tab::Controle, "check", "NLCS-controle");
-                nav(ui, Tab::Hoeveelheden, "quantities", "Hoeveelheden");
                 nav(ui, Tab::Coords, "point", "Coördinaten");
+                if crate::lang::dutch() {
+                    ui.add_space(8.0);
+                    ui.label(RichText::new(crate::lang::tr("NEDERLAND", "NETHERLANDS")).small().weak());
+                    nav(ui, Tab::Controle, "check", "NLCS-controle");
+                    nav(ui, Tab::Hoeveelheden, "quantities", crate::lang::tr("NLCS-hoeveelheden", "NLCS quantities"));
+                }
             } else {
             ui.label(RichText::new("WEBSERVICES").small().weak());
             nav(ui, Tab::Location, "location", "Geografische locatie");
@@ -2711,16 +2715,16 @@ impl eframe::App for App {
             nav(ui, Tab::Wfs, "vector", "WFS (vector)");
             nav(ui, Tab::Services, "services", crate::lang::tr("Services wereldwijd", "Services worldwide"));
             nav(ui, Tab::Osm, "globe", "OpenStreetMap");
-            nav(ui, Tab::Pdok, "pdok", "PDOK (NL)");
-            ui.add_space(8.0);
-            ui.label(RichText::new("BASISDATA NL").small().weak());
-            nav(ui, Tab::Nlcs, "nlcs", "BGT · Kadaster · KLIC");
-            nav(ui, Tab::Ahn, "ahn", "AHN-hoogtes");
-            nav(ui, Tab::Planning, "vector", crate::lang::tr("Ruimtelijke plannen", "Spatial plans"));
-            ui.add_space(8.0);
-            ui.label(RichText::new("NLCS").small().weak());
-            nav(ui, Tab::Controle, "check", "NLCS-controle");
-            nav(ui, Tab::Hoeveelheden, "quantities", "Hoeveelheden");
+            if crate::lang::dutch() {
+                ui.add_space(8.0);
+                ui.label(RichText::new(crate::lang::tr("NEDERLAND", "NETHERLANDS")).small().weak());
+                nav(ui, Tab::Pdok, "pdok", "PDOK · BAG · NWB");
+                nav(ui, Tab::Nlcs, "nlcs", "BGT · Kadaster · KLIC");
+                nav(ui, Tab::Ahn, "ahn", "AHN-hoogtes");
+                nav(ui, Tab::Planning, "vector", crate::lang::tr("Ruimtelijke plannen", "Spatial plans"));
+                nav(ui, Tab::Controle, "check", "NLCS-controle");
+                nav(ui, Tab::Hoeveelheden, "quantities", crate::lang::tr("NLCS-hoeveelheden", "NLCS quantities"));
+            }
             ui.add_space(8.0);
             ui.label(RichText::new("HULPMIDDELEN").small().weak());
             nav(ui, Tab::Coords, "point", "Coördinaten");
