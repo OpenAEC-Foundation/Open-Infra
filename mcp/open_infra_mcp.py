@@ -392,6 +392,23 @@ def t_service_load(a):
     return OCS.run("GIS_SERVICE_LOAD " + _kv(DIENST=a["service"], LAAG=a.get("layer"), RESOLUTIE=a.get("resolution"), LIMIET=a.get("limit")))
 
 
+@tool("planning_search", "Find legacy IMRO/TAM plans at an RD point or the project location. Requires OPENINFRA_RP_API_KEY in the plugin process; never pass a key as an argument. Returns plan IDs, status and dates.", {"x": NUM, "y": NUM})
+def t_planning_search(a):
+    if (a.get("x") is None) != (a.get("y") is None):
+        raise ValueError("Provide both RD x and y")
+    return OCS.run("GIS_PLAN_SEARCH " + _kv(X=a.get("x"), Y=a.get("y")))
+
+
+@tool("planning_import", "Download a selected legacy IMRO/TAM plan as editable styled geometry. Requires local OPENINFRA_RP_API_KEY and a project location.", {"plan": STR}, ["plan"])
+def t_planning_import(a):
+    return OCS.run("GIS_PLAN_IMPORT " + _kv(PLAN=a["plan"]), 1800)
+
+
+@tool("planning_gml", "Import local IMRO GML with planning styles and source metadata; no API key required.", {"path": STR}, ["path"])
+def t_planning_gml(a):
+    return OCS.run("GIS_PLAN_GML " + _quote(a["path"]), 1800)
+
+
 @tool("nlcs_check", "NLCS 5.02 check of the drawing (report beside the drawing); repair=true sets layer styles and ByLayer.",
       {"repair": {"type": "boolean"}})
 def t_nlcs(a):

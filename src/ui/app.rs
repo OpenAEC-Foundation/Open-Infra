@@ -458,6 +458,7 @@ pub struct App {
     lib: super::library::LibraryPage,
     files: super::files::FilesPage,
     svc: services::ServicesPage,
+    planning: super::planning::PlanningPage,
 }
 
 impl App {
@@ -497,6 +498,7 @@ impl App {
             lib: Default::default(),
             files: Default::default(),
             svc: Default::default(),
+            planning: Default::default(),
         }
     }
 
@@ -2714,6 +2716,7 @@ impl eframe::App for App {
             ui.label(RichText::new("BASISDATA NL").small().weak());
             nav(ui, Tab::Nlcs, "nlcs", "BGT · Kadaster · KLIC");
             nav(ui, Tab::Ahn, "ahn", "AHN-hoogtes");
+            nav(ui, Tab::Planning, "vector", crate::lang::tr("Ruimtelijke plannen", "Spatial plans"));
             ui.add_space(8.0);
             ui.label(RichText::new("NLCS").small().weak());
             nav(ui, Tab::Controle, "check", "NLCS-controle");
@@ -2792,6 +2795,7 @@ impl eframe::App for App {
                     Tab::Files => self.files.page(ui),
                     Tab::Civiel => self.civiel_page(ui),
                     Tab::Services => self.services_page(ui),
+                    Tab::Planning => self.planning.page(ui),
                 }
             });
         });

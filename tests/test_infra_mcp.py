@@ -25,5 +25,19 @@ class InfraMcpTest(unittest.TestCase):
                 mcp.t_infra_place({'item':'zitbank','parameters':{'width':float('nan')}})
             run.assert_not_called()
 
+    def test_planning_commands_do_not_accept_credentials(self):
+        with patch.object(mcp.OCS, 'run', return_value={'ok': True}) as run:
+            mcp.t_planning_search({'x': 100000, 'y': 400000})
+            self.assertIn('GIS_PLAN_SEARCH X=100000 Y=400000', run.call_args.args[0])
+            with self.assertRaises(ValueError):
+                mcp.t_planning_search({'x': 100000})
+            mcp.t_planning_import({'plan': 'NL.IMRO.0000.synthetic-TEST'})
+            self.assertIn('PLAN=NL.IMRO.0000.synthetic-TEST', run.call_args.args[0])
+            mcp.t_planning_gml({'path': 'C:/synthetic plan.gml'})
+            self.assertEqual(run.call_args.args[0], 'GIS_PLAN_GML "C:/synthetic plan.gml"')
+        for tool in mcp.TOOLS:
+            if tool['name'].startswith('planning_'):
+                self.assertNotIn('key', tool['inputSchema']['properties'])
+
 if __name__=='__main__':
     unittest.main()
